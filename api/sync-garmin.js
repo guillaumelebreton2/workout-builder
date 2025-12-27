@@ -61,7 +61,7 @@ async function setCachedTokens(email, tokens) {
 const SPORT_TYPE_MAP = {
   running: { sportTypeId: 1, sportTypeKey: 'running' },
   cycling: { sportTypeId: 2, sportTypeKey: 'cycling' },
-  swimming: { sportTypeId: 5, sportTypeKey: 'lap_swimming' },
+  swimming: { sportTypeId: 4, sportTypeKey: 'swimming' },
 };
 
 // Mapping des types d'intensité/step
