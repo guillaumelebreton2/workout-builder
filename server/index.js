@@ -5,7 +5,8 @@
 
 import express from 'express';
 import cors from 'cors';
-import { GarminConnect } from '@gooin/garmin-connect';
+import pkg from '@gooin/garmin-connect';
+const { GarminConnect } = pkg;
 
 const app = express();
 const PORT = process.env.PORT || 3001;

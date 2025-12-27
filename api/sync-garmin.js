@@ -2,7 +2,8 @@
  * Vercel Serverless Function pour la synchro Garmin Connect
  */
 
-import { GarminConnect } from '@gooin/garmin-connect';
+import pkg from '@gooin/garmin-connect';
+const { GarminConnect } = pkg;
 import { Redis } from '@upstash/redis';
 
 // Configuration Redis pour le cache de session
