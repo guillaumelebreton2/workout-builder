@@ -5,7 +5,7 @@
 
 import express from 'express';
 import cors from 'cors';
-import pkg from '@gooin/garmin-connect';
+import pkg from 'garmin-connect';
 const { GarminConnect } = pkg;
 
 const app = express();
@@ -366,7 +366,9 @@ app.post('/api/sync-garmin', async (req, res) => {
 
       try {
         console.log('Planification du workout', result.workoutId, 'pour', dateString);
-        const scheduleResult = await client.scheduleWorkout({ workoutId: result.workoutId }, workoutDate);
+        // POST vers l'endpoint de planification (confirmé via garmin-workouts Python)
+        const scheduleUrl = `https://connect.garmin.com/proxy/workout-service/schedule/${result.workoutId}`;
+        const scheduleResult = await client.post(scheduleUrl, { date: dateString });
         console.log('Workout planifié avec succès:', JSON.stringify(scheduleResult));
         scheduled = true;
       } catch (err) {
