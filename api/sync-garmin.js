@@ -4,66 +4,6 @@
 
 import pkg from 'garmin-connect';
 const { GarminConnect } = pkg;
-import { Redis } from '@upstash/redis';
-
-// Durée du cache de session : 1 heure
-const SESSION_TTL = 60 * 60;
-
-// Vérifier la configuration Redis
-const redisUrl = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
-
-const redisConfigured = !!(redisUrl && redisToken);
-if (!redisConfigured) {
-  console.warn('⚠️ Redis non configuré: UPSTASH_REDIS_REST_URL ou UPSTASH_REDIS_REST_TOKEN manquant');
-}
-
-// Initialiser Redis seulement si configuré
-const redis = redisConfigured
-  ? new Redis({ url: redisUrl, token: redisToken })
-  : null;
-
-// Créer une clé unique pour le cache basée sur l'email
-function getSessionKey(email) {
-  return `garmin_session_${email.replace(/[^a-zA-Z0-9]/g, '_')}`;
-}
-
-// Récupérer la session depuis le cache
-async function getCachedSession(email) {
-  if (!redis) {
-    console.log('Redis non disponible, pas de cache');
-    return null;
-  }
-  try {
-    const key = getSessionKey(email);
-    console.log('Recherche session en cache:', key);
-    const session = await redis.get(key);
-    if (session) {
-      console.log('Session Garmin trouvée en cache pour', email);
-      // Si c'est une string, parser le JSON
-      return typeof session === 'string' ? JSON.parse(session) : session;
-    }
-    console.log('Pas de session en cache pour', email);
-  } catch (error) {
-    console.warn('Erreur lecture cache Redis:', error.message);
-  }
-  return null;
-}
-
-// Sauvegarder la session dans le cache
-async function setCachedSession(email, tokens) {
-  if (!redis) {
-    console.log('Redis non disponible, session non mise en cache');
-    return;
-  }
-  try {
-    const key = getSessionKey(email);
-    await redis.set(key, JSON.stringify(tokens), { ex: SESSION_TTL });
-    console.log('Session Garmin mise en cache pour', email, '(TTL:', SESSION_TTL, 's)');
-  } catch (error) {
-    console.warn('Erreur écriture cache Redis:', error.message);
-  }
-}
 
 // Mapping des types de sport
 const SPORT_TYPE_MAP = {
@@ -342,34 +282,10 @@ export default async function handler(req, res) {
       password: password,
     });
 
-    // Essayer de récupérer la session depuis le cache
-    const cachedSession = await getCachedSession(email);
-    let connected = false;
-
-    if (cachedSession) {
-      try {
-        console.log('Session trouvée en cache, tentative de restauration...');
-        client.sessionJson = cachedSession;
-        // Vérifier que la session est valide
-        await client.getUserProfile();
-        console.log('Session restaurée avec succès');
-        connected = true;
-      } catch (e) {
-        console.log('Session invalide, nouveau login nécessaire:', e.message);
-      }
-    }
-
-    if (!connected) {
-      console.log('Connexion à Garmin Connect...');
-      await client.login();
-      console.log('Connecté à Garmin Connect');
-    }
-
-    // Sauvegarder/mettre à jour la session dans le cache
-    const newSession = client.sessionJson;
-    if (newSession) {
-      await setCachedSession(email, newSession);
-    }
+    // Login frais à chaque requête (plus lent mais fiable)
+    console.log('Connexion à Garmin Connect...');
+    await client.login();
+    console.log('Connecté à Garmin Connect');
 
     const garminWorkout = convertToGarminFormat(workout);
     console.log('Workout converti');
@@ -378,22 +294,33 @@ export default async function handler(req, res) {
     console.log('Workout créé:', result?.workoutId);
 
     // Planifier le workout à la date spécifiée
+    let scheduled = false;
+    let scheduleError = null;
+
     if (workout.date && result?.workoutId) {
       const workoutDate = new Date(workout.date);
+      const dateString = workoutDate.toISOString().split('T')[0]; // YYYY-MM-DD
+      console.log('Tentative de planification pour:', dateString);
 
       try {
-        // Utiliser la méthode scheduleWorkout de garmin-connect
-        const scheduleResult = await client.scheduleWorkout({ workoutId: result.workoutId }, workoutDate);
-        console.log('Workout planifié pour', workoutDate.toISOString().split('T')[0], ':', scheduleResult);
-      } catch (scheduleError) {
-        console.warn('Impossible de planifier:', scheduleError.message);
+        // Utiliser l'API directe car scheduleWorkout n'existe pas dans v1.6.2
+        const scheduleUrl = `/workout-service/schedule/${result.workoutId}`;
+        const scheduleResult = await client.post(scheduleUrl, { date: dateString });
+        console.log('Workout planifié avec succès:', scheduleResult);
+        scheduled = true;
+      } catch (err) {
+        console.error('Erreur planification:', err);
+        scheduleError = err.message;
       }
     }
 
     res.json({
       success: true,
-      message: 'Workout synchronisé avec Garmin Connect',
+      message: scheduled
+        ? 'Workout synchronisé et planifié avec Garmin Connect'
+        : 'Workout synchronisé avec Garmin Connect (planification: ' + (scheduleError || 'pas de date') + ')',
       workoutId: result?.workoutId,
+      scheduled,
     });
   } catch (error) {
     console.error('Erreur Garmin:', error);

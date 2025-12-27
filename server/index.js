@@ -356,22 +356,33 @@ app.post('/api/sync-garmin', async (req, res) => {
     console.log('Workout créé:', result);
 
     // Planifier le workout à la date spécifiée
+    let scheduled = false;
+    let scheduleError = null;
+
     if (workout.date && result?.workoutId) {
       const workoutDate = new Date(workout.date);
+      const dateString = workoutDate.toISOString().split('T')[0]; // YYYY-MM-DD
+      console.log('Tentative de planification pour:', dateString);
 
       try {
-        // Utiliser la méthode scheduleWorkout de garmin-connect
-        const scheduleResult = await client.scheduleWorkout({ workoutId: result.workoutId }, workoutDate);
-        console.log('Workout planifié pour', workoutDate.toISOString().split('T')[0], ':', scheduleResult);
-      } catch (scheduleError) {
-        console.warn('Impossible de planifier:', scheduleError.message);
+        // Utiliser l'API directe car scheduleWorkout n'existe pas dans v1.6.2
+        const scheduleUrl = `/workout-service/schedule/${result.workoutId}`;
+        const scheduleResult = await client.post(scheduleUrl, { date: dateString });
+        console.log('Workout planifié avec succès:', scheduleResult);
+        scheduled = true;
+      } catch (err) {
+        console.error('Erreur planification:', err);
+        scheduleError = err.message;
       }
     }
 
     res.json({
       success: true,
-      message: 'Workout synchronisé avec Garmin Connect',
+      message: scheduled
+        ? 'Workout synchronisé et planifié avec Garmin Connect'
+        : 'Workout synchronisé avec Garmin Connect (planification: ' + (scheduleError || 'pas de date') + ')',
       workoutId: result?.workoutId,
+      scheduled,
     });
   } catch (error) {
     console.error('Erreur Garmin:', error);
