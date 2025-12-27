@@ -4,6 +4,41 @@
 
 import pkg from 'garmin-connect';
 const { GarminConnect } = pkg;
+import { kv } from '@vercel/kv';
+
+// Durée du cache de session : 1 heure
+const SESSION_TTL = 60 * 60;
+
+// Créer une clé unique pour le cache basée sur l'email
+function getSessionKey(email) {
+  return `garmin_session_${email.replace(/[^a-zA-Z0-9]/g, '_')}`;
+}
+
+// Récupérer la session depuis le cache
+async function getCachedSession(email) {
+  try {
+    const key = getSessionKey(email);
+    const session = await kv.get(key);
+    if (session) {
+      console.log('Session Garmin trouvée en cache pour', email);
+      return session;
+    }
+  } catch (error) {
+    console.warn('Erreur lecture cache KV:', error.message);
+  }
+  return null;
+}
+
+// Sauvegarder la session dans le cache
+async function setCachedSession(email, tokens) {
+  try {
+    const key = getSessionKey(email);
+    await kv.set(key, tokens, { ex: SESSION_TTL });
+    console.log('Session Garmin mise en cache pour', email);
+  } catch (error) {
+    console.warn('Erreur écriture cache KV:', error.message);
+  }
+}
 
 // Mapping des types de sport
 const SPORT_TYPE_MAP = {
@@ -277,14 +312,34 @@ export default async function handler(req, res) {
   }
 
   try {
-    console.log('Connexion à Garmin Connect...');
     const client = new GarminConnect({
       username: email,
       password: password,
     });
 
-    await client.login();
-    console.log('Connecté à Garmin Connect');
+    // Essayer de récupérer la session depuis le cache
+    const cachedTokens = await getCachedSession(email);
+
+    if (cachedTokens) {
+      try {
+        // Restaurer la session depuis le cache
+        client.loadToken(cachedTokens.oauth1, cachedTokens.oauth2);
+        console.log('Session restaurée depuis le cache');
+      } catch (e) {
+        console.log('Session invalide, nouvelle connexion...');
+        await client.login();
+        const tokens = client.exportToken();
+        await setCachedSession(email, tokens);
+      }
+    } else {
+      console.log('Connexion à Garmin Connect...');
+      await client.login();
+      console.log('Connecté à Garmin Connect');
+
+      // Sauvegarder les tokens dans le cache
+      const tokens = client.exportToken();
+      await setCachedSession(email, tokens);
+    }
 
     const garminWorkout = convertToGarminFormat(workout);
     console.log('Workout converti');
