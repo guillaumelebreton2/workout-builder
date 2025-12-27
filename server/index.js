@@ -364,20 +364,12 @@ app.post('/api/sync-garmin', async (req, res) => {
       const dateString = workoutDate.toISOString().split('T')[0]; // YYYY-MM-DD
 
       try {
-        // Utiliser client.post() pour l'authentification automatique
-        const scheduleUrl = `https://connect.garmin.com/proxy/workout-service/schedule/${result.workoutId}`;
+        // Utiliser l'API connectapi.garmin.com pour la planification
+        const scheduleUrl = `https://connectapi.garmin.com/workout-service/schedule/${result.workoutId}`;
         const scheduleResult = await client.post(scheduleUrl, { date: dateString });
         console.log('Workout planifié pour', dateString, ':', scheduleResult);
       } catch (scheduleError) {
         console.warn('Impossible de planifier:', scheduleError.message);
-        // Essayer une 2ème méthode si la première échoue
-        try {
-          const altUrl = `https://connect.garmin.com/workout-service/schedule/${result.workoutId}`;
-          const altResult = await client.post(altUrl, { date: dateString });
-          console.log('Workout planifié (alt) pour', dateString, ':', altResult);
-        } catch (altError) {
-          console.warn('Planification alternative échouée:', altError.message);
-        }
       }
     }
 

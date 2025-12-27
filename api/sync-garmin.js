@@ -9,11 +9,19 @@ import { Redis } from '@upstash/redis';
 // Durée du cache de session : 1 heure
 const SESSION_TTL = 60 * 60;
 
-// Initialiser Redis (utilise automatiquement UPSTASH_REDIS_REST_URL et UPSTASH_REDIS_REST_TOKEN)
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN,
-});
+// Vérifier la configuration Redis
+const redisUrl = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+
+const redisConfigured = !!(redisUrl && redisToken);
+if (!redisConfigured) {
+  console.warn('⚠️ Redis non configuré: UPSTASH_REDIS_REST_URL ou UPSTASH_REDIS_REST_TOKEN manquant');
+}
+
+// Initialiser Redis seulement si configuré
+const redis = redisConfigured
+  ? new Redis({ url: redisUrl, token: redisToken })
+  : null;
 
 // Créer une clé unique pour le cache basée sur l'email
 function getSessionKey(email) {
@@ -22,14 +30,20 @@ function getSessionKey(email) {
 
 // Récupérer la session depuis le cache
 async function getCachedSession(email) {
+  if (!redis) {
+    console.log('Redis non disponible, pas de cache');
+    return null;
+  }
   try {
     const key = getSessionKey(email);
+    console.log('Recherche session en cache:', key);
     const session = await redis.get(key);
     if (session) {
       console.log('Session Garmin trouvée en cache pour', email);
       // Si c'est une string, parser le JSON
       return typeof session === 'string' ? JSON.parse(session) : session;
     }
+    console.log('Pas de session en cache pour', email);
   } catch (error) {
     console.warn('Erreur lecture cache Redis:', error.message);
   }
@@ -38,10 +52,14 @@ async function getCachedSession(email) {
 
 // Sauvegarder la session dans le cache
 async function setCachedSession(email, tokens) {
+  if (!redis) {
+    console.log('Redis non disponible, session non mise en cache');
+    return;
+  }
   try {
     const key = getSessionKey(email);
     await redis.set(key, JSON.stringify(tokens), { ex: SESSION_TTL });
-    console.log('Session Garmin mise en cache pour', email);
+    console.log('Session Garmin mise en cache pour', email, '(TTL:', SESSION_TTL, 's)');
   } catch (error) {
     console.warn('Erreur écriture cache Redis:', error.message);
   }
@@ -327,18 +345,25 @@ export default async function handler(req, res) {
     // Essayer de récupérer la session depuis le cache
     const cachedTokens = await getCachedSession(email);
 
-    if (cachedTokens) {
+    let sessionValid = false;
+
+    if (cachedTokens && cachedTokens.oauth1 && cachedTokens.oauth2) {
       try {
         // Restaurer la session depuis le cache
         client.loadToken(cachedTokens.oauth1, cachedTokens.oauth2);
-        console.log('Session restaurée depuis le cache');
+        console.log('Tokens chargés depuis le cache, vérification...');
+
+        // Tester si la session est encore valide avec un appel simple
+        await client.getUserProfile();
+        console.log('Session cache valide');
+        sessionValid = true;
       } catch (e) {
-        console.log('Session invalide, nouvelle connexion...');
-        await client.login();
-        const tokens = client.exportToken();
-        await setCachedSession(email, tokens);
+        console.log('Session cache invalide:', e.message);
+        sessionValid = false;
       }
-    } else {
+    }
+
+    if (!sessionValid) {
       console.log('Connexion à Garmin Connect...');
       await client.login();
       console.log('Connecté à Garmin Connect');
@@ -360,20 +385,12 @@ export default async function handler(req, res) {
       const dateString = workoutDate.toISOString().split('T')[0];
 
       try {
-        // Utiliser client.post() pour l'authentification automatique
-        const scheduleUrl = `https://connect.garmin.com/proxy/workout-service/schedule/${result.workoutId}`;
+        // Utiliser l'API connectapi.garmin.com pour la planification
+        const scheduleUrl = `https://connectapi.garmin.com/workout-service/schedule/${result.workoutId}`;
         const scheduleResult = await client.post(scheduleUrl, { date: dateString });
         console.log('Workout planifié pour', dateString, ':', scheduleResult);
       } catch (scheduleError) {
         console.warn('Impossible de planifier:', scheduleError.message);
-        // Essayer une 2ème méthode si la première échoue
-        try {
-          const altUrl = `https://connect.garmin.com/workout-service/schedule/${result.workoutId}`;
-          const altResult = await client.post(altUrl, { date: dateString });
-          console.log('Workout planifié (alt) pour', dateString, ':', altResult);
-        } catch (altError) {
-          console.warn('Planification alternative échouée:', altError.message);
-        }
       }
     }
 
