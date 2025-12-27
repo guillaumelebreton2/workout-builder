@@ -10,9 +10,53 @@ interface GarminSyncModalProps {
 // En production (Vercel), utiliser /api, en dev utiliser localhost:3001
 const BACKEND_URL = import.meta.env.PROD ? '' : 'http://localhost:3001';
 
-// Clés localStorage pour sauvegarder les identifiants
-const STORAGE_KEY_EMAIL = 'garmin_email';
-const STORAGE_KEY_PASSWORD = 'garmin_password';
+// Sauvegarder les identifiants via Credential Management API (sécurisé)
+async function saveCredentials(email: string, password: string) {
+  if (!navigator.credentials || !window.PasswordCredential) {
+    // Fallback: ne stocker que l'email en localStorage (pas le mot de passe)
+    localStorage.setItem('garmin_email', email);
+    return;
+  }
+
+  try {
+    const credential = new PasswordCredential({
+      id: email,
+      password: password,
+      name: 'Garmin Connect',
+    });
+    await navigator.credentials.store(credential);
+  } catch (e) {
+    console.warn('Impossible de sauvegarder les credentials:', e);
+    // Fallback: stocker juste l'email
+    localStorage.setItem('garmin_email', email);
+  }
+}
+
+// Récupérer les identifiants via Credential Management API
+async function getCredentials(): Promise<{ email: string; password: string } | null> {
+  if (!navigator.credentials || !window.PasswordCredential) {
+    // Fallback: récupérer l'email depuis localStorage
+    const email = localStorage.getItem('garmin_email');
+    return email ? { email, password: '' } : null;
+  }
+
+  try {
+    const credential = await navigator.credentials.get({
+      password: true,
+      mediation: 'silent', // Ne pas afficher de popup
+    }) as PasswordCredential | null;
+
+    if (credential && credential.password) {
+      return { email: credential.id, password: credential.password };
+    }
+  } catch (e) {
+    console.warn('Impossible de récupérer les credentials:', e);
+  }
+
+  // Fallback: récupérer l'email depuis localStorage
+  const email = localStorage.getItem('garmin_email');
+  return email ? { email, password: '' } : null;
+}
 
 async function syncWorkout(email: string, password: string, workout: Workout) {
   const response = await fetch(`${BACKEND_URL}/api/sync-garmin`, {
@@ -57,31 +101,37 @@ export function GarminSyncModal({ workout, onClose, onSuccess }: GarminSyncModal
 
   // Au montage, essayer de sync automatiquement si on a des identifiants
   useEffect(() => {
-    const savedEmail = localStorage.getItem(STORAGE_KEY_EMAIL);
-    const savedPassword = localStorage.getItem(STORAGE_KEY_PASSWORD);
+    if (autoSyncTried) return;
 
-    if (savedEmail) setEmail(savedEmail);
-    if (savedPassword) setPassword(savedPassword);
+    setAutoSyncTried(true);
+    setIsLoading(true);
 
-    // Si on a les deux, tenter une sync automatique
-    if (savedEmail && savedPassword && !autoSyncTried) {
-      setAutoSyncTried(true);
-      setIsLoading(true);
+    getCredentials()
+      .then((creds) => {
+        if (creds?.email) setEmail(creds.email);
+        if (creds?.password) setPassword(creds.password);
 
-      syncWorkout(savedEmail, savedPassword, workout)
-        .then(() => {
-          onSuccess();
-        })
-        .catch((err) => {
-          console.log('Auto-sync échoué, affichage du formulaire:', err.message);
+        // Si on a les deux, tenter une sync automatique
+        if (creds?.email && creds?.password) {
+          return syncWorkout(creds.email, creds.password, workout)
+            .then(() => {
+              onSuccess();
+            })
+            .catch((err) => {
+              console.log('Auto-sync échoué:', err.message);
+              setShowForm(true);
+              setIsLoading(false);
+            });
+        } else {
+          // Pas d'identifiants complets, afficher le formulaire
           setShowForm(true);
           setIsLoading(false);
-          // Ne pas afficher l'erreur pour l'auto-sync, juste montrer le form
-        });
-    } else if (!savedEmail || !savedPassword) {
-      // Pas d'identifiants sauvegardés, afficher le formulaire
-      setShowForm(true);
-    }
+        }
+      })
+      .catch(() => {
+        setShowForm(true);
+        setIsLoading(false);
+      });
   }, [workout, onSuccess, autoSyncTried]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -92,9 +142,8 @@ export function GarminSyncModal({ workout, onClose, onSuccess }: GarminSyncModal
     try {
       await syncWorkout(email, password, workout);
 
-      // Sauvegarder les identifiants pour la prochaine fois
-      localStorage.setItem(STORAGE_KEY_EMAIL, email);
-      localStorage.setItem(STORAGE_KEY_PASSWORD, password);
+      // Sauvegarder les identifiants de manière sécurisée
+      await saveCredentials(email, password);
 
       onSuccess();
     } catch (err) {
@@ -152,6 +201,8 @@ export function GarminSyncModal({ workout, onClose, onSuccess }: GarminSyncModal
             <input
               type="email"
               id="garmin-email"
+              name="username"
+              autoComplete="username"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -167,6 +218,8 @@ export function GarminSyncModal({ workout, onClose, onSuccess }: GarminSyncModal
             <input
               type="password"
               id="garmin-password"
+              name="password"
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
