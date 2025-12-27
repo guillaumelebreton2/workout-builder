@@ -4,10 +4,16 @@
 
 import pkg from 'garmin-connect';
 const { GarminConnect } = pkg;
-import { kv } from '@vercel/kv';
+import { Redis } from '@upstash/redis';
 
 // Durée du cache de session : 1 heure
 const SESSION_TTL = 60 * 60;
+
+// Initialiser Redis (utilise automatiquement UPSTASH_REDIS_REST_URL et UPSTASH_REDIS_REST_TOKEN)
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN,
+});
 
 // Créer une clé unique pour le cache basée sur l'email
 function getSessionKey(email) {
@@ -18,13 +24,14 @@ function getSessionKey(email) {
 async function getCachedSession(email) {
   try {
     const key = getSessionKey(email);
-    const session = await kv.get(key);
+    const session = await redis.get(key);
     if (session) {
       console.log('Session Garmin trouvée en cache pour', email);
-      return session;
+      // Si c'est une string, parser le JSON
+      return typeof session === 'string' ? JSON.parse(session) : session;
     }
   } catch (error) {
-    console.warn('Erreur lecture cache KV:', error.message);
+    console.warn('Erreur lecture cache Redis:', error.message);
   }
   return null;
 }
@@ -33,10 +40,10 @@ async function getCachedSession(email) {
 async function setCachedSession(email, tokens) {
   try {
     const key = getSessionKey(email);
-    await kv.set(key, tokens, { ex: SESSION_TTL });
+    await redis.set(key, JSON.stringify(tokens), { ex: SESSION_TTL });
     console.log('Session Garmin mise en cache pour', email);
   } catch (error) {
-    console.warn('Erreur écriture cache KV:', error.message);
+    console.warn('Erreur écriture cache Redis:', error.message);
   }
 }
 
