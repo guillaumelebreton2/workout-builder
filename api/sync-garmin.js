@@ -378,9 +378,18 @@ export default async function handler(req, res) {
       try {
         // Utiliser l'API directe car scheduleWorkout n'existe pas dans v1.6.2
         const scheduleUrl = `https://connect.garmin.com/proxy/workout-service/schedule/${result.workoutId}`;
-        const scheduleResult = await client.post(scheduleUrl, { date: dateString });
-        console.log('Workout planifié avec succès:', scheduleResult);
-        scheduled = true;
+        console.log('URL de planification:', scheduleUrl);
+        console.log('Données envoyées:', { date: dateString });
+
+        // Utiliser le client HTTP interne avec les headers requis
+        const scheduleResult = await client.client.post(scheduleUrl, { date: dateString }, {
+          headers: {
+            'Referer': 'https://connect.garmin.com/',
+            'NK': 'NT'
+          }
+        });
+        console.log('Réponse planification:', JSON.stringify(scheduleResult));
+        scheduled = scheduleResult && Object.keys(scheduleResult).length > 0;
       } catch (err) {
         console.error('Erreur planification:', err);
         scheduleError = err.message;
