@@ -5,6 +5,10 @@
 
 const SALT_KEY = 'garmin_salt';
 const CREDENTIALS_KEY = 'garmin_credentials_encrypted';
+const EXPIRY_KEY = 'garmin_credentials_expiry';
+
+// Durée de validité des credentials (30 jours en ms)
+const CREDENTIALS_TTL = 30 * 24 * 60 * 60 * 1000;
 
 // Génère un sel aléatoire (stocké en localStorage, pas secret)
 function getSalt(): Uint8Array {
@@ -67,6 +71,8 @@ export async function encryptCredentials(
   };
 
   localStorage.setItem(CREDENTIALS_KEY, JSON.stringify(payload));
+  // Sauvegarder la date d'expiration
+  localStorage.setItem(EXPIRY_KEY, String(Date.now() + CREDENTIALS_TTL));
 }
 
 // Déchiffre les credentials avec le PIN
@@ -94,13 +100,25 @@ export async function decryptCredentials(
   }
 }
 
-// Vérifie si des credentials chiffrés existent
+// Vérifie si des credentials chiffrés existent et sont valides
 export function hasEncryptedCredentials(): boolean {
-  return localStorage.getItem(CREDENTIALS_KEY) !== null;
+  const credentials = localStorage.getItem(CREDENTIALS_KEY);
+  if (!credentials) return false;
+
+  // Vérifier l'expiration
+  const expiry = localStorage.getItem(EXPIRY_KEY);
+  if (expiry && Date.now() > Number(expiry)) {
+    // Credentials expirés, les supprimer
+    clearEncryptedCredentials();
+    return false;
+  }
+
+  return true;
 }
 
 // Supprime les credentials chiffrés
 export function clearEncryptedCredentials(): void {
   localStorage.removeItem(CREDENTIALS_KEY);
   localStorage.removeItem(SALT_KEY);
+  localStorage.removeItem(EXPIRY_KEY);
 }
