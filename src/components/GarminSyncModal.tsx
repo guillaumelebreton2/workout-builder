@@ -7,7 +7,8 @@ interface GarminSyncModalProps {
   onSuccess: () => void;
 }
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+// En production (Vercel), utiliser /api, en dev utiliser localhost:3001
+const BACKEND_URL = import.meta.env.PROD ? '' : 'http://localhost:3001';
 
 export function GarminSyncModal({ workout, onClose, onSuccess }: GarminSyncModalProps) {
   const [email, setEmail] = useState('');
