@@ -7,8 +7,8 @@ const SALT_KEY = 'garmin_salt';
 const CREDENTIALS_KEY = 'garmin_credentials_encrypted';
 const EXPIRY_KEY = 'garmin_credentials_expiry';
 
-// Durée de validité des credentials (30 jours en ms)
-const CREDENTIALS_TTL = 30 * 24 * 60 * 60 * 1000;
+// Durée de validité des credentials (1 heure en ms)
+const CREDENTIALS_TTL = 60 * 60 * 1000;
 
 // Génère un sel aléatoire (stocké en localStorage, pas secret)
 function getSalt(): Uint8Array {
