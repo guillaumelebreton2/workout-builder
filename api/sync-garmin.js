@@ -377,7 +377,7 @@ export default async function handler(req, res) {
 
       try {
         // Utiliser l'API directe car scheduleWorkout n'existe pas dans v1.6.2
-        const scheduleUrl = `/workout-service/schedule/${result.workoutId}`;
+        const scheduleUrl = `https://connect.garmin.com/workout-service/schedule/${result.workoutId}`;
         const scheduleResult = await client.post(scheduleUrl, { date: dateString });
         console.log('Workout planifié avec succès:', scheduleResult);
         scheduled = true;
