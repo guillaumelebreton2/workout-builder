@@ -313,13 +313,33 @@ app.post('/api/sync-garmin', async (req, res) => {
   }
 
   try {
-    // Créer le client et restaurer ou se connecter
-    const client = new GarminConnect();
-    const cachedSession = getCachedSession(email);
+    const client = new GarminConnect({
+      username: email,
+      password: password,
+    });
 
-    console.log(cachedSession ? 'Session trouvée en cache, tentative de restauration...' : 'Pas de session en cache, connexion...');
-    await client.restoreOrLogin(cachedSession, email, password);
-    console.log('Connecté à Garmin Connect');
+    // Essayer de récupérer la session depuis le cache
+    const cachedSession = getCachedSession(email);
+    let connected = false;
+
+    if (cachedSession) {
+      try {
+        console.log('Session trouvée en cache, tentative de restauration...');
+        client.sessionJson = cachedSession;
+        // Vérifier que la session est valide
+        await client.getUserProfile();
+        console.log('Session restaurée avec succès');
+        connected = true;
+      } catch (e) {
+        console.log('Session invalide, nouveau login nécessaire:', e.message);
+      }
+    }
+
+    if (!connected) {
+      console.log('Connexion à Garmin Connect...');
+      await client.login();
+      console.log('Connecté à Garmin Connect');
+    }
 
     // Mettre à jour la session en cache
     const newSession = client.sessionJson;
