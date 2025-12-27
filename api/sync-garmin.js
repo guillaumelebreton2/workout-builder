@@ -7,9 +7,11 @@ const { GarminConnect } = pkg;
 import { Redis } from '@upstash/redis';
 
 // Configuration Redis pour le cache de session
-const redisUrl = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+const redisUrl = process.env.KV_REST_API_URL;
+const redisToken = process.env.KV_REST_API_TOKEN;
+console.log('🔧 Redis config - URL:', !!redisUrl, 'Token:', !!redisToken);
 const redis = (redisUrl && redisToken) ? new Redis({ url: redisUrl, token: redisToken }) : null;
+console.log('🔧 Redis initialisé:', !!redis);
 
 const SESSION_TTL = 55 * 60; // 55 minutes (tokens expirent généralement après 1h)
 
@@ -18,26 +20,40 @@ function getSessionKey(email) {
 }
 
 async function getCachedTokens(email) {
-  if (!redis) return null;
+  if (!redis) {
+    console.log('❌ Redis non configuré - KV_REST_API_URL:', !!process.env.KV_REST_API_URL);
+    return null;
+  }
   try {
-    const data = await redis.get(getSessionKey(email));
+    const key = getSessionKey(email);
+    console.log('🔍 Recherche tokens en cache, clé:', key);
+    const data = await redis.get(key);
     if (data) {
-      console.log('Tokens trouvés en cache pour', email);
-      return typeof data === 'string' ? JSON.parse(data) : data;
+      console.log('✅ Tokens trouvés en cache');
+      const tokens = typeof data === 'string' ? JSON.parse(data) : data;
+      console.log('📦 Structure tokens:', Object.keys(tokens));
+      return tokens;
     }
+    console.log('❌ Pas de tokens en cache');
   } catch (e) {
-    console.warn('Erreur lecture Redis:', e.message);
+    console.error('❌ Erreur lecture Redis:', e.message);
   }
   return null;
 }
 
 async function setCachedTokens(email, tokens) {
-  if (!redis) return;
+  if (!redis) {
+    console.log('❌ Redis non configuré, tokens non sauvegardés');
+    return;
+  }
   try {
-    await redis.set(getSessionKey(email), JSON.stringify(tokens), { ex: SESSION_TTL });
-    console.log('Tokens sauvegardés en cache pour', email);
+    const key = getSessionKey(email);
+    console.log('💾 Sauvegarde tokens, clé:', key);
+    console.log('📦 Structure tokens à sauvegarder:', Object.keys(tokens));
+    await redis.set(key, JSON.stringify(tokens), { ex: SESSION_TTL });
+    console.log('✅ Tokens sauvegardés (TTL:', SESSION_TTL, 's)');
   } catch (e) {
-    console.warn('Erreur écriture Redis:', e.message);
+    console.error('❌ Erreur écriture Redis:', e.message);
   }
 }
 
