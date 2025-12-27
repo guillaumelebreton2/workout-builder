@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Workout } from '../lib/types';
 
 interface GarminSyncModalProps {
@@ -10,9 +10,21 @@ interface GarminSyncModalProps {
 // En production (Vercel), utiliser /api, en dev utiliser localhost:3001
 const BACKEND_URL = import.meta.env.PROD ? '' : 'http://localhost:3001';
 
+// Clés localStorage pour sauvegarder les identifiants
+const STORAGE_KEY_EMAIL = 'garmin_email';
+const STORAGE_KEY_PASSWORD = 'garmin_password';
+
 export function GarminSyncModal({ workout, onClose, onSuccess }: GarminSyncModalProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
+  // Charger les identifiants sauvegardés au montage
+  useEffect(() => {
+    const savedEmail = localStorage.getItem(STORAGE_KEY_EMAIL);
+    const savedPassword = localStorage.getItem(STORAGE_KEY_PASSWORD);
+    if (savedEmail) setEmail(savedEmail);
+    if (savedPassword) setPassword(savedPassword);
+  }, []);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,6 +63,10 @@ export function GarminSyncModal({ workout, onClose, onSuccess }: GarminSyncModal
         throw new Error(data.error || 'Erreur lors de la synchronisation');
       }
 
+      // Sauvegarder les identifiants pour la prochaine fois
+      localStorage.setItem(STORAGE_KEY_EMAIL, email);
+      localStorage.setItem(STORAGE_KEY_PASSWORD, password);
+
       onSuccess();
     } catch (err) {
       console.error('Erreur sync Garmin:', err);
@@ -83,9 +99,9 @@ export function GarminSyncModal({ workout, onClose, onSuccess }: GarminSyncModal
           Connecte-toi avec ton compte Garmin Connect pour synchroniser la séance "{workout.name}".
         </p>
 
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
-          <p className="text-sm text-amber-800">
-            <strong>Note :</strong> Tes identifiants ne sont pas stockés. Ils sont uniquement utilisés pour cette synchronisation.
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+          <p className="text-sm text-blue-800">
+            Tes identifiants sont sauvegardés localement dans ton navigateur pour ne pas avoir à les ressaisir.
           </p>
         </div>
 
