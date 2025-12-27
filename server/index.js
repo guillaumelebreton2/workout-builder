@@ -366,9 +366,14 @@ app.post('/api/sync-garmin', async (req, res) => {
 
       try {
         console.log('Planification du workout', result.workoutId, 'pour', dateString);
-        // POST vers l'endpoint de planification (confirmé via garmin-workouts Python)
+        // POST avec headers obligatoires (Referer + nk token)
         const scheduleUrl = `https://connect.garmin.com/proxy/workout-service/schedule/${result.workoutId}`;
-        const scheduleResult = await client.post(scheduleUrl, { date: dateString });
+        const scheduleResult = await client.post(scheduleUrl, { date: dateString }, {
+          headers: {
+            'Referer': 'https://connect.garmin.com/modern/workouts',
+            'nk': 'NT'
+          }
+        });
         console.log('Workout planifié avec succès:', JSON.stringify(scheduleResult));
         scheduled = true;
       } catch (err) {
