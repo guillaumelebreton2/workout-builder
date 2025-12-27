@@ -4,6 +4,42 @@
 
 import pkg from 'garmin-connect';
 const { GarminConnect } = pkg;
+import { Redis } from '@upstash/redis';
+
+// Configuration Redis pour le cache de session
+const redisUrl = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+const redis = (redisUrl && redisToken) ? new Redis({ url: redisUrl, token: redisToken }) : null;
+
+const SESSION_TTL = 55 * 60; // 55 minutes (tokens expirent généralement après 1h)
+
+function getSessionKey(email) {
+  return `garmin_tokens_${email.replace(/[^a-zA-Z0-9]/g, '_')}`;
+}
+
+async function getCachedTokens(email) {
+  if (!redis) return null;
+  try {
+    const data = await redis.get(getSessionKey(email));
+    if (data) {
+      console.log('Tokens trouvés en cache pour', email);
+      return typeof data === 'string' ? JSON.parse(data) : data;
+    }
+  } catch (e) {
+    console.warn('Erreur lecture Redis:', e.message);
+  }
+  return null;
+}
+
+async function setCachedTokens(email, tokens) {
+  if (!redis) return;
+  try {
+    await redis.set(getSessionKey(email), JSON.stringify(tokens), { ex: SESSION_TTL });
+    console.log('Tokens sauvegardés en cache pour', email);
+  } catch (e) {
+    console.warn('Erreur écriture Redis:', e.message);
+  }
+}
 
 // Mapping des types de sport
 const SPORT_TYPE_MAP = {
@@ -282,10 +318,31 @@ export default async function handler(req, res) {
       password: password,
     });
 
-    // Login frais à chaque requête (plus lent mais fiable)
-    console.log('Connexion à Garmin Connect...');
-    await client.login();
-    console.log('Connecté à Garmin Connect');
+    // Essayer de restaurer les tokens depuis le cache
+    const cachedTokens = await getCachedTokens(email);
+    let connected = false;
+
+    if (cachedTokens?.oauth1 && cachedTokens?.oauth2) {
+      try {
+        console.log('Restauration des tokens depuis le cache...');
+        client.loadToken(cachedTokens.oauth1, cachedTokens.oauth2);
+        // Vérifier que la session est valide
+        await client.getUserProfile();
+        console.log('Session restaurée avec succès');
+        connected = true;
+      } catch (e) {
+        console.log('Tokens expirés ou invalides:', e.message);
+      }
+    }
+
+    if (!connected) {
+      console.log('Connexion à Garmin Connect...');
+      await client.login();
+      console.log('Connecté à Garmin Connect');
+      // Sauvegarder les tokens pour les prochaines requêtes
+      const tokens = client.exportToken();
+      await setCachedTokens(email, tokens);
+    }
 
     const garminWorkout = convertToGarminFormat(workout);
     console.log('Workout converti');
