@@ -2,8 +2,7 @@
  * Vercel Serverless Function pour la synchro Garmin Connect
  */
 
-import pkg from 'garmin-connect';
-const { GarminConnect } = pkg;
+import { GarminConnect } from '@gooin/garmin-connect';
 import { Redis } from '@upstash/redis';
 
 // Configuration Redis pour le cache de session
@@ -376,20 +375,10 @@ export default async function handler(req, res) {
       console.log('Tentative de planification pour:', dateString);
 
       try {
-        // Utiliser l'API directe car scheduleWorkout n'existe pas dans v1.6.2
-        const scheduleUrl = `https://connect.garmin.com/proxy/workout-service/schedule/${result.workoutId}`;
-        console.log('URL de planification:', scheduleUrl);
-        console.log('Données envoyées:', { date: dateString });
-
-        // Utiliser le client HTTP interne avec les headers requis
-        const scheduleResult = await client.client.post(scheduleUrl, { date: dateString }, {
-          headers: {
-            'Referer': 'https://connect.garmin.com/',
-            'NK': 'NT'
-          }
-        });
-        console.log('Réponse planification:', JSON.stringify(scheduleResult));
-        scheduled = scheduleResult && Object.keys(scheduleResult).length > 0;
+        console.log('Planification du workout', result.workoutId, 'pour', dateString);
+        const scheduleResult = await client.scheduleWorkout({ workoutId: result.workoutId }, workoutDate);
+        console.log('Workout planifié avec succès:', JSON.stringify(scheduleResult));
+        scheduled = true;
       } catch (err) {
         console.error('Erreur planification:', err);
         scheduleError = err.message;
