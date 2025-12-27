@@ -18,11 +18,11 @@ app.use(express.json());
 const SESSION_DURATION = 60 * 60 * 1000; // 1 heure en ms
 const sessionCache = new Map();
 
-function getCachedClient(email) {
+function getCachedSession(email) {
   const cached = sessionCache.get(email);
   if (cached && Date.now() - cached.timestamp < SESSION_DURATION) {
     console.log('Session Garmin en cache trouvée pour', email);
-    return cached.client;
+    return cached.session;
   }
   if (cached) {
     console.log('Session expirée pour', email);
@@ -31,9 +31,9 @@ function getCachedClient(email) {
   return null;
 }
 
-function setCachedClient(email, client) {
+function setCachedSession(email, session) {
   sessionCache.set(email, {
-    client,
+    session,
     timestamp: Date.now()
   });
   console.log('Session Garmin mise en cache pour', email);
@@ -313,21 +313,18 @@ app.post('/api/sync-garmin', async (req, res) => {
   }
 
   try {
-    // Vérifier si on a une session en cache
-    let client = getCachedClient(email);
+    // Créer le client et restaurer ou se connecter
+    const client = new GarminConnect();
+    const cachedSession = getCachedSession(email);
 
-    if (!client) {
-      console.log('Connexion à Garmin Connect...');
-      client = new GarminConnect({
-        username: email,
-        password: password,
-      });
+    console.log(cachedSession ? 'Session trouvée en cache, tentative de restauration...' : 'Pas de session en cache, connexion...');
+    await client.restoreOrLogin(cachedSession, email, password);
+    console.log('Connecté à Garmin Connect');
 
-      await client.login();
-      console.log('Connecté à Garmin Connect');
-
-      // Mettre en cache la session
-      setCachedClient(email, client);
+    // Mettre à jour la session en cache
+    const newSession = client.sessionJson;
+    if (newSession) {
+      setCachedSession(email, newSession);
     }
 
     // Convertir au format Garmin
@@ -335,27 +332,7 @@ app.post('/api/sync-garmin', async (req, res) => {
     console.log('Workout converti:', JSON.stringify(garminWorkout, null, 2));
 
     // Créer le workout sur Garmin Connect
-    let result;
-    try {
-      result = await client.addWorkout(garminWorkout);
-    } catch (addError) {
-      // Si erreur d'auth, invalider le cache et réessayer
-      if (addError.message?.includes('401') || addError.message?.includes('403')) {
-        console.log('Session expirée, reconnexion...');
-        sessionCache.delete(email);
-
-        client = new GarminConnect({
-          username: email,
-          password: password,
-        });
-        await client.login();
-        setCachedClient(email, client);
-
-        result = await client.addWorkout(garminWorkout);
-      } else {
-        throw addError;
-      }
-    }
+    const result = await client.addWorkout(garminWorkout);
     console.log('Workout créé:', result);
 
     // Planifier le workout à la date spécifiée

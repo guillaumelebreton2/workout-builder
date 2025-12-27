@@ -337,40 +337,20 @@ export default async function handler(req, res) {
   }
 
   try {
-    const client = new GarminConnect({
-      username: email,
-      password: password,
-    });
+    const client = new GarminConnect();
 
     // Essayer de récupérer la session depuis le cache
-    const cachedTokens = await getCachedSession(email);
+    const cachedSession = await getCachedSession(email);
 
-    let sessionValid = false;
+    // Utiliser restoreOrLogin: restaure la session si valide, sinon fait un login
+    console.log(cachedSession ? 'Session trouvée en cache, tentative de restauration...' : 'Pas de session en cache, connexion...');
+    await client.restoreOrLogin(cachedSession, email, password);
+    console.log('Connecté à Garmin Connect');
 
-    if (cachedTokens && cachedTokens.oauth1 && cachedTokens.oauth2) {
-      try {
-        // Restaurer la session depuis le cache
-        client.loadToken(cachedTokens.oauth1, cachedTokens.oauth2);
-        console.log('Tokens chargés depuis le cache, vérification...');
-
-        // Tester si la session est encore valide avec un appel simple
-        await client.getUserProfile();
-        console.log('Session cache valide');
-        sessionValid = true;
-      } catch (e) {
-        console.log('Session cache invalide:', e.message);
-        sessionValid = false;
-      }
-    }
-
-    if (!sessionValid) {
-      console.log('Connexion à Garmin Connect...');
-      await client.login();
-      console.log('Connecté à Garmin Connect');
-
-      // Sauvegarder les tokens dans le cache
-      const tokens = client.exportToken();
-      await setCachedSession(email, tokens);
+    // Sauvegarder/mettre à jour la session dans le cache
+    const newSession = client.sessionJson;
+    if (newSession) {
+      await setCachedSession(email, newSession);
     }
 
     const garminWorkout = convertToGarminFormat(workout);
