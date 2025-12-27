@@ -364,9 +364,13 @@ app.post('/api/sync-garmin', async (req, res) => {
       const dateString = workoutDate.toISOString().split('T')[0]; // YYYY-MM-DD
 
       try {
-        const scheduleUrl = `https://connect.garmin.com/workout-service/schedule/${result.workoutId}`;
-        const scheduleResult = await client.post(scheduleUrl, {
-          date: dateString
+        // Endpoint correct avec /proxy/ et headers requis
+        const scheduleUrl = `https://connect.garmin.com/proxy/workout-service/schedule/${result.workoutId}`;
+        const scheduleResult = await client.client.post(scheduleUrl, { date: dateString }, {
+          headers: {
+            'Referer': 'https://connect.garmin.com/modern/workouts',
+            'nk': 'NT'
+          }
         });
         console.log('Workout planifié pour', dateString, ':', scheduleResult);
       } catch (scheduleError) {
