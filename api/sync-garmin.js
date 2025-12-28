@@ -294,20 +294,14 @@ function stepsAreSimilar(a, b) {
 }
 
 /**
- * Détecte les blocs de répétition dans les steps
- * Retourne un tableau avec les steps avant, le bloc répété, et les steps après
+ * Trouve UN bloc de répétition dans les steps à partir d'une position
  */
-function detectRepeatBlocks(steps) {
-  console.log('detectRepeatBlocks - nombre de steps:', steps.length);
-  if (steps.length < 2) {
-    console.log('Pas assez de steps pour détecter des répétitions');
-    return null;
-  }
+function findRepeatBlock(steps, fromPos = 0) {
+  if (steps.length - fromPos < 2) return null;
 
-  // Chercher des patterns à TOUTES les positions
   let bestResult = null;
 
-  for (let startPos = 0; startPos < steps.length - 1; startPos++) {
+  for (let startPos = fromPos; startPos < steps.length - 1; startPos++) {
     for (let patternLen = 1; patternLen <= 3; patternLen++) {
       if (startPos + patternLen * 2 > steps.length) continue;
 
@@ -327,35 +321,72 @@ function detectRepeatBlocks(steps) {
         }
       }
 
-      // Garder le meilleur pattern (au moins 2 répétitions)
+      // Au moins 2 répétitions pour être valide
       if (repetitions >= 2) {
-        const score = repetitions * patternLen; // Plus de répétitions = meilleur
-        if (!bestResult || score > bestResult.score) {
+        // Priorité aux patterns qui commencent plus tôt, puis au score
+        if (!bestResult || startPos < bestResult.startPos ||
+            (startPos === bestResult.startPos && repetitions * patternLen > bestResult.score)) {
           bestResult = {
             startPos,
             pattern,
             repetitions,
             endPos,
-            score
+            score: repetitions * patternLen
           };
         }
       }
     }
   }
 
-  if (bestResult) {
-    console.log(`Meilleur pattern trouvé à position ${bestResult.startPos}: ${bestResult.repetitions}x${bestResult.pattern.length} steps`);
-    console.log('Pattern:', bestResult.pattern.map(s => `${s.duration?.value}m ${s.type}`));
-    return {
-      stepsBefore: steps.slice(0, bestResult.startPos),
-      pattern: bestResult.pattern,
-      repetitions: bestResult.repetitions,
-      stepsAfter: steps.slice(bestResult.endPos)
-    };
+  return bestResult;
+}
+
+/**
+ * Détecte TOUS les blocs de répétition dans les steps
+ * Retourne un tableau d'éléments (steps simples ou blocs répétés)
+ */
+function detectAllRepeatBlocks(steps) {
+  console.log('detectAllRepeatBlocks - nombre de steps:', steps.length);
+  if (steps.length < 2) {
+    console.log('Pas assez de steps pour détecter des répétitions');
+    return null;
   }
 
-  console.log('Aucun pattern de répétition trouvé');
-  return null;
+  const result = [];
+  let currentPos = 0;
+
+  while (currentPos < steps.length) {
+    const block = findRepeatBlock(steps, currentPos);
+
+    if (block && block.startPos === currentPos) {
+      // On a trouvé un bloc de répétition qui commence à la position actuelle
+      console.log(`Pattern trouvé à position ${block.startPos}: ${block.repetitions}x${block.pattern.length} steps`);
+      console.log('Pattern:', block.pattern.map(s => `${s.duration?.value}m ${s.type}`));
+
+      result.push({
+        type: 'repeat',
+        pattern: block.pattern,
+        repetitions: block.repetitions
+      });
+      currentPos = block.endPos;
+    } else if (block) {
+      // Il y a des steps simples avant le prochain bloc
+      const simpleSteps = steps.slice(currentPos, block.startPos);
+      for (const step of simpleSteps) {
+        result.push({ type: 'single', step });
+      }
+      currentPos = block.startPos;
+    } else {
+      // Pas de bloc trouvé, ajouter les steps restants comme simples
+      for (let i = currentPos; i < steps.length; i++) {
+        result.push({ type: 'single', step: steps[i] });
+      }
+      break;
+    }
+  }
+
+  console.log('Résultat détection:', result.map(r => r.type === 'repeat' ? `${r.repetitions}x` : 'single').join(', '));
+  return result.length > 0 ? result : null;
 }
 
 /**
@@ -392,40 +423,39 @@ function convertToGarminFormat(workout) {
     workoutSteps.push(createGarminStep(step, stepOrder++, workout.sport));
   }
 
-  const repeatBlock = detectRepeatBlocks(mainSteps);
+  // Détecter TOUS les blocs de répétition dans le corps de séance
+  const blocks = detectAllRepeatBlocks(mainSteps);
 
-  if (repeatBlock && repeatBlock.repetitions >= 2) {
-    // Ajouter les steps AVANT le bloc de répétition
-    for (const step of repeatBlock.stepsBefore) {
-      workoutSteps.push(createGarminStep(step, stepOrder++, workout.sport));
-    }
+  if (blocks) {
+    for (const block of blocks) {
+      if (block.type === 'repeat') {
+        // Créer un bloc de répétition Garmin
+        const repeatSteps = block.pattern.map((step, idx) =>
+          createGarminStep(step, idx + 1, workout.sport)
+        );
 
-    // Créer le bloc de répétition
-    const repeatSteps = repeatBlock.pattern.map((step, idx) =>
-      createGarminStep(step, idx + 1, workout.sport)
-    );
-
-    workoutSteps.push({
-      type: 'RepeatGroupDTO',
-      stepId: null,
-      stepOrder: stepOrder++,
-      stepType: { stepTypeId: 6, stepTypeKey: 'repeat' },
-      childStepId: 1,
-      numberOfIterations: repeatBlock.repetitions,
-      smartRepeat: false,
-      endCondition: null,
-      endConditionValue: null,
-      preferredEndConditionUnit: null,
-      endConditionCompare: null,
-      endConditionZone: null,
-      workoutSteps: repeatSteps,
-    });
-
-    // Ajouter les steps APRÈS le bloc de répétition
-    for (const step of repeatBlock.stepsAfter) {
-      workoutSteps.push(createGarminStep(step, stepOrder++, workout.sport));
+        workoutSteps.push({
+          type: 'RepeatGroupDTO',
+          stepId: null,
+          stepOrder: stepOrder++,
+          stepType: { stepTypeId: 6, stepTypeKey: 'repeat' },
+          childStepId: 1,
+          numberOfIterations: block.repetitions,
+          smartRepeat: false,
+          endCondition: null,
+          endConditionValue: null,
+          preferredEndConditionUnit: null,
+          endConditionCompare: null,
+          endConditionZone: null,
+          workoutSteps: repeatSteps,
+        });
+      } else {
+        // Step simple
+        workoutSteps.push(createGarminStep(block.step, stepOrder++, workout.sport));
+      }
     }
   } else {
+    // Pas de répétition détectée, ajouter tous les steps
     for (const step of mainSteps) {
       workoutSteps.push(createGarminStep(step, stepOrder++, workout.sport));
     }
