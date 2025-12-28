@@ -451,7 +451,10 @@ export async function parseWithGroq(description: string, apiKey: string): Promis
 
     // Nommage automatique pour le vélo si le nom est générique
     const stepName = step.name || '';
-    const genericNames = ['intervalle', 'interval', 'effort', 'active', 'récup', 'recup', 'recovery'];
+    const genericNames = [
+      'intervalle', 'interval', 'effort', 'active', 'récup', 'recup', 'recovery',
+      'force', 'vélocité', 'velocité', 'velocite', 'puissance', 'power', 'sprint'
+    ];
     const isGenericName = !stepName ||
                           genericNames.some(g => stepName.toLowerCase().includes(g)) ||
                           stepName.length <= 3 ||
