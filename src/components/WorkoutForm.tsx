@@ -132,6 +132,39 @@ const STORAGE_KEYS = {
   swimming: 'workout_ref_swimming_pace',
 };
 
+// Placeholders par sport
+const DESCRIPTION_PLACEHOLDERS: Record<Sport, string> = {
+  running: `Décris ta séance comme tu veux, l'IA comprendra :
+
+• "15min échauffement, puis 5x1000m à 90% avec 2min récup, et 10min retour au calme"
+
+• "Sortie longue 1h30 en endurance fondamentale à 70-75%"
+
+• "Pyramide : 200-400-600-800-600-400-200m avec récup égale à l'effort"
+
+• Ou colle directement depuis Nolio/TrainingPeaks/etc.`,
+
+  cycling: `Décris ta séance comme tu veux, l'IA comprendra :
+
+• "10min échauffement 90rpm, puis 5x (1min force 40rpm / 1min vélocité 110rpm), 10min récup"
+
+• "20min à 75-85% FTP, puis 2x10min à 95% avec 5min récup"
+
+• "Sortie endurance 2h à 60-70% avec cadence libre"
+
+• Ou colle directement depuis Nolio/TrainingPeaks/etc.`,
+
+  swimming: `Décris ta séance comme tu veux, l'IA comprendra :
+
+• "200m échauffement crawl, 4x50m sprints avec 30s récup, 200m retour au calme"
+
+• "400m pull-buoy, 4x100m battements planche, 4x25m sprints"
+
+• "10x100m crawl départ tous les 2min"
+
+• Ou colle directement depuis Nolio/TrainingPeaks/etc.`,
+};
+
 export function WorkoutForm() {
   const [name, setName] = useState('');
   const [sport, setSport] = useState<Sport>('running');
@@ -408,15 +441,7 @@ export function WorkoutForm() {
           id="description"
           value={description}
           onChange={(e) => handleDescriptionChange(e.target.value)}
-          placeholder={`Décris ta séance comme tu veux, l'IA comprendra :
-
-• "15min échauffement tranquille, puis 5x1000m à fond avec 2min récup, et 10min de retour au calme"
-
-• "Sortie longue 1h30 en endurance fondamentale"
-
-• "Pyramide : 200-400-600-800-600-400-200m avec récup égale à l'effort"
-
-• Ou colle directement depuis Nolio/TrainingPeaks/etc.`}
+          placeholder={DESCRIPTION_PLACEHOLDERS[sport]}
           rows={6}
           className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
         />
