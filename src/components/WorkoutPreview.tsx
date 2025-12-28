@@ -45,13 +45,24 @@ function formatDistance(meters: number): string {
 
 // Comparer deux steps pour voir s'ils sont similaires (pour détecter les répétitions)
 function stepsAreSimilar(a: WorkoutStep, b: WorkoutStep): boolean {
-  return (
-    a.type === b.type &&
-    a.duration.type === b.duration.type &&
-    a.duration.value === b.duration.value &&
-    a.details?.capPercent?.low === b.details?.capPercent?.low &&
-    a.details?.capPercent?.high === b.details?.capPercent?.high
-  );
+  // Vérifications de base
+  if (a.type !== b.type) return false;
+  if (a.duration.type !== b.duration.type) return false;
+  if (a.duration.value !== b.duration.value) return false;
+  if (a.details?.capPercent?.low !== b.details?.capPercent?.low) return false;
+  if (a.details?.capPercent?.high !== b.details?.capPercent?.high) return false;
+
+  // Vérifications natation - si différent, PAS similaire
+  if (a.details?.swimStroke !== b.details?.swimStroke) return false;
+  if (a.details?.swimDrill !== b.details?.swimDrill) return false;
+  if (a.details?.swimIntensity !== b.details?.swimIntensity) return false;
+
+  // Vérifier les équipements (tableaux)
+  const aEquip = a.details?.swimEquipment?.sort().join(',') || '';
+  const bEquip = b.details?.swimEquipment?.sort().join(',') || '';
+  if (aEquip !== bEquip) return false;
+
+  return true;
 }
 
 // Détecter les patterns de répétition dans les steps

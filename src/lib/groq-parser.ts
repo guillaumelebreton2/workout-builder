@@ -101,11 +101,18 @@ Chaque étape de natation DOIT avoir ces champs (si applicable) :
 5. swim_notes : notes pour tout ce qui ne rentre pas ailleurs (ex: "Hypoxie respiration 5tps/7tps", "technique rattrapé")
 
 RÈGLE CRITIQUE NATATION - NE JAMAIS REGROUPER :
-- Chaque ligne de la description = UNE étape séparée dans le JSON
-- MÊME si la distance est identique (ex: 3 lignes de 100m = 3 étapes, PAS 3x100m)
-- NE JAMAIS créer de répétition (Nx) si les nages ou équipements sont différents
-- "100m dos pullbuoy" + "100m brasse" + "100m crawl pullbuoy" = 3 ÉTAPES SÉPARÉES (pas 3x100m !)
-- Seules les vraies répétitions explicites (ex: "4x 25m sprint") doivent être déroulées
+- Chaque ligne de la description utilisateur = UNE étape séparée dans le JSON
+- INTERDIT de créer des répétitions si les lignes ont des nages ou équipements différents
+
+EXEMPLE - CE QU'IL NE FAUT PAS FAIRE :
+Input utilisateur:
+  "100m dos avec pullbuoy
+   100m brasse
+   100m crawl avec pullbuoy"
+MAUVAISE réponse (INTERDIT): répétitions: 3, name: "3x100m"
+BONNE réponse: 3 objets séparés dans le tableau steps
+
+- Seules les VRAIES répétitions EXPLICITES (ex: "4x 25m sprint" ou "6x 50m") doivent être déroulées
 - La nage par défaut si non précisée est "free" (crawl)
 
 Réponds UNIQUEMENT avec un JSON valide, sans commentaires ni explications.

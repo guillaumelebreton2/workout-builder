@@ -231,6 +231,27 @@ function createGarminStep(step, stepOrder, sport) {
 }
 
 /**
+ * Compare deux steps pour voir s'ils sont similaires
+ */
+function stepsAreSimilar(a, b) {
+  if (a.type !== b.type) return false;
+  if (a.duration?.type !== b.duration?.type) return false;
+  if (a.duration?.value !== b.duration?.value) return false;
+
+  // Vérifications natation - si différent, PAS similaire
+  if (a.details?.swimStroke !== b.details?.swimStroke) return false;
+  if (a.details?.swimDrill !== b.details?.swimDrill) return false;
+  if (a.details?.swimIntensity !== b.details?.swimIntensity) return false;
+
+  // Vérifier les équipements (tableaux)
+  const aEquip = (a.details?.swimEquipment || []).sort().join(',');
+  const bEquip = (b.details?.swimEquipment || []).sort().join(',');
+  if (aEquip !== bEquip) return false;
+
+  return true;
+}
+
+/**
  * Détecte les blocs de répétition dans les steps
  */
 function detectRepeatBlocks(steps) {
@@ -244,12 +265,7 @@ function detectRepeatBlocks(steps) {
 
     while (i + patternLen <= steps.length) {
       const nextBlock = steps.slice(i, i + patternLen);
-      const isMatch = pattern.every((step, idx) => {
-        const other = nextBlock[idx];
-        return step.type === other.type &&
-               step.duration?.type === other.duration?.type &&
-               step.duration?.value === other.duration?.value;
-      });
+      const isMatch = pattern.every((step, idx) => stepsAreSimilar(step, nextBlock[idx]));
 
       if (isMatch) {
         repetitions++;
