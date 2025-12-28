@@ -224,9 +224,11 @@ function createGarminStep(step, stepOrder, sport) {
     if (step.details?.swimIntensity) {
       const intensityTarget = SWIM_INTENSITY_TARGET_MAP[step.details.swimIntensity];
       if (intensityTarget) {
-        // Utiliser swim.instruction avec zoneNumber = instructionTypeId
+        // Utiliser swim.instruction avec secondaryTargetType + secondaryTargetValueOne
         garminStep.targetType = { workoutTargetTypeId: 18, workoutTargetTypeKey: 'swim.instruction' };
-        garminStep.zoneNumber = intensityTarget.instructionTypeId;
+        garminStep.secondaryTargetType = { workoutTargetTypeId: 18, workoutTargetTypeKey: 'swim.instruction' };
+        garminStep.secondaryTargetValueOne = intensityTarget.instructionTypeId;
+        garminStep.secondaryTargetValueTwo = 0;
       }
       // Aussi ajouter le label dans la description pour plus de clarté
       const intensityLabels = {
