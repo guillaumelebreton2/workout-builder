@@ -121,6 +121,17 @@ CE QUI EST INTERDIT :
 - NE JAMAIS utiliser un champ "repetitions"
 - NE JAMAIS créer un seul objet pour représenter plusieurs répétitions
 - NE JAMAIS numéroter (pas de "1/5", "2/5", etc.)
+- NE JAMAIS mélanger des blocs de répétitions différents
+
+EXEMPLE - "5x (1' à 40rpm / 1' à 80rpm) puis 5x (1' à 110rpm / 1' à 80rpm)" :
+CORRECT - garder les blocs séparés :
+  40rpm, 80rpm, 40rpm, 80rpm, 40rpm, 80rpm, 40rpm, 80rpm, 40rpm, 80rpm,  <- bloc 1 complet
+  110rpm, 80rpm, 110rpm, 80rpm, 110rpm, 80rpm, 110rpm, 80rpm, 110rpm, 80rpm  <- bloc 2 complet
+
+INCORRECT - mélanger les blocs :
+  40rpm, 80rpm, 110rpm, 80rpm, 40rpm, 80rpm...  <- INTERDIT !
+
+Chaque bloc "Nx" doit être COMPLÈTEMENT terminé avant de passer au suivant.
 
 TOUJOURS dérouler EXPLICITEMENT chaque étape en objets JSON séparés.
 
