@@ -330,29 +330,32 @@ export async function parseWithGroq(description: string, apiKeys: string | strin
     throw new Error('Clé API Groq manquante');
   }
 
-  // Essayer chaque clé API, puis chaque modèle
+  // Stratégie : prioriser le meilleur modèle sur toutes les clés
+  // 1. Essayer le modèle principal sur toutes les clés
+  // 2. Si épuisé partout, passer aux modèles secondaires
   let lastError: Error | null = null;
   let content: string | null = null;
   let usedModel: string | null = null;
 
-  for (let keyIndex = 0; keyIndex < keys.length; keyIndex++) {
-    const apiKey = keys[keyIndex];
-    console.log(`Essai avec la clé API ${keyIndex + 1}/${keys.length}`);
+  for (const model of GROQ_MODELS) {
+    console.log(`Essai du modèle: ${model}`);
 
-    for (const model of GROQ_MODELS) {
+    for (let keyIndex = 0; keyIndex < keys.length; keyIndex++) {
+      const apiKey = keys[keyIndex];
+
       try {
-        console.log(`  Essai avec le modèle: ${model}`);
+        console.log(`  Clé API ${keyIndex + 1}/${keys.length}...`);
         const result = await callGroqAPI(description, apiKey, model);
         content = result.content;
         usedModel = result.model;
-        console.log(`  Succès avec le modèle: ${model}`);
+        console.log(`  Succès !`);
         break;
       } catch (error) {
         lastError = error as Error;
         const isRateLimit = (error as Error & { isRateLimit?: boolean }).isRateLimit;
 
         if (isRateLimit) {
-          console.warn(`  Rate limit atteint pour ${model}, essai du modèle suivant...`);
+          console.warn(`  Rate limit atteint, essai clé suivante...`);
           continue;
         }
         // Si ce n'est pas un rate limit, propager l'erreur
@@ -360,10 +363,10 @@ export async function parseWithGroq(description: string, apiKeys: string | strin
       }
     }
 
-    // Si on a trouvé un contenu, on sort de la boucle des clés
+    // Si on a trouvé un contenu, on sort
     if (content) break;
 
-    console.log(`Tous les modèles épuisés pour la clé ${keyIndex + 1}, essai de la clé suivante...`);
+    console.log(`Modèle ${model} épuisé sur toutes les clés, essai du modèle suivant...`);
   }
 
   if (!content) {
