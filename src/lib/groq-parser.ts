@@ -449,6 +449,31 @@ export async function parseWithGroq(description: string, apiKey: string): Promis
       };
     }
 
+    // Nommage automatique pour le vélo si le nom est générique
+    const genericNames = ['intervalle', 'interval', 'effort', 'active', 'récup', 'recup', 'recovery'];
+    const isGenericName = genericNames.some(g => step.name.toLowerCase().includes(g)) ||
+                          step.name.length <= 3 ||
+                          /^\d/.test(step.name); // commence par un chiffre
+
+    if (isGenericName && (step.cadence_rpm || step.power_percent_low)) {
+      // Logique de nommage basée sur la cadence et la puissance
+      if (step.type === 'recovery' || step.type === 'cooldown' || step.type === 'rest') {
+        workoutStep.name = 'Récupération';
+      } else if (step.cadence_rpm) {
+        if (step.cadence_rpm < 80) {
+          workoutStep.name = 'Force';
+        } else if (step.cadence_rpm > 90) {
+          workoutStep.name = 'Vélocité';
+        } else if (step.power_percent_low) {
+          workoutStep.name = 'Puissance';
+        } else {
+          workoutStep.name = 'Récupération';
+        }
+      } else if (step.power_percent_low) {
+        workoutStep.name = 'Puissance';
+      }
+    }
+
     // Nettoyer les détails vides
     if (Object.keys(workoutStep.details).length === 0) {
       delete workoutStep.details;
