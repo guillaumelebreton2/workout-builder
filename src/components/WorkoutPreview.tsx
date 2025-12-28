@@ -217,11 +217,11 @@ function StepRow({ step, showIndex, index }: { step: WorkoutStep; showIndex?: bo
             </span>
           )}
 
-          {/* Puissance % FTP (vélo) */}
+          {/* Puissance % (vélo) */}
           {step.details.powerPercent && (
             <span className="flex items-center gap-1">
               <span className="font-medium">Puissance:</span>
-              {step.details.powerPercent.low}% - {step.details.powerPercent.high}% FTP
+              {step.details.powerPercent.low}% - {step.details.powerPercent.high}%
             </span>
           )}
 
