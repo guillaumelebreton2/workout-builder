@@ -88,12 +88,41 @@ Exemple vélo :
 - "5' récupération 80 rpm" = duration_minutes: 5, type: cooldown, cadence_rpm: 80
 - "Récupération lap" = is_lap: true, type: cooldown
 
-RÉPÉTITIONS - CRITIQUE :
-- "10x 800m avec 2' récup" = déroule les 10 répétitions complètes : 800m, récup 2min, 800m, récup 2min, ... , 800m, récup 2min (10 x 800m ET 10 x récup)
-- "4x (1500m - 500m) avec 2' récup" = 1500m, récup, 500m, récup, 1500m, récup, 500m, récup... (4 fois le bloc complet avec récup)
-- TOUJOURS dérouler explicitement chaque étape
-- TOUJOURS inclure la récup après chaque intervalle, y compris le dernier
-- NE PAS numéroter les étapes (pas de "1/10", "2/10", etc.) - utiliser des noms simples comme "Intervalle", "Récup", "800m"
+RÉPÉTITIONS - TRÈS CRITIQUE - LIRE ATTENTIVEMENT :
+Tu DOIS créer UN OBJET JSON SÉPARÉ pour CHAQUE répétition. Ne JAMAIS regrouper.
+
+RÈGLE D'OR : Si tu vois "3x", tu DOIS avoir AU MOINS 6 objets dans steps (3 efforts + 3 récups).
+            Si tu vois "5x", tu DOIS avoir AU MOINS 10 objets dans steps (5 efforts + 5 récups).
+            Si tu vois "10x", tu DOIS avoir AU MOINS 20 objets dans steps.
+
+EXEMPLE CONCRET - "3x 1' vite / 1' lent" :
+Tu DOIS générer EXACTEMENT 6 objets :
+  {"duration_minutes": 1, "type": "active", "name": "Vite"},
+  {"duration_minutes": 1, "type": "recovery", "name": "Récup"},
+  {"duration_minutes": 1, "type": "active", "name": "Vite"},
+  {"duration_minutes": 1, "type": "recovery", "name": "Récup"},
+  {"duration_minutes": 1, "type": "active", "name": "Vite"},
+  {"duration_minutes": 1, "type": "recovery", "name": "Récup"}
+
+EXEMPLE CONCRET - "5x 800m avec 2' récup" :
+Tu DOIS générer EXACTEMENT 10 objets :
+  {"distance_meters": 800, "type": "active", "name": "800m"},
+  {"duration_minutes": 2, "type": "recovery", "name": "Récup"},
+  {"distance_meters": 800, "type": "active", "name": "800m"},
+  {"duration_minutes": 2, "type": "recovery", "name": "Récup"},
+  {"distance_meters": 800, "type": "active", "name": "800m"},
+  {"duration_minutes": 2, "type": "recovery", "name": "Récup"},
+  {"distance_meters": 800, "type": "active", "name": "800m"},
+  {"duration_minutes": 2, "type": "recovery", "name": "Récup"},
+  {"distance_meters": 800, "type": "active", "name": "800m"},
+  {"duration_minutes": 2, "type": "recovery", "name": "Récup"}
+
+CE QUI EST INTERDIT :
+- NE JAMAIS utiliser un champ "repetitions"
+- NE JAMAIS créer un seul objet pour représenter plusieurs répétitions
+- NE JAMAIS numéroter (pas de "1/5", "2/5", etc.)
+
+TOUJOURS dérouler EXPLICITEMENT chaque étape en objets JSON séparés.
 
 NATATION - SPÉCIFIQUE :
 Chaque étape de natation DOIT avoir ces champs (si applicable) :
