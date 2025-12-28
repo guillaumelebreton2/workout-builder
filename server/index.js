@@ -256,9 +256,13 @@ function createGarminStep(step, stepOrder, sport) {
       const speedLow = 100 / (low * 60);  // allure lente = vitesse basse
       const speedHigh = 100 / (high * 60); // allure rapide = vitesse haute
 
+      // Garmin utilise targetType + secondaryTargetType pour l'allure
       garminStep.targetType = { workoutTargetTypeId: 6, workoutTargetTypeKey: 'pace.zone' };
-      garminStep.targetValueOne = speedHigh; // vitesse min
-      garminStep.targetValueTwo = speedLow;  // vitesse max
+      garminStep.targetValueOne = speedLow;
+      garminStep.targetValueTwo = speedHigh;
+      garminStep.secondaryTargetType = { workoutTargetTypeId: 6, workoutTargetTypeKey: 'pace.zone' };
+      garminStep.secondaryTargetValueOne = speedLow;
+      garminStep.secondaryTargetValueTwo = null;
     }
 
     // Notes additionnelles
