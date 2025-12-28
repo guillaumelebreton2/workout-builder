@@ -100,9 +100,12 @@ Chaque étape de natation DOIT avoir ces champs (si applicable) :
 
 5. swim_notes : notes pour tout ce qui ne rentre pas ailleurs (ex: "Hypoxie respiration 5tps/7tps", "technique rattrapé")
 
-RÈGLE IMPORTANTE NATATION :
-- Chaque ligne avec une nage, équipement ou distance différente = une étape SÉPARÉE
-- NE PAS regrouper "200m crawl pullbuoy + 100m dos pullbuoy" en une seule étape
+RÈGLE CRITIQUE NATATION - NE JAMAIS REGROUPER :
+- Chaque ligne de la description = UNE étape séparée dans le JSON
+- MÊME si la distance est identique (ex: 3 lignes de 100m = 3 étapes, PAS 3x100m)
+- NE JAMAIS créer de répétition (Nx) si les nages ou équipements sont différents
+- "100m dos pullbuoy" + "100m brasse" + "100m crawl pullbuoy" = 3 ÉTAPES SÉPARÉES (pas 3x100m !)
+- Seules les vraies répétitions explicites (ex: "4x 25m sprint") doivent être déroulées
 - La nage par défaut si non précisée est "free" (crawl)
 
 Réponds UNIQUEMENT avec un JSON valide, sans commentaires ni explications.
