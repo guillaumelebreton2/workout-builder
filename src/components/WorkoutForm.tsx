@@ -134,35 +134,9 @@ const STORAGE_KEYS = {
 
 // Placeholders par sport
 const DESCRIPTION_PLACEHOLDERS: Record<Sport, string> = {
-  running: `Décris ta séance comme tu veux, l'IA comprendra :
-
-• "15min échauffement, puis 5x1000m à 90% avec 2min récup, et 10min retour au calme"
-
-• "Sortie longue 1h30 en endurance fondamentale à 70-75%"
-
-• "Pyramide : 200-400-600-800-600-400-200m avec récup égale à l'effort"
-
-• Ou colle directement depuis Nolio/TrainingPeaks/etc.`,
-
-  cycling: `Décris ta séance comme tu veux, l'IA comprendra :
-
-• "10min échauffement 90rpm, puis 5x (1min force 40rpm / 1min vélocité 110rpm), 10min récup"
-
-• "20min à 75-85% FTP, puis 2x10min à 95% avec 5min récup"
-
-• "Sortie endurance 2h à 60-70% avec cadence libre"
-
-• Ou colle directement depuis Nolio/TrainingPeaks/etc.`,
-
-  swimming: `Décris ta séance comme tu veux, l'IA comprendra :
-
-• "200m échauffement crawl, 4x50m sprints avec 30s récup, 200m retour au calme"
-
-• "400m pull-buoy, 4x100m battements planche, 4x25m sprints"
-
-• "10x100m crawl départ tous les 2min"
-
-• Ou colle directement depuis Nolio/TrainingPeaks/etc.`,
+  running: `Décris ta séance ici ou utilise un exemple ci-dessous...`,
+  cycling: `Décris ta séance ici ou utilise un exemple ci-dessous...`,
+  swimming: `Décris ta séance ici ou utilise un exemple ci-dessous...`,
 };
 
 // Aide et exemples par sport
