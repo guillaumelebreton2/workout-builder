@@ -140,6 +140,7 @@ function createGarminStep(step, stepOrder, sport) {
     endConditionCalories: null,
     strokeType: null,
     equipmentType: null,
+    drillType: null,
     exerciseName: null,
     workoutProvider: null,
     providerExerciseSourceId: null,
@@ -212,11 +213,11 @@ function createGarminStep(step, stepOrder, sport) {
       }
     }
 
-    // Type d'exercice (drill) - remplace exerciseName si défini
+    // Type d'exercice (drill) - utilise drillType
     if (step.details?.swimDrill) {
       const drill = DRILL_TYPE_MAP[step.details.swimDrill];
       if (drill) {
-        garminStep.exerciseName = drill.drillTypeKey;
+        garminStep.drillType = drill;
       }
     }
 
