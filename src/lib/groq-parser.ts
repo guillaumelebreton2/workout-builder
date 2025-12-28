@@ -322,39 +322,52 @@ export interface ParseResult {
   isFallback: boolean;
 }
 
-export async function parseWithGroq(description: string, apiKey: string): Promise<ParseResult> {
-  if (!apiKey) {
+export async function parseWithGroq(description: string, apiKeys: string | string[]): Promise<ParseResult> {
+  // Normaliser en tableau de clés
+  const keys = Array.isArray(apiKeys) ? apiKeys.filter(k => k) : [apiKeys].filter(k => k);
+
+  if (keys.length === 0) {
     throw new Error('Clé API Groq manquante');
   }
 
-  // Essayer chaque modèle jusqu'à ce qu'un fonctionne
+  // Essayer chaque clé API, puis chaque modèle
   let lastError: Error | null = null;
   let content: string | null = null;
   let usedModel: string | null = null;
 
-  for (const model of GROQ_MODELS) {
-    try {
-      console.log(`Essai avec le modèle: ${model}`);
-      const result = await callGroqAPI(description, apiKey, model);
-      content = result.content;
-      usedModel = result.model;
-      console.log(`Succès avec le modèle: ${model}`);
-      break;
-    } catch (error) {
-      lastError = error as Error;
-      const isRateLimit = (error as Error & { isRateLimit?: boolean }).isRateLimit;
+  for (let keyIndex = 0; keyIndex < keys.length; keyIndex++) {
+    const apiKey = keys[keyIndex];
+    console.log(`Essai avec la clé API ${keyIndex + 1}/${keys.length}`);
 
-      if (isRateLimit) {
-        console.warn(`Rate limit atteint pour ${model}, essai du modèle suivant...`);
-        continue;
+    for (const model of GROQ_MODELS) {
+      try {
+        console.log(`  Essai avec le modèle: ${model}`);
+        const result = await callGroqAPI(description, apiKey, model);
+        content = result.content;
+        usedModel = result.model;
+        console.log(`  Succès avec le modèle: ${model}`);
+        break;
+      } catch (error) {
+        lastError = error as Error;
+        const isRateLimit = (error as Error & { isRateLimit?: boolean }).isRateLimit;
+
+        if (isRateLimit) {
+          console.warn(`  Rate limit atteint pour ${model}, essai du modèle suivant...`);
+          continue;
+        }
+        // Si ce n'est pas un rate limit, propager l'erreur
+        throw error;
       }
-      // Si ce n'est pas un rate limit, propager l'erreur
-      throw error;
     }
+
+    // Si on a trouvé un contenu, on sort de la boucle des clés
+    if (content) break;
+
+    console.log(`Tous les modèles épuisés pour la clé ${keyIndex + 1}, essai de la clé suivante...`);
   }
 
   if (!content) {
-    throw lastError || new Error('Tous les modèles ont échoué');
+    throw lastError || new Error('Toutes les clés API et tous les modèles ont échoué');
   }
 
   console.log(`Modèle utilisé: ${usedModel}`);

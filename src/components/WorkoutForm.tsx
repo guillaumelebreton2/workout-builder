@@ -6,8 +6,11 @@ import { SportSelector } from './SportSelector';
 import { WorkoutPreview } from './WorkoutPreview';
 import { GarminSyncModal } from './GarminSyncModal';
 
-// Clé API depuis les variables d'environnement
-const API_KEY = import.meta.env.VITE_GROQ_API_KEY;
+// Clés API depuis les variables d'environnement
+const API_KEYS = [
+  import.meta.env.VITE_GROQ_API_KEY,
+  import.meta.env.VITE_GROQ_API_KEY_2,
+].filter(key => key && key !== 'ta_cle_ici');
 
 // Parse l'allure en format "4:30" vers un nombre décimal en min/km
 function parsePaceInput(input: string): number | null {
@@ -306,7 +309,7 @@ export function WorkoutForm() {
       return;
     }
 
-    if (!API_KEY || API_KEY === 'ta_cle_ici') {
+    if (API_KEYS.length === 0) {
       setError('Clé API manquante. Configure VITE_GROQ_API_KEY dans le fichier .env');
       return;
     }
@@ -314,7 +317,7 @@ export function WorkoutForm() {
     setIsParsing(true);
 
     try {
-      const result = await parseWithGroq(description, API_KEY);
+      const result = await parseWithGroq(description, API_KEYS);
       let parsedSteps = result.steps;
 
       // Afficher un avertissement si un modèle de fallback a été utilisé
