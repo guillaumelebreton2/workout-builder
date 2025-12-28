@@ -103,9 +103,9 @@ const EQUIPMENT_TYPE_MAP = {
 
 // Mapping des types d'exercices natation
 const DRILL_TYPE_MAP = {
-  kick: { drillTypeId: 1, drillTypeKey: 'kick' },
-  pull: { drillTypeId: 2, drillTypeKey: 'pull' },
-  drill: { drillTypeId: 3, drillTypeKey: 'drill' },
+  kick: { drillTypeId: 1, drillTypeKey: 'kick', displayOrder: 1 },
+  pull: { drillTypeId: 2, drillTypeKey: 'pull', displayOrder: 2 },
+  drill: { drillTypeId: 3, drillTypeKey: 'drill', displayOrder: 3 },
 };
 
 // Mapping des niveaux d'intensité natation (workoutSwimInstructionTypes)
