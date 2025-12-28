@@ -165,6 +165,102 @@ const DESCRIPTION_PLACEHOLDERS: Record<Sport, string> = {
 • Ou colle directement depuis Nolio/TrainingPeaks/etc.`,
 };
 
+// Aide et exemples par sport
+const SPORT_HELP: Record<Sport, { features: string[]; examples: { label: string; value: string }[] }> = {
+  running: {
+    features: [
+      'Pourcentages de VMA/CAP : "à 85%", "entre 70-80%"',
+      'Durées : "15min", "1h30", "2\'"',
+      'Distances : "800m", "1km", "5000m"',
+      'Répétitions : "10x400m", "5x (1000m + 500m)"',
+      'Récupération : "avec 2min récup", "récup trot"',
+      'Types : échauffement, actif, récupération, retour au calme',
+    ],
+    examples: [
+      {
+        label: 'Fractionné 10x400m',
+        value: `Échauffement 15min 65%
+10x 400m à 100% avec 1min30 récup trot
+Retour au calme 10min`,
+      },
+      {
+        label: 'Seuil 3x2000m',
+        value: `Échauffement 20min progressif 60-70%
+3x 2000m à 88-92% avec 3min récup
+Retour au calme 15min 60%`,
+      },
+      {
+        label: 'Sortie longue',
+        value: `Sortie longue 1h30 à 70-75%`,
+      },
+    ],
+  },
+  cycling: {
+    features: [
+      'Cadence : "90rpm", "40 rpm", "110rpm"',
+      'Puissance : "à 75-85%", "95% FTP"',
+      'Force (cadence < 80rpm) et Vélocité (> 90rpm) détectées auto',
+      'Répétitions : "5x (1min force / 1min vélocité)"',
+      'Durées : "10min", "1h", "2\'"',
+    ],
+    examples: [
+      {
+        label: 'Force/Vélocité',
+        value: `Échauffement 10min 90rpm
+5x (1' 40 rpm / 1' 80rpm)
+5x (1' 110 rpm / 1' 80rpm)
+15' 75% - 90% 90rpm
+Récupération 5' 80 rpm
+Récupération lap`,
+      },
+      {
+        label: 'Sweetspot',
+        value: `Échauffement 15min 85-90rpm
+3x 10min à 88-93% avec 5min récup
+Retour au calme 10min`,
+      },
+      {
+        label: 'Endurance',
+        value: `Sortie endurance 2h à 60-70% cadence libre`,
+      },
+    ],
+  },
+  swimming: {
+    features: [
+      'Nages : crawl, dos, brasse, papillon, 4 nages',
+      'Équipements : pull-buoy, plaquettes, palmes, planche, tuba',
+      'Éducatifs : battements, bras, technique',
+      'Intensités : souple, modéré, rapide, sprint, progressif',
+      'Départ chronométré : "départ tous les 2min"',
+      'Distances : "100m", "50m", "25m"',
+    ],
+    examples: [
+      {
+        label: 'Technique',
+        value: `200m crawl souple échauffement
+4x 50m battements planche
+4x 50m bras pull-buoy
+4x 25m sprint crawl avec 30s récup
+200m 4 nages retour au calme`,
+      },
+      {
+        label: 'Intervalles',
+        value: `300m échauffement varié
+8x 100m crawl départ tous les 2min
+4x 50m sprint départ tous les 1min30
+200m souple retour au calme`,
+      },
+      {
+        label: 'Endurance',
+        value: `400m crawl échauffement
+800m pull-buoy allure modérée
+400m plaquettes crawl
+200m souple`,
+      },
+    ],
+  },
+};
+
 export function WorkoutForm() {
   const [name, setName] = useState('');
   const [sport, setSport] = useState<Sport>('running');
@@ -184,6 +280,7 @@ export function WorkoutForm() {
   const [showSyncModal, setShowSyncModal] = useState(false);
   const [syncSuccess, setSyncSuccess] = useState(false);
   const [fallbackWarning, setFallbackWarning] = useState<string | null>(null);
+  const [showHelp, setShowHelp] = useState(false);
 
   // Sauvegarder les références dans localStorage avec formatage automatique
   const handleRunningPaceChange = (value: string) => {
@@ -445,6 +542,64 @@ export function WorkoutForm() {
           rows={6}
           className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
         />
+
+        {/* Section Aide */}
+        <div className="mt-2">
+          <button
+            type="button"
+            onClick={() => setShowHelp(!showHelp)}
+            className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+          >
+            <svg
+              className={`w-4 h-4 transition-transform ${showHelp ? 'rotate-90' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+            Aide et exemples
+          </button>
+
+          {showHelp && (
+            <div className="mt-3 p-4 bg-gray-50 rounded-lg border border-gray-200 text-sm">
+              {/* Fonctionnalités */}
+              <div className="mb-4">
+                <h4 className="font-medium text-gray-900 mb-2">Ce que l'IA comprend :</h4>
+                <ul className="space-y-1 text-gray-600">
+                  {SPORT_HELP[sport].features.map((feature, idx) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="text-green-500 mt-0.5">✓</span>
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Exemples cliquables */}
+              <div>
+                <h4 className="font-medium text-gray-900 mb-2">Exemples à essayer :</h4>
+                <div className="flex flex-wrap gap-2">
+                  {SPORT_HELP[sport].examples.map((example, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => {
+                        setDescription(example.value);
+                        setShowHelp(false);
+                        setShowPreview(false);
+                        setSteps([]);
+                      }}
+                      className="px-3 py-1.5 bg-white border border-gray-300 rounded-full text-gray-700 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-colors"
+                    >
+                      {example.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Bouton Prévisualiser */}
         <button
