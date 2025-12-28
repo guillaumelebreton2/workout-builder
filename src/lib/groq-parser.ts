@@ -10,8 +10,8 @@ const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const GROQ_MODELS = [
   'llama-3.3-70b-versatile',  // Principal : meilleure qualité
   'llama-3.1-8b-instant',      // Fallback 1 : rapide
-  'mixtral-8x7b-32768',        // Fallback 2 : bon compromis
-  'gemma2-9b-it',              // Fallback 3 : Google
+  'gemma2-9b-it',              // Fallback 2 : Google
+  'llama-3.2-3b-preview',      // Fallback 3 : très petit mais disponible
 ];
 
 interface ParsedStep {
