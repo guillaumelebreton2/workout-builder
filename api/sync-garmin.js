@@ -307,8 +307,8 @@ function detectRepeatBlocks(steps) {
   // Chercher des patterns à TOUTES les positions
   let bestResult = null;
 
-  for (let startPos = 0; startPos < steps.length - 3; startPos++) {
-    for (let patternLen = 2; patternLen <= 3; patternLen++) {
+  for (let startPos = 0; startPos < steps.length - 1; startPos++) {
+    for (let patternLen = 1; patternLen <= 3; patternLen++) {
       if (startPos + patternLen * 2 > steps.length) continue;
 
       const pattern = steps.slice(startPos, startPos + patternLen);
