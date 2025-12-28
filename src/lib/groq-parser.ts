@@ -109,10 +109,16 @@ Chaque étape de natation DOIT avoir ces champs (si applicable) :
    - "4x50m à 45''/50m" = swim_pace_seconds_per_100m: 90 (45s pour 50m = 90s pour 100m)
    - Calcul pour "Xm en Y'" : swim_pace_seconds_per_100m = (Y en secondes) * 100 / X
 
-SEND-OFF TIME (départ tous les X') :
-   - "3x100m départ tous les 2'" = 3 répétitions de 100m, départ toutes les 2 minutes
-   - Le temps de repos = send-off - temps de nage (calculé automatiquement par Garmin)
-   - Pour ce format, créer les steps 100m avec swim_notes: "Départ tous les 2'"
+SEND-OFF TIME (départ tous les X') - TRÈS IMPORTANT :
+   - "3x100m départ tous les 2'" = 3 répétitions de 100m avec départ toutes les 2 minutes
+   - DOIT générer un pattern [distance + repos lap] pour chaque répétition :
+     * 100m active avec swim_notes: "Départ tous les 2'"
+     * rest avec is_lap: true (repos jusqu'au prochain départ, touche lap)
+     * 100m active avec swim_notes: "Départ tous les 2'"
+     * rest avec is_lap: true
+     * 100m active avec swim_notes: "Départ tous les 2'"
+     * rest avec is_lap: true
+   - Le repos is_lap: true permet au nageur d'appuyer sur lap quand c'est l'heure de repartir
 
 RÈGLE CRITIQUE NATATION - NE JAMAIS REGROUPER :
 - Chaque ligne de la description utilisateur = UNE étape séparée dans le JSON
