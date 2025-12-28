@@ -62,6 +62,34 @@ const END_CONDITION_MAP = {
   open: { conditionTypeId: 1, conditionTypeKey: 'lap.button' },
 };
 
+// Mapping des types de nage (natation)
+const STROKE_TYPE_MAP = {
+  free: { strokeTypeId: 6, strokeTypeKey: 'free' },
+  backstroke: { strokeTypeId: 2, strokeTypeKey: 'backstroke' },
+  breaststroke: { strokeTypeId: 3, strokeTypeKey: 'breaststroke' },
+  fly: { strokeTypeId: 5, strokeTypeKey: 'fly' },
+  im: { strokeTypeId: 4, strokeTypeKey: 'im' },
+  rimo: { strokeTypeId: 7, strokeTypeKey: 'rimo' },
+  choice: { strokeTypeId: 1, strokeTypeKey: 'any_stroke' },
+  mixed: { strokeTypeId: 0, strokeTypeKey: 'mixed' },
+};
+
+// Mapping des équipements natation
+const EQUIPMENT_TYPE_MAP = {
+  fins: { equipmentTypeId: 1, equipmentTypeKey: 'fins' },
+  kickboard: { equipmentTypeId: 2, equipmentTypeKey: 'kickboard' },
+  paddles: { equipmentTypeId: 3, equipmentTypeKey: 'paddles' },
+  pull_buoy: { equipmentTypeId: 4, equipmentTypeKey: 'pull_buoy' },
+  snorkel: { equipmentTypeId: 5, equipmentTypeKey: 'snorkel' },
+};
+
+// Mapping des types d'exercices natation
+const DRILL_TYPE_MAP = {
+  kick: { drillTypeId: 1, drillTypeKey: 'kick' },
+  pull: { drillTypeId: 2, drillTypeKey: 'pull' },
+  drill: { drillTypeId: 3, drillTypeKey: 'drill' },
+};
+
 /**
  * Crée un step Garmin à partir de notre format
  */
@@ -138,6 +166,65 @@ function createGarminStep(step, stepOrder, sport) {
     garminStep.targetType = { workoutTargetTypeId: 4, workoutTargetTypeKey: 'power.zone' };
     garminStep.targetValueOne = low;
     garminStep.targetValueTwo = high;
+  }
+
+  // Ajouter les paramètres natation
+  if (sport === 'swimming') {
+    // Type de nage
+    if (step.details?.swimStroke) {
+      const strokeType = STROKE_TYPE_MAP[step.details.swimStroke];
+      if (strokeType) {
+        garminStep.strokeType = strokeType;
+      }
+    }
+
+    // Équipement (prendre le premier si plusieurs)
+    if (step.details?.swimEquipment && step.details.swimEquipment.length > 0) {
+      const equipment = EQUIPMENT_TYPE_MAP[step.details.swimEquipment[0]];
+      if (equipment) {
+        garminStep.equipmentType = equipment;
+      }
+    }
+
+    // Type d'exercice (drill)
+    if (step.details?.swimDrill) {
+      const drill = DRILL_TYPE_MAP[step.details.swimDrill];
+      if (drill) {
+        // Pour les exercices, on utilise le targetType swim.instruction
+        garminStep.targetType = { workoutTargetTypeId: 18, workoutTargetTypeKey: 'swim.instruction' };
+        // Et on met le drill dans exerciseName si disponible
+        garminStep.exerciseName = drill.drillTypeKey;
+      }
+    }
+
+    // Intensité natation (cible d'effort)
+    if (step.details?.swimIntensity) {
+      // Mapper l'intensité vers une cible swim.instruction ou pas de cible
+      const intensityMap = {
+        recovery: 'Récupération',
+        easy: 'Facile',
+        moderate: 'Modéré',
+        hard: 'Difficile',
+        very_hard: 'Très difficile',
+        maximum: 'Maximum',
+        ascending: 'Progressif',
+        descending: 'Décroissant',
+      };
+      // Ajouter l'intensité à la description
+      const intensityLabel = intensityMap[step.details.swimIntensity];
+      if (intensityLabel && !garminStep.description?.includes(intensityLabel)) {
+        garminStep.description = garminStep.description
+          ? `${garminStep.description} - ${intensityLabel}`
+          : intensityLabel;
+      }
+    }
+
+    // Notes additionnelles
+    if (step.details?.swimNotes) {
+      garminStep.description = garminStep.description
+        ? `${garminStep.description} | ${step.details.swimNotes}`
+        : step.details.swimNotes;
+    }
   }
 
   return garminStep;

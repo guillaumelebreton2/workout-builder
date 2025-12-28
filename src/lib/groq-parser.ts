@@ -2,7 +2,7 @@
  * Service de parsing de séances via Groq AI
  */
 
-import { WorkoutStep, StepType, generateId } from './types';
+import { WorkoutStep, StepType, SwimStrokeType, SwimEquipmentType, SwimDrillType, SwimIntensityLevel, generateId } from './types';
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
@@ -16,6 +16,12 @@ interface ParsedStep {
   cap_percent_low?: number;
   cap_percent_high?: number;
   repetitions?: number;
+  // Champs natation
+  swim_stroke?: SwimStrokeType;
+  swim_equipment?: SwimEquipmentType[];
+  swim_drill?: SwimDrillType;
+  swim_intensity?: SwimIntensityLevel;
+  swim_notes?: string;
 }
 
 interface AIResponse {
@@ -57,9 +63,51 @@ RÉPÉTITIONS - CRITIQUE :
 - TOUJOURS inclure la récup après chaque intervalle, y compris le dernier
 - NE PAS numéroter les étapes (pas de "1/10", "2/10", etc.) - utiliser des noms simples comme "Intervalle", "Récup", "800m"
 
+NATATION - SPÉCIFIQUE :
+Chaque étape de natation DOIT avoir ces champs (si applicable) :
+
+1. swim_stroke (type de nage) - OBLIGATOIRE si mentionné :
+   - "free" : crawl, nage libre
+   - "backstroke" : dos, dos crawlé
+   - "breaststroke" : brasse
+   - "fly" : papillon
+   - "im" : 4 nages, épreuve individuelle
+   - "rimo" : 4 nages inversé (dos, brasse, papillon, crawl)
+   - "choice" : choix (la nage est au choix)
+   - "mixed" : mixte (plusieurs nages)
+
+2. swim_equipment (équipements) - tableau si mentionné :
+   - "fins" : palmes
+   - "kickboard" : planche
+   - "paddles" : plaquettes
+   - "pull_buoy" : pull-buoy, pullbuoy, pull buoy
+   - "snorkel" : tuba
+
+3. swim_drill (type d'exercice) - si applicable :
+   - "kick" : battements de jambes, jambes, éducatif jambes
+   - "pull" : bras seulement, tirage
+   - "drill" : éducatif, exercice technique
+
+4. swim_intensity (intensité) - si mentionné :
+   - "recovery" : récupération, souple, tranquille
+   - "easy" : facile
+   - "moderate" : modéré
+   - "hard" : difficile, soutenu
+   - "very_hard" : très difficile
+   - "maximum" : max, vitesse max, sprint, 100%
+   - "ascending" : progressif, croissant
+   - "descending" : décroissant, négatif split
+
+5. swim_notes : notes pour tout ce qui ne rentre pas ailleurs (ex: "Hypoxie respiration 5tps/7tps", "technique rattrapé")
+
+RÈGLE IMPORTANTE NATATION :
+- Chaque ligne avec une nage, équipement ou distance différente = une étape SÉPARÉE
+- NE PAS regrouper "200m crawl pullbuoy + 100m dos pullbuoy" en une seule étape
+- La nage par défaut si non précisée est "free" (crawl)
+
 Réponds UNIQUEMENT avec un JSON valide, sans commentaires ni explications.
 
-Format de réponse :
+Format de réponse course/vélo :
 {
   "steps": [
     {
@@ -69,14 +117,44 @@ Format de réponse :
       "name": "Échauffement",
       "cap_percent_low": 55,
       "cap_percent_high": 75
+    }
+  ]
+}
+
+Format de réponse NATATION :
+{
+  "steps": [
+    {
+      "distance_meters": 200,
+      "is_lap": false,
+      "type": "warmup",
+      "name": "Crawl pull-buoy",
+      "swim_stroke": "free",
+      "swim_equipment": ["pull_buoy"]
     },
     {
-      "distance_meters": 400,
+      "distance_meters": 100,
+      "is_lap": false,
+      "type": "warmup",
+      "name": "Dos pull-buoy",
+      "swim_stroke": "backstroke",
+      "swim_equipment": ["pull_buoy"]
+    },
+    {
+      "distance_meters": 25,
       "is_lap": false,
       "type": "active",
-      "name": "Intervalle 1/5",
-      "cap_percent_low": 100,
-      "cap_percent_high": 100
+      "name": "Sprint",
+      "swim_stroke": "free",
+      "swim_intensity": "maximum"
+    },
+    {
+      "distance_meters": 75,
+      "is_lap": false,
+      "type": "recovery",
+      "name": "Récupération",
+      "swim_stroke": "free",
+      "swim_intensity": "recovery"
     }
   ]
 }`;
@@ -149,6 +227,9 @@ export async function parseWithGroq(description: string, apiKey: string): Promis
       },
     };
 
+    // Initialiser les détails
+    workoutStep.details = {};
+
     // Ajouter l'intensité basée sur le % CAP
     if (step.cap_percent_low) {
       const avg = step.cap_percent_high
@@ -163,12 +244,32 @@ export async function parseWithGroq(description: string, apiKey: string): Promis
       else zone = 5;
 
       workoutStep.intensity = { type: 'heartRate', zone };
-      workoutStep.details = {
-        capPercent: {
-          low: step.cap_percent_low,
-          high: step.cap_percent_high || step.cap_percent_low,
-        },
+      workoutStep.details.capPercent = {
+        low: step.cap_percent_low,
+        high: step.cap_percent_high || step.cap_percent_low,
       };
+    }
+
+    // Ajouter les champs natation
+    if (step.swim_stroke) {
+      workoutStep.details.swimStroke = step.swim_stroke;
+    }
+    if (step.swim_equipment && step.swim_equipment.length > 0) {
+      workoutStep.details.swimEquipment = step.swim_equipment;
+    }
+    if (step.swim_drill) {
+      workoutStep.details.swimDrill = step.swim_drill;
+    }
+    if (step.swim_intensity) {
+      workoutStep.details.swimIntensity = step.swim_intensity;
+    }
+    if (step.swim_notes) {
+      workoutStep.details.swimNotes = step.swim_notes;
+    }
+
+    // Nettoyer les détails vides
+    if (Object.keys(workoutStep.details).length === 0) {
+      delete workoutStep.details;
     }
 
     return workoutStep;

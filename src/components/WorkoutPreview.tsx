@@ -1,4 +1,4 @@
-import { WorkoutStep } from '../lib/types';
+import { WorkoutStep, SWIM_STROKE_LABELS, SWIM_EQUIPMENT_LABELS, SWIM_DRILL_LABELS, SWIM_INTENSITY_LABELS } from '../lib/types';
 import { formatDurationDisplay } from '../lib/workout-parser';
 
 interface WorkoutPreviewProps {
@@ -204,6 +204,45 @@ function StepRow({ step, showIndex, index }: { step: WorkoutStep; showIndex?: bo
             <span className="flex items-center gap-1">
               <span className="font-medium">Allure:</span>
               {formatPace(step.details.swimPaceMin100m.low)} - {formatPace(step.details.swimPaceMin100m.high)}/100m
+            </span>
+          )}
+
+          {/* Type de nage */}
+          {step.details.swimStroke && (
+            <span className="flex items-center gap-1">
+              <span className="font-medium">Nage:</span>
+              {SWIM_STROKE_LABELS[step.details.swimStroke]}
+            </span>
+          )}
+
+          {/* Équipements natation */}
+          {step.details.swimEquipment && step.details.swimEquipment.length > 0 && (
+            <span className="flex items-center gap-1">
+              <span className="font-medium">Équipement:</span>
+              {step.details.swimEquipment.map(eq => SWIM_EQUIPMENT_LABELS[eq]).join(', ')}
+            </span>
+          )}
+
+          {/* Type d'exercice natation */}
+          {step.details.swimDrill && (
+            <span className="flex items-center gap-1">
+              <span className="font-medium">Exercice:</span>
+              {SWIM_DRILL_LABELS[step.details.swimDrill]}
+            </span>
+          )}
+
+          {/* Intensité natation */}
+          {step.details.swimIntensity && (
+            <span className="flex items-center gap-1">
+              <span className="font-medium">Intensité:</span>
+              {SWIM_INTENSITY_LABELS[step.details.swimIntensity]}
+            </span>
+          )}
+
+          {/* Notes natation */}
+          {step.details.swimNotes && (
+            <span className="flex items-center gap-1 italic text-gray-600">
+              {step.details.swimNotes}
             </span>
           )}
 
