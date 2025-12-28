@@ -108,15 +108,15 @@ const DRILL_TYPE_MAP = {
   drill: { drillTypeId: 3, drillTypeKey: 'drill' },
 };
 
-// Mapping des niveaux d'intensité (basé sur les efforts)
-// Target type 18 = swim.instruction avec les zones d'intensité
+// Mapping des niveaux d'intensité natation (workoutSwimInstructionTypes)
+// Target type 18 = swim.instruction avec instructionTypeId
 const SWIM_INTENSITY_TARGET_MAP = {
-  recovery: { zoneNumber: 1 },    // Récupération
-  easy: { zoneNumber: 2 },        // Facile
-  moderate: { zoneNumber: 3 },    // Modéré
-  hard: { zoneNumber: 4 },        // Difficile
-  very_hard: { zoneNumber: 5 },   // Très difficile
-  maximum: { zoneNumber: 6 },     // Maximum
+  recovery: { instructionTypeId: 1 },    // Récupération
+  easy: { instructionTypeId: 3 },        // Facile (very_easy=2, easy=3)
+  moderate: { instructionTypeId: 4 },    // Modéré
+  hard: { instructionTypeId: 5 },        // Difficile
+  very_hard: { instructionTypeId: 6 },   // Très difficile
+  maximum: { instructionTypeId: 7 },     // Maximum
 };
 
 // Mapping exerciseName pour les nages (type d'exercice en plus du stroke)
@@ -234,13 +234,13 @@ function createGarminStep(step, stepOrder, sport) {
       }
     }
 
-    // Intensité natation (objectif d'intensité basé sur les efforts)
+    // Intensité natation (objectif d'intensité basé sur swim.instruction)
     if (step.details?.swimIntensity) {
       const intensityTarget = SWIM_INTENSITY_TARGET_MAP[step.details.swimIntensity];
       if (intensityTarget) {
-        // Utiliser swim.instruction avec zoneNumber pour l'intensité
+        // Utiliser swim.instruction avec zoneNumber = instructionTypeId
         garminStep.targetType = { workoutTargetTypeId: 18, workoutTargetTypeKey: 'swim.instruction' };
-        garminStep.zoneNumber = intensityTarget.zoneNumber;
+        garminStep.zoneNumber = intensityTarget.instructionTypeId;
       }
       // Aussi ajouter le label dans la description pour plus de clarté
       const intensityLabels = {
