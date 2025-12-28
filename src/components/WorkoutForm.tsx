@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Workout, WorkoutStep, Sport, generateId } from '../lib/types';
 import { downloadFitFile } from '../lib/fit-encoder';
 import { parseWithGroq } from '../lib/groq-parser';
@@ -263,11 +263,31 @@ Retour au calme 10min`,
   },
 };
 
+// Noms par défaut par sport
+const SPORT_DEFAULT_NAMES: Record<Sport, string> = {
+  running: 'Course',
+  cycling: 'Vélo',
+  swimming: 'Natation',
+};
+
+// Générer un nom par défaut basé sur le sport et la date
+function getDefaultName(sport: Sport, dateStr: string): string {
+  const date = new Date(dateStr);
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  return `${SPORT_DEFAULT_NAMES[sport]} ${day}/${month}`;
+}
+
 export function WorkoutForm() {
-  const [name, setName] = useState('');
-  const [sport, setSport] = useState<Sport>('running');
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [sport, setSport] = useState<Sport>('running');
+  const [name, setName] = useState(() => getDefaultName('running', new Date().toISOString().split('T')[0]));
   const [description, setDescription] = useState('');
+
+  // Mettre à jour le nom par défaut quand le sport ou la date change
+  useEffect(() => {
+    setName(getDefaultName(sport, date));
+  }, [sport, date]);
 
   // Références par sport (chargées depuis localStorage)
   const [runningPace, setRunningPace] = useState(() => localStorage.getItem(STORAGE_KEYS.running) || '');
