@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Workout, WorkoutStep, Sport, generateId } from '../lib/types';
 import { downloadFitFile } from '../lib/fit-encoder';
-import { parseWithGroq, ParseResult } from '../lib/groq-parser';
+import { parseWithGroq } from '../lib/groq-parser';
 import { SportSelector } from './SportSelector';
 import { WorkoutPreview } from './WorkoutPreview';
 import { GarminSyncModal } from './GarminSyncModal';
