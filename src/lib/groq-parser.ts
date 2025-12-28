@@ -95,7 +95,7 @@ RÈGLE D'OR : Si tu vois "3x", tu DOIS avoir AU MOINS 6 objets dans steps (3 eff
             Si tu vois "5x", tu DOIS avoir AU MOINS 10 objets dans steps (5 efforts + 5 récups).
             Si tu vois "10x", tu DOIS avoir AU MOINS 20 objets dans steps.
 
-EXEMPLE CONCRET - "3x 1' vite / 1' lent" :
+EXEMPLE CONCRET - "3x 1' vite / 1' lent" (course) :
 Tu DOIS générer EXACTEMENT 6 objets :
   {"duration_minutes": 1, "type": "active", "name": "Vite"},
   {"duration_minutes": 1, "type": "recovery", "name": "Récup"},
@@ -103,6 +103,15 @@ Tu DOIS générer EXACTEMENT 6 objets :
   {"duration_minutes": 1, "type": "recovery", "name": "Récup"},
   {"duration_minutes": 1, "type": "active", "name": "Vite"},
   {"duration_minutes": 1, "type": "recovery", "name": "Récup"}
+
+EXEMPLE CONCRET - "3x (1' 40rpm / 1' 80rpm)" (vélo) :
+Tu DOIS générer EXACTEMENT 6 objets AVEC cadence_rpm :
+  {"duration_minutes": 1, "type": "active", "name": "Force", "cadence_rpm": 40},
+  {"duration_minutes": 1, "type": "recovery", "name": "Récup", "cadence_rpm": 80},
+  {"duration_minutes": 1, "type": "active", "name": "Force", "cadence_rpm": 40},
+  {"duration_minutes": 1, "type": "recovery", "name": "Récup", "cadence_rpm": 80},
+  {"duration_minutes": 1, "type": "active", "name": "Force", "cadence_rpm": 40},
+  {"duration_minutes": 1, "type": "recovery", "name": "Récup", "cadence_rpm": 80}
 
 EXEMPLE CONCRET - "5x 800m avec 2' récup" :
 Tu DOIS générer EXACTEMENT 10 objets :
@@ -132,6 +141,11 @@ INCORRECT - mélanger les blocs :
   40rpm, 80rpm, 110rpm, 80rpm, 40rpm, 80rpm...  <- INTERDIT !
 
 Chaque bloc "Nx" doit être COMPLÈTEMENT terminé avant de passer au suivant.
+
+IMPORTANT : Dans chaque étape, TOUJOURS inclure les paramètres spécifiques :
+- Vélo : cadence_rpm si mentionné, power_percent_low/high si mentionné
+- Course : cap_percent_low/high si mentionné
+- Natation : swim_stroke, swim_equipment, swim_intensity si mentionnés
 
 TOUJOURS dérouler EXPLICITEMENT chaque étape en objets JSON séparés.
 

@@ -364,7 +364,7 @@ export function WorkoutForm() {
                 id="cyclingWatts"
                 value={cyclingWatts}
                 onChange={(e) => handleCyclingWattsChange(e.target.value)}
-                placeholder="250"
+                placeholder="200"
                 className="w-32 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center font-mono"
               />
               <span className="text-gray-500">watts</span>
