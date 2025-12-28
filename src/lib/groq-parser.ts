@@ -381,7 +381,7 @@ export async function parseWithGroq(description: string, apiKey: string): Promis
     const workoutStep: WorkoutStep = {
       id: generateId(),
       type: step.type as StepType,
-      name: step.name,
+      name: step.name || 'Étape',
       duration: {
         type: step.is_lap ? 'open' : step.distance_meters ? 'distance' : 'time',
         value: step.distance_meters ||
@@ -450,10 +450,12 @@ export async function parseWithGroq(description: string, apiKey: string): Promis
     }
 
     // Nommage automatique pour le vélo si le nom est générique
+    const stepName = step.name || '';
     const genericNames = ['intervalle', 'interval', 'effort', 'active', 'récup', 'recup', 'recovery'];
-    const isGenericName = genericNames.some(g => step.name.toLowerCase().includes(g)) ||
-                          step.name.length <= 3 ||
-                          /^\d/.test(step.name); // commence par un chiffre
+    const isGenericName = !stepName ||
+                          genericNames.some(g => stepName.toLowerCase().includes(g)) ||
+                          stepName.length <= 3 ||
+                          /^\d/.test(stepName); // commence par un chiffre
 
     if (isGenericName && (step.cadence_rpm || step.power_percent_low)) {
       // Logique de nommage basée sur la cadence et la puissance
