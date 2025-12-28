@@ -233,6 +233,8 @@ Retour au calme 10min`,
       'Intensités : souple, modéré, rapide, sprint, progressif',
       'Départ chronométré : "départ tous les 2min"',
       'Distances : "100m", "50m", "25m"',
+      'Allure au 100m : "300m à 2\'/100m"',
+      'Temps sur distance : "300m en 6\'" (calcule auto 2\'/100m)',
     ],
     examples: [
       {
