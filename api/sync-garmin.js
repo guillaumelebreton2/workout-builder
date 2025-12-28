@@ -261,6 +261,18 @@ function createGarminStep(step, stepOrder, sport) {
       }
     }
 
+    // Allure natation (swimPaceMin100m)
+    if (step.details?.swimPaceMin100m) {
+      const { low, high } = step.details.swimPaceMin100m;
+      // Convertir min/100m en m/s : vitesse = 100m / (pace en secondes)
+      const speedLow = 100 / (low * 60);  // allure lente = vitesse basse
+      const speedHigh = 100 / (high * 60); // allure rapide = vitesse haute
+
+      garminStep.targetType = { workoutTargetTypeId: 6, workoutTargetTypeKey: 'pace.zone' };
+      garminStep.targetValueOne = speedHigh; // vitesse min
+      garminStep.targetValueTwo = speedLow;  // vitesse max
+    }
+
     // Notes additionnelles
     if (step.details?.swimNotes) {
       garminStep.description = garminStep.description

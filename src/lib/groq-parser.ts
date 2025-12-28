@@ -22,6 +22,8 @@ interface ParsedStep {
   swim_drill?: SwimDrillType;
   swim_intensity?: SwimIntensityLevel;
   swim_notes?: string;
+  // Allure natation (en secondes par 100m)
+  swim_pace_seconds_per_100m?: number;
 }
 
 interface AIResponse {
@@ -99,6 +101,18 @@ Chaque étape de natation DOIT avoir ces champs (si applicable) :
    - "descending" : décroissant, négatif split
 
 5. swim_notes : notes pour tout ce qui ne rentre pas ailleurs (ex: "Hypoxie respiration 5tps/7tps", "technique rattrapé")
+
+6. swim_pace_seconds_per_100m (allure en SECONDES par 100m) - TRÈS IMPORTANT :
+   - "200m à 2'/100m" = 200m à allure de 2 minutes par 100m = swim_pace_seconds_per_100m: 120
+   - "300m en 6'" = 300m en 6 minutes total = 6min pour 300m = 2min/100m = swim_pace_seconds_per_100m: 120
+   - "100m à 1'45/100m" = swim_pace_seconds_per_100m: 105
+   - "4x50m à 45''/50m" = swim_pace_seconds_per_100m: 90 (45s pour 50m = 90s pour 100m)
+   - Calcul pour "Xm en Y'" : swim_pace_seconds_per_100m = (Y en secondes) * 100 / X
+
+SEND-OFF TIME (départ tous les X') :
+   - "3x100m départ tous les 2'" = 3 répétitions de 100m, départ toutes les 2 minutes
+   - Le temps de repos = send-off - temps de nage (calculé automatiquement par Garmin)
+   - Pour ce format, créer les steps 100m avec swim_notes: "Départ tous les 2'"
 
 RÈGLE CRITIQUE NATATION - NE JAMAIS REGROUPER :
 - Chaque ligne de la description utilisateur = UNE étape séparée dans le JSON
@@ -275,6 +289,14 @@ export async function parseWithGroq(description: string, apiKey: string): Promis
     }
     if (step.swim_notes) {
       workoutStep.details.swimNotes = step.swim_notes;
+    }
+    // Allure natation (convertir secondes -> minutes)
+    if (step.swim_pace_seconds_per_100m) {
+      const paceMinutes = step.swim_pace_seconds_per_100m / 60;
+      workoutStep.details.swimPaceMin100m = {
+        low: paceMinutes,
+        high: paceMinutes,
+      };
     }
 
     // Nettoyer les détails vides
