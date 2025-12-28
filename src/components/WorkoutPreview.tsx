@@ -52,6 +52,13 @@ function stepsAreSimilar(a: WorkoutStep, b: WorkoutStep): boolean {
   if (a.details?.capPercent?.low !== b.details?.capPercent?.low) return false;
   if (a.details?.capPercent?.high !== b.details?.capPercent?.high) return false;
 
+  // Vérifications vélo - si différent, PAS similaire
+  if (a.details?.cadence !== b.details?.cadence) return false;
+  if (a.details?.powerPercent?.low !== b.details?.powerPercent?.low) return false;
+  if (a.details?.powerPercent?.high !== b.details?.powerPercent?.high) return false;
+  if (a.details?.watts?.low !== b.details?.watts?.low) return false;
+  if (a.details?.watts?.high !== b.details?.watts?.high) return false;
+
   // Vérifications natation - si différent, PAS similaire
   if (a.details?.swimStroke !== b.details?.swimStroke) return false;
   if (a.details?.swimDrill !== b.details?.swimDrill) return false;
@@ -207,6 +214,22 @@ function StepRow({ step, showIndex, index }: { step: WorkoutStep; showIndex?: bo
             <span className="flex items-center gap-1">
               <span className="font-medium">Puissance:</span>
               {step.details.watts.low} - {step.details.watts.high} W
+            </span>
+          )}
+
+          {/* Puissance % FTP (vélo) */}
+          {step.details.powerPercent && (
+            <span className="flex items-center gap-1">
+              <span className="font-medium">Puissance:</span>
+              {step.details.powerPercent.low}% - {step.details.powerPercent.high}% FTP
+            </span>
+          )}
+
+          {/* Cadence (vélo) */}
+          {step.details.cadence && (
+            <span className="flex items-center gap-1">
+              <span className="font-medium">Cadence:</span>
+              {step.details.cadence} rpm
             </span>
           )}
 

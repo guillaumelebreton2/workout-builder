@@ -329,6 +329,13 @@ function stepsAreSimilar(a, b) {
   if (a.duration?.type !== b.duration?.type) return false;
   if (a.duration?.value !== b.duration?.value) return false;
 
+  // Vérifications vélo - si différent, PAS similaire
+  if (a.details?.cadence !== b.details?.cadence) return false;
+  if (a.details?.powerPercent?.low !== b.details?.powerPercent?.low) return false;
+  if (a.details?.powerPercent?.high !== b.details?.powerPercent?.high) return false;
+  if (a.details?.watts?.low !== b.details?.watts?.low) return false;
+  if (a.details?.watts?.high !== b.details?.watts?.high) return false;
+
   // Vérifications natation - si différent, PAS similaire
   if (a.details?.swimStroke !== b.details?.swimStroke) return false;
   if (a.details?.swimDrill !== b.details?.swimDrill) return false;
