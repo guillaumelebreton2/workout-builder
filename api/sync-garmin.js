@@ -297,16 +297,34 @@ function stepsAreSimilar(a, b) {
  * Détecte les blocs de répétition dans les steps
  */
 function detectRepeatBlocks(steps) {
-  if (steps.length < 4) return null;
+  console.log('detectRepeatBlocks - nombre de steps:', steps.length);
+  if (steps.length < 4) {
+    console.log('Pas assez de steps pour détecter des répétitions');
+    return null;
+  }
+
+  // Chercher le meilleur pattern (taille 2 ou 3)
+  let bestResult = null;
 
   for (let patternLen = 2; patternLen <= 3; patternLen++) {
     const pattern = steps.slice(0, patternLen);
     let repetitions = 1;
     let i = patternLen;
 
+    console.log(`Essai pattern de taille ${patternLen}:`, pattern.map(s => `${s.duration?.value}m ${s.type}`));
+
     while (i + patternLen <= steps.length) {
       const nextBlock = steps.slice(i, i + patternLen);
-      const isMatch = pattern.every((step, idx) => stepsAreSimilar(step, nextBlock[idx]));
+      const isMatch = pattern.every((step, idx) => {
+        const match = stepsAreSimilar(step, nextBlock[idx]);
+        if (!match) {
+          console.log(`  Step ${idx} ne match pas:`, {
+            a: { type: step.type, duration: step.duration?.value, stroke: step.details?.swimStroke, intensity: step.details?.swimIntensity },
+            b: { type: nextBlock[idx].type, duration: nextBlock[idx].duration?.value, stroke: nextBlock[idx].details?.swimStroke, intensity: nextBlock[idx].details?.swimIntensity }
+          });
+        }
+        return match;
+      });
 
       if (isMatch) {
         repetitions++;
@@ -316,8 +334,10 @@ function detectRepeatBlocks(steps) {
       }
     }
 
-    if (repetitions >= 2) {
-      return {
+    console.log(`Pattern taille ${patternLen}: ${repetitions} répétitions trouvées`);
+
+    if (repetitions >= 2 && (!bestResult || repetitions > bestResult.repetitions)) {
+      bestResult = {
         pattern,
         repetitions,
         remainingSteps: steps.slice(i)
@@ -325,7 +345,10 @@ function detectRepeatBlocks(steps) {
     }
   }
 
-  return null;
+  if (bestResult) {
+    console.log(`Meilleur pattern: ${bestResult.repetitions}x${bestResult.pattern.length} steps`);
+  }
+  return bestResult;
 }
 
 /**
