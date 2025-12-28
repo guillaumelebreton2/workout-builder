@@ -24,6 +24,10 @@ interface ParsedStep {
   swim_notes?: string;
   // Allure natation (en secondes par 100m)
   swim_pace_seconds_per_100m?: number;
+  // Champs vélo
+  cadence_rpm?: number;
+  power_percent_low?: number;
+  power_percent_high?: number;
 }
 
 interface AIResponse {
@@ -54,9 +58,27 @@ TYPES D'ÉTAPES :
 - cooldown : retour au calme (fin de séance)
 - rest : repos complet
 
-POURCENTAGES :
+POURCENTAGES (course à pied) :
 - Extrais le pourcentage CAP/VMA UNIQUEMENT s'il est explicitement mentionné (ex: "76%-90%" ou "100%")
 - Si aucun pourcentage n'est mentionné, NE PAS ajouter cap_percent_low ni cap_percent_high
+
+VÉLO - SPÉCIFIQUE :
+1. cadence_rpm (cadence en tours/minute) :
+   - "90rpm" ou "90 rpm" = cadence_rpm: 90
+   - "40 rpm" = cadence_rpm: 40
+   - "110rpm" = cadence_rpm: 110
+
+2. power_percent_low et power_percent_high (puissance en % FTP) :
+   - "75% - 90%" = power_percent_low: 75, power_percent_high: 90
+   - "100%" = power_percent_low: 100, power_percent_high: 100
+   - Ces pourcentages sont pour la PUISSANCE vélo, pas la CAP course
+
+Exemple vélo :
+- "Échauffement 10' 90rpm" = duration_minutes: 10, type: warmup, cadence_rpm: 90
+- "1' 40 rpm" = duration_minutes: 1, cadence_rpm: 40
+- "15' 75% - 90% 90rpm" = duration_minutes: 15, power_percent_low: 75, power_percent_high: 90, cadence_rpm: 90
+- "5' récupération 80 rpm" = duration_minutes: 5, type: cooldown, cadence_rpm: 80
+- "Récupération lap" = is_lap: true, type: cooldown
 
 RÉPÉTITIONS - CRITIQUE :
 - "10x 800m avec 2' récup" = déroule les 10 répétitions complètes : 800m, récup 2min, 800m, récup 2min, ... , 800m, récup 2min (10 x 800m ET 10 x récup)
@@ -302,6 +324,17 @@ export async function parseWithGroq(description: string, apiKey: string): Promis
       workoutStep.details.swimPaceMin100m = {
         low: paceMinutes,
         high: paceMinutes,
+      };
+    }
+
+    // Champs vélo
+    if (step.cadence_rpm) {
+      workoutStep.details.cadence = step.cadence_rpm;
+    }
+    if (step.power_percent_low) {
+      workoutStep.details.powerPercent = {
+        low: step.power_percent_low,
+        high: step.power_percent_high || step.power_percent_low,
       };
     }
 

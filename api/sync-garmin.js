@@ -196,12 +196,42 @@ function createGarminStep(step, stepOrder, sport) {
     garminStep.targetValueTwo = speedLow;
   }
 
-  // Ajouter la cible de puissance si disponible (vélo)
-  if (sport === 'cycling' && step.details?.watts) {
-    const { low, high } = step.details.watts;
-    garminStep.targetType = { workoutTargetTypeId: 4, workoutTargetTypeKey: 'power.zone' };
-    garminStep.targetValueOne = low;
-    garminStep.targetValueTwo = high;
+  // Ajouter les paramètres vélo
+  if (sport === 'cycling') {
+    // Puissance en watts absolus
+    if (step.details?.watts) {
+      const { low, high } = step.details.watts;
+      garminStep.targetType = { workoutTargetTypeId: 2, workoutTargetTypeKey: 'power.zone' };
+      garminStep.targetValueOne = low;
+      garminStep.targetValueTwo = high;
+    }
+
+    // Puissance en % FTP (convertir en watts si FTP connu - on utilise 200W par défaut)
+    if (step.details?.powerPercent) {
+      const ftp = 200; // TODO: récupérer depuis les settings utilisateur
+      const { low, high } = step.details.powerPercent;
+      const wattsLow = Math.round(ftp * low / 100);
+      const wattsHigh = Math.round(ftp * high / 100);
+      garminStep.targetType = { workoutTargetTypeId: 2, workoutTargetTypeKey: 'power.zone' };
+      garminStep.targetValueOne = wattsLow;
+      garminStep.targetValueTwo = wattsHigh;
+    }
+
+    // Cadence (RPM)
+    if (step.details?.cadence) {
+      const cadenceValue = step.details.cadence;
+      // Si on a déjà une cible de puissance, la cadence va en secondaryTarget
+      if (step.details?.powerPercent || step.details?.watts) {
+        garminStep.secondaryTargetType = { workoutTargetTypeId: 3, workoutTargetTypeKey: 'cadence' };
+        garminStep.secondaryTargetValueOne = cadenceValue;
+        garminStep.secondaryTargetValueTwo = cadenceValue;
+      } else {
+        // Sinon la cadence est la cible principale
+        garminStep.targetType = { workoutTargetTypeId: 3, workoutTargetTypeKey: 'cadence' };
+        garminStep.targetValueOne = cadenceValue;
+        garminStep.targetValueTwo = cadenceValue;
+      }
+    }
   }
 
   // Ajouter les paramètres natation

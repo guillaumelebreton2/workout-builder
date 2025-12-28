@@ -58,6 +58,8 @@ export interface StepDetails {
   speedKmh?: { low: number; high: number };   // Vitesse en km/h (course)
   paceMinKm?: { low: number; high: number };  // Allure en min/km (course)
   watts?: { low: number; high: number };      // Puissance en watts (vélo)
+  cadence?: number;                           // Cadence en RPM (vélo)
+  powerPercent?: { low: number; high: number }; // Puissance en % FTP (vélo)
   swimPaceMin100m?: { low: number; high: number }; // Allure en min/100m (natation)
   distanceMeters?: { low: number; high: number }; // Distance estimée
   // Champs spécifiques natation
