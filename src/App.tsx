@@ -11,7 +11,7 @@ function App() {
             Workout Builder
           </h1>
           <p className="text-gray-600">
-            Créez vos séances d'entraînement et exportez-les au format Garmin FIT
+            Créez vos séances d'entraînement et synchronisez-les avec Garmin Connect
           </p>
         </header>
 
