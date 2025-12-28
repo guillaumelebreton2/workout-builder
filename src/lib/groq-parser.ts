@@ -6,6 +6,12 @@ import { WorkoutStep, StepType, SwimStrokeType, SwimEquipmentType, SwimDrillType
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
+// Modèles Groq par ordre de préférence
+const GROQ_MODELS = [
+  'llama-3.3-70b-versatile',  // Principal : meilleure qualité
+  'llama-3.1-8b-instant',      // Fallback : plus rapide, limite séparée
+];
+
 interface ParsedStep {
   duration_minutes?: number;
   duration_seconds?: number;
@@ -211,11 +217,8 @@ Format de réponse NATATION :
   ]
 }`;
 
-export async function parseWithGroq(description: string, apiKey: string): Promise<WorkoutStep[]> {
-  if (!apiKey) {
-    throw new Error('Clé API Groq manquante');
-  }
-
+// Appeler l'API Groq avec un modèle spécifique
+async function callGroqAPI(description: string, apiKey: string, model: string): Promise<{ content: string; model: string }> {
   const response = await fetch(GROQ_API_URL, {
     method: 'POST',
     headers: {
@@ -223,7 +226,7 @@ export async function parseWithGroq(description: string, apiKey: string): Promis
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
+      model,
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: `Analyse cette description de séance et convertis-la en JSON :\n\n${description}` }
@@ -234,11 +237,17 @@ export async function parseWithGroq(description: string, apiKey: string): Promis
   });
 
   if (!response.ok) {
-    const error = await response.text();
+    const errorText = await response.text();
     if (response.status === 401) {
       throw new Error('Clé API invalide');
     }
-    throw new Error(`Erreur Groq: ${error}`);
+    // Vérifier si c'est une erreur de rate limit
+    if (response.status === 429 || errorText.includes('rate_limit')) {
+      const error = new Error(`Rate limit atteint pour ${model}`);
+      (error as Error & { isRateLimit: boolean }).isRateLimit = true;
+      throw error;
+    }
+    throw new Error(`Erreur Groq: ${errorText}`);
   }
 
   const data = await response.json();
@@ -247,6 +256,46 @@ export async function parseWithGroq(description: string, apiKey: string): Promis
   if (!content) {
     throw new Error('Réponse vide de Groq');
   }
+
+  return { content, model };
+}
+
+export async function parseWithGroq(description: string, apiKey: string): Promise<WorkoutStep[]> {
+  if (!apiKey) {
+    throw new Error('Clé API Groq manquante');
+  }
+
+  // Essayer chaque modèle jusqu'à ce qu'un fonctionne
+  let lastError: Error | null = null;
+  let content: string | null = null;
+  let usedModel: string | null = null;
+
+  for (const model of GROQ_MODELS) {
+    try {
+      console.log(`Essai avec le modèle: ${model}`);
+      const result = await callGroqAPI(description, apiKey, model);
+      content = result.content;
+      usedModel = result.model;
+      console.log(`Succès avec le modèle: ${model}`);
+      break;
+    } catch (error) {
+      lastError = error as Error;
+      const isRateLimit = (error as Error & { isRateLimit?: boolean }).isRateLimit;
+
+      if (isRateLimit) {
+        console.warn(`Rate limit atteint pour ${model}, essai du modèle suivant...`);
+        continue;
+      }
+      // Si ce n'est pas un rate limit, propager l'erreur
+      throw error;
+    }
+  }
+
+  if (!content) {
+    throw lastError || new Error('Tous les modèles ont échoué');
+  }
+
+  console.log(`Modèle utilisé: ${usedModel}`);
 
   // Parser le JSON de la réponse
   let parsed: AIResponse;
