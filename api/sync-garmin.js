@@ -295,6 +295,7 @@ function stepsAreSimilar(a, b) {
 
 /**
  * Détecte les blocs de répétition dans les steps
+ * Retourne un tableau avec les steps avant, le bloc répété, et les steps après
  */
 function detectRepeatBlocks(steps) {
   console.log('detectRepeatBlocks - nombre de steps:', steps.length);
@@ -303,52 +304,58 @@ function detectRepeatBlocks(steps) {
     return null;
   }
 
-  // Chercher le meilleur pattern (taille 2 ou 3)
+  // Chercher des patterns à TOUTES les positions
   let bestResult = null;
 
-  for (let patternLen = 2; patternLen <= 3; patternLen++) {
-    const pattern = steps.slice(0, patternLen);
-    let repetitions = 1;
-    let i = patternLen;
+  for (let startPos = 0; startPos < steps.length - 3; startPos++) {
+    for (let patternLen = 2; patternLen <= 3; patternLen++) {
+      if (startPos + patternLen * 2 > steps.length) continue;
 
-    console.log(`Essai pattern de taille ${patternLen}:`, pattern.map(s => `${s.duration?.value}m ${s.type}`));
+      const pattern = steps.slice(startPos, startPos + patternLen);
+      let repetitions = 1;
+      let endPos = startPos + patternLen;
 
-    while (i + patternLen <= steps.length) {
-      const nextBlock = steps.slice(i, i + patternLen);
-      const isMatch = pattern.every((step, idx) => {
-        const match = stepsAreSimilar(step, nextBlock[idx]);
-        if (!match) {
-          console.log(`  Step ${idx} ne match pas:`, {
-            a: { type: step.type, duration: step.duration?.value, stroke: step.details?.swimStroke, intensity: step.details?.swimIntensity },
-            b: { type: nextBlock[idx].type, duration: nextBlock[idx].duration?.value, stroke: nextBlock[idx].details?.swimStroke, intensity: nextBlock[idx].details?.swimIntensity }
-          });
+      while (endPos + patternLen <= steps.length) {
+        const nextBlock = steps.slice(endPos, endPos + patternLen);
+        const isMatch = pattern.every((step, idx) => stepsAreSimilar(step, nextBlock[idx]));
+
+        if (isMatch) {
+          repetitions++;
+          endPos += patternLen;
+        } else {
+          break;
         }
-        return match;
-      });
-
-      if (isMatch) {
-        repetitions++;
-        i += patternLen;
-      } else {
-        break;
       }
-    }
 
-    console.log(`Pattern taille ${patternLen}: ${repetitions} répétitions trouvées`);
-
-    if (repetitions >= 2 && (!bestResult || repetitions > bestResult.repetitions)) {
-      bestResult = {
-        pattern,
-        repetitions,
-        remainingSteps: steps.slice(i)
-      };
+      // Garder le meilleur pattern (au moins 2 répétitions)
+      if (repetitions >= 2) {
+        const score = repetitions * patternLen; // Plus de répétitions = meilleur
+        if (!bestResult || score > bestResult.score) {
+          bestResult = {
+            startPos,
+            pattern,
+            repetitions,
+            endPos,
+            score
+          };
+        }
+      }
     }
   }
 
   if (bestResult) {
-    console.log(`Meilleur pattern: ${bestResult.repetitions}x${bestResult.pattern.length} steps`);
+    console.log(`Meilleur pattern trouvé à position ${bestResult.startPos}: ${bestResult.repetitions}x${bestResult.pattern.length} steps`);
+    console.log('Pattern:', bestResult.pattern.map(s => `${s.duration?.value}m ${s.type}`));
+    return {
+      stepsBefore: steps.slice(0, bestResult.startPos),
+      pattern: bestResult.pattern,
+      repetitions: bestResult.repetitions,
+      stepsAfter: steps.slice(bestResult.endPos)
+    };
   }
-  return bestResult;
+
+  console.log('Aucun pattern de répétition trouvé');
+  return null;
 }
 
 /**
@@ -388,6 +395,12 @@ function convertToGarminFormat(workout) {
   const repeatBlock = detectRepeatBlocks(mainSteps);
 
   if (repeatBlock && repeatBlock.repetitions >= 2) {
+    // Ajouter les steps AVANT le bloc de répétition
+    for (const step of repeatBlock.stepsBefore) {
+      workoutSteps.push(createGarminStep(step, stepOrder++, workout.sport));
+    }
+
+    // Créer le bloc de répétition
     const repeatSteps = repeatBlock.pattern.map((step, idx) =>
       createGarminStep(step, idx + 1, workout.sport)
     );
@@ -408,7 +421,8 @@ function convertToGarminFormat(workout) {
       workoutSteps: repeatSteps,
     });
 
-    for (const step of repeatBlock.remainingSteps) {
+    // Ajouter les steps APRÈS le bloc de répétition
+    for (const step of repeatBlock.stepsAfter) {
       workoutSteps.push(createGarminStep(step, stepOrder++, workout.sport));
     }
   } else {
