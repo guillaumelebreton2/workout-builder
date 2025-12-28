@@ -285,7 +285,7 @@ function stepsAreSimilar(a, b) {
  */
 function detectRepeatBlocks(steps) {
   console.log('detectRepeatBlocks - nombre de steps:', steps.length);
-  if (steps.length < 4) {
+  if (steps.length < 2) {
     console.log('Pas assez de steps pour détecter des répétitions');
     return null;
   }
