@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Workout, WorkoutStep, Sport, generateId } from '../lib/types';
 import { downloadFitFile } from '../lib/fit-encoder';
-import { parseWithGroq } from '../lib/groq-parser';
+import { parseWithGroq, ParseResult } from '../lib/groq-parser';
 import { SportSelector } from './SportSelector';
 import { WorkoutPreview } from './WorkoutPreview';
 import { GarminSyncModal } from './GarminSyncModal';
@@ -150,6 +150,7 @@ export function WorkoutForm() {
   const [error, setError] = useState<string | null>(null);
   const [showSyncModal, setShowSyncModal] = useState(false);
   const [syncSuccess, setSyncSuccess] = useState(false);
+  const [fallbackWarning, setFallbackWarning] = useState<string | null>(null);
 
   // Sauvegarder les références dans localStorage avec formatage automatique
   const handleRunningPaceChange = (value: string) => {
@@ -172,6 +173,7 @@ export function WorkoutForm() {
 
   const handlePreview = async () => {
     setError(null);
+    setFallbackWarning(null);
 
     if (!description.trim()) {
       setError('Veuillez entrer une description de séance');
@@ -186,32 +188,38 @@ export function WorkoutForm() {
     setIsParsing(true);
 
     try {
-      let parsed = await parseWithGroq(description, API_KEY);
+      const result = await parseWithGroq(description, API_KEY);
+      let parsedSteps = result.steps;
+
+      // Afficher un avertissement si un modèle de fallback a été utilisé
+      if (result.isFallback) {
+        setFallbackWarning(`Modèle de secours utilisé (${result.model}). La qualité du parsing peut être réduite, notamment pour les répétitions.`);
+      }
 
       // Enrichir avec les allures/watts selon le sport
       if (sport === 'running') {
         const paceMinKm = parsePaceInput(runningPace);
         if (paceMinKm) {
-          parsed = enrichStepsWithPace(parsed, paceMinKm);
+          parsedSteps = enrichStepsWithPace(parsedSteps, paceMinKm);
         }
       } else if (sport === 'cycling') {
         const watts = parseFloat(cyclingWatts);
         if (!isNaN(watts) && watts > 0) {
-          parsed = enrichStepsWithWatts(parsed, watts);
+          parsedSteps = enrichStepsWithWatts(parsedSteps, watts);
         }
       } else if (sport === 'swimming') {
         const paceMin100m = parsePaceInput(swimmingPace);
         if (paceMin100m) {
-          parsed = enrichStepsWithSwimPace(parsed, paceMin100m);
+          parsedSteps = enrichStepsWithSwimPace(parsedSteps, paceMin100m);
         }
       }
 
-      if (parsed.length === 0) {
+      if (parsedSteps.length === 0) {
         setError('Aucune étape détectée. Essayez de reformuler.');
         return;
       }
 
-      setSteps(parsed);
+      setSteps(parsedSteps);
       setShowPreview(true);
     } catch (err) {
       console.error(err);
@@ -263,6 +271,7 @@ export function WorkoutForm() {
       setSteps([]);
     }
     setSyncSuccess(false);
+    setFallbackWarning(null);
   };
 
   const getCurrentWorkout = (): Workout => ({
@@ -439,6 +448,16 @@ export function WorkoutForm() {
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
           {error}
+        </div>
+      )}
+
+      {/* Fallback warning */}
+      {fallbackWarning && (
+        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 flex items-start gap-2">
+          <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+          </svg>
+          <span>{fallbackWarning}</span>
         </div>
       )}
 

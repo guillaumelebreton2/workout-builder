@@ -262,7 +262,13 @@ async function callGroqAPI(description: string, apiKey: string, model: string): 
   return { content, model };
 }
 
-export async function parseWithGroq(description: string, apiKey: string): Promise<WorkoutStep[]> {
+export interface ParseResult {
+  steps: WorkoutStep[];
+  model: string;
+  isFallback: boolean;
+}
+
+export async function parseWithGroq(description: string, apiKey: string): Promise<ParseResult> {
   if (!apiKey) {
     throw new Error('Clé API Groq manquante');
   }
@@ -317,7 +323,7 @@ export async function parseWithGroq(description: string, apiKey: string): Promis
   }
 
   // Convertir en WorkoutStep[]
-  return parsed.steps.map((step): WorkoutStep => {
+  const steps = parsed.steps.map((step): WorkoutStep => {
     const workoutStep: WorkoutStep = {
       id: generateId(),
       type: step.type as StepType,
@@ -396,6 +402,12 @@ export async function parseWithGroq(description: string, apiKey: string): Promis
 
     return workoutStep;
   });
+
+  return {
+    steps,
+    model: usedModel!,
+    isFallback: usedModel !== GROQ_MODELS[0],
+  };
 }
 
 // Vérifier si une clé API est valide
