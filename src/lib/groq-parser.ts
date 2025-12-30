@@ -77,7 +77,7 @@ POURCENTAGES (course à pied) :
 - Extrais le pourcentage CAP/VMA UNIQUEMENT s'il est explicitement mentionné (ex: "76%-90%" ou "100%")
 - Si aucun pourcentage n'est mentionné, NE PAS ajouter cap_percent_low ni cap_percent_high
 
-ALLURES ET VITESSES EXPLICITES (course à pied) :
+ALLURES ET VITESSES EXPLICITES (course à pied) - TRÈS IMPORTANT :
 1. pace_min_km_low et pace_min_km_high (allure en min/km, valeur décimale) :
    - "4:30/km" ou "4'30/km" = pace_min_km_low: 4.5, pace_min_km_high: 4.5
    - "4:30 - 5:00 /km" = pace_min_km_low: 5.0, pace_min_km_high: 4.5 (low = allure lente, high = allure rapide)
@@ -88,8 +88,10 @@ ALLURES ET VITESSES EXPLICITES (course à pied) :
    - "8.25 - 11.25 km/h" = speed_kmh_low: 8.25, speed_kmh_high: 11.25
    - "VC 15.15 - 15.75 km/h" = speed_kmh_low: 15.15, speed_kmh_high: 15.75
 
-PRIORITÉ : Si les deux sont présents (min/km ET km/h), extraire LES DEUX.
-Le système utilisera min/km en priorité pour l'affichage.
+RÈGLE CRITIQUE : Si la description contient À LA FOIS des pourcentages CAP ET des vitesses/allures explicites,
+tu DOIS extraire LES DEUX. Exemple :
+"55% - 75% CAP VC 8.25 - 11.25 km/h" → cap_percent_low: 55, cap_percent_high: 75, speed_kmh_low: 8.25, speed_kmh_high: 11.25
+Le système utilisera les vitesses explicites en priorité pour l'affichage.
 
 VÉLO - SPÉCIFIQUE :
 1. cadence_rpm (cadence en tours/minute) :
