@@ -36,6 +36,8 @@ interface ParsedStep {
   cadence_rpm?: number;
   power_percent_low?: number;
   power_percent_high?: number;
+  watts_low?: number;
+  watts_high?: number;
 }
 
 interface AIResponse {
@@ -80,6 +82,13 @@ VÉLO - SPÉCIFIQUE :
    - "75% - 90%" = power_percent_low: 75, power_percent_high: 90
    - "100%" = power_percent_low: 100, power_percent_high: 100
    - Ces pourcentages sont pour la PUISSANCE vélo, pas la CAP course
+
+3. watts_low et watts_high (puissance en watts EXPLICITE) :
+   - "127 - 173 W" = watts_low: 127, watts_high: 173
+   - "0 - 127 W" = watts_low: 0, watts_high: 127
+   - "200 W" = watts_low: 200, watts_high: 200
+   - "Zone 2 127- 173 W" = watts_low: 127, watts_high: 173
+   - Si des watts explicites sont mentionnés, utiliser watts_low/watts_high, PAS power_percent
 
 Exemple vélo :
 - "Échauffement 10' 90rpm" = duration_minutes: 10, type: warmup, cadence_rpm: 90
@@ -458,6 +467,14 @@ export async function parseWithGroq(description: string, apiKeys: string | strin
     if (step.cadence_rpm) {
       workoutStep.details.cadence = step.cadence_rpm;
     }
+    // Watts explicites (prioritaires sur les %)
+    if (step.watts_low !== undefined) {
+      workoutStep.details.watts = {
+        low: step.watts_low,
+        high: step.watts_high ?? step.watts_low,
+      };
+    }
+    // Pourcentage de puissance
     if (step.power_percent_low) {
       workoutStep.details.powerPercent = {
         low: step.power_percent_low,
@@ -476,7 +493,7 @@ export async function parseWithGroq(description: string, apiKeys: string | strin
                           stepName.length <= 3 ||
                           /^\d/.test(stepName); // commence par un chiffre
 
-    if (isGenericName && (step.cadence_rpm || step.power_percent_low)) {
+    if (isGenericName && (step.cadence_rpm || step.power_percent_low || step.watts_low !== undefined)) {
       // Logique de nommage basée sur la cadence et la puissance
       if (step.type === 'recovery' || step.type === 'cooldown' || step.type === 'rest') {
         workoutStep.name = 'Récupération';
@@ -485,12 +502,12 @@ export async function parseWithGroq(description: string, apiKeys: string | strin
           workoutStep.name = 'Force';
         } else if (step.cadence_rpm > 90) {
           workoutStep.name = 'Vélocité';
-        } else if (step.power_percent_low) {
+        } else if (step.power_percent_low || step.watts_low !== undefined) {
           workoutStep.name = 'Puissance';
         } else {
           workoutStep.name = 'Récupération';
         }
-      } else if (step.power_percent_low) {
+      } else if (step.power_percent_low || step.watts_low !== undefined) {
         workoutStep.name = 'Puissance';
       }
     }

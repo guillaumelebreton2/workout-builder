@@ -77,14 +77,21 @@ function enrichStepsWithPace(steps: WorkoutStep[], referencePaceMinKm: number): 
   });
 }
 
+// Puissance par défaut si non renseignée (pour convertir les %)
+const DEFAULT_POWER_WATTS = 200;
+
 // Enrichir les steps avec les watts calculés (vélo)
 // Le % correspond à la puissance : 100% = puissance de référence, 95% = moins de watts
 function enrichStepsWithWatts(steps: WorkoutStep[], referenceWatts: number): WorkoutStep[] {
   return steps.map(step => {
-    if (step.details?.capPercent && !step.details?.watts) {
-      const { low, high } = step.details.capPercent;
-      // low correspond au % bas (moins de watts)
-      // high correspond au % haut (plus de watts)
+    // Si watts déjà présents, ne pas écraser
+    if (step.details?.watts) {
+      return step;
+    }
+
+    // Calculer les watts depuis powerPercent
+    if (step.details?.powerPercent) {
+      const { low, high } = step.details.powerPercent;
       return {
         ...step,
         details: {
@@ -96,6 +103,22 @@ function enrichStepsWithWatts(steps: WorkoutStep[], referenceWatts: number): Wor
         },
       };
     }
+
+    // Calculer les watts depuis capPercent (ancien format)
+    if (step.details?.capPercent) {
+      const { low, high } = step.details.capPercent;
+      return {
+        ...step,
+        details: {
+          ...step.details,
+          watts: {
+            low: Math.round(referenceWatts * (low / 100)),
+            high: Math.round(referenceWatts * (high / 100))
+          },
+        },
+      };
+    }
+
     return step;
   });
 }
@@ -334,7 +357,14 @@ export function WorkoutForm() {
       } else if (sport === 'cycling') {
         const watts = parseFloat(cyclingWatts);
         if (!isNaN(watts) && watts > 0) {
+          // Utiliser la puissance de référence renseignée
           parsedSteps = enrichStepsWithWatts(parsedSteps, watts);
+        } else {
+          // Utiliser la puissance par défaut si des % sont présents
+          const hasPercent = parsedSteps.some(s => s.details?.powerPercent);
+          if (hasPercent) {
+            parsedSteps = enrichStepsWithWatts(parsedSteps, DEFAULT_POWER_WATTS);
+          }
         }
       } else if (sport === 'swimming') {
         const paceMin100m = parsePaceInput(swimmingPace);

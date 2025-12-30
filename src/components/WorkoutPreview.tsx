@@ -209,16 +209,20 @@ function StepRow({ step, showIndex, index }: { step: WorkoutStep; showIndex?: bo
             </span>
           )}
 
-          {/* Watts (vélo) */}
+          {/* Puissance vélo : afficher watts + % entre parenthèses si applicable */}
           {step.details.watts && (
             <span className="flex items-center gap-1">
               <span className="font-medium">Puissance:</span>
               {step.details.watts.low} - {step.details.watts.high} W
+              {step.details.powerPercent && (
+                <span className="text-gray-500">
+                  ({step.details.powerPercent.low}% - {step.details.powerPercent.high}%)
+                </span>
+              )}
             </span>
           )}
-
-          {/* Puissance % (vélo) */}
-          {step.details.powerPercent && (
+          {/* Si seulement % sans watts (ne devrait pas arriver normalement) */}
+          {!step.details.watts && step.details.powerPercent && (
             <span className="flex items-center gap-1">
               <span className="font-medium">Puissance:</span>
               {step.details.powerPercent.low}% - {step.details.powerPercent.high}%
