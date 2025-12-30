@@ -45,13 +45,25 @@ function formatPaceInput(value: string): string {
   return value;
 }
 
+// Allure par défaut si non renseignée (pour convertir les %)
+const DEFAULT_PACE_MIN_KM = 5.0; // 5:00/km
+
 // Enrichir les steps avec les allures calculées (course à pied)
 // Le % correspond à la vitesse : 100% = vitesse de référence, 95% = plus lent (allure plus haute)
-function enrichStepsWithPace(steps: WorkoutStep[], referencePaceMinKm: number): WorkoutStep[] {
-  const referenceSpeedKmh = 60 / referencePaceMinKm;
-
+// Priorité : allure explicite > % avec référence > % avec défaut
+function enrichStepsWithPace(steps: WorkoutStep[], referencePaceMinKm: number | null): WorkoutStep[] {
   return steps.map(step => {
-    if (step.details?.capPercent && !step.details?.paceMinKm) {
+    // Si paceMinKm déjà présent (allure explicite), ne pas écraser
+    if (step.details?.paceMinKm) {
+      return step;
+    }
+
+    // Calculer depuis capPercent
+    if (step.details?.capPercent) {
+      // Utiliser la référence fournie ou le défaut
+      const refPace = referencePaceMinKm ?? DEFAULT_PACE_MIN_KM;
+      const referenceSpeedKmh = 60 / refPace;
+
       const { low, high } = step.details.capPercent;
       const speedAtLowPercent = referenceSpeedKmh * (low / 100);
       const speedAtHighPercent = referenceSpeedKmh * (high / 100);
@@ -351,9 +363,8 @@ export function WorkoutForm() {
       // Enrichir avec les allures/watts selon le sport
       if (sport === 'running') {
         const paceMinKm = parsePaceInput(runningPace);
-        if (paceMinKm) {
-          parsedSteps = enrichStepsWithPace(parsedSteps, paceMinKm);
-        }
+        // Toujours appeler pour gérer les allures explicites et les % (avec ou sans référence)
+        parsedSteps = enrichStepsWithPace(parsedSteps, paceMinKm);
       } else if (sport === 'cycling') {
         const watts = parseFloat(cyclingWatts);
         if (!isNaN(watts) && watts > 0) {

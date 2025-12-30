@@ -24,6 +24,11 @@ interface ParsedStep {
   cap_percent_low?: number;
   cap_percent_high?: number;
   repetitions?: number;
+  // Allures/vitesses explicites (course à pied)
+  pace_min_km_low?: number;  // Allure en min/km (ex: 4.5 = 4:30/km)
+  pace_min_km_high?: number;
+  speed_kmh_low?: number;    // Vitesse en km/h
+  speed_kmh_high?: number;
   // Champs natation
   swim_stroke?: SwimStrokeType;
   swim_equipment?: SwimEquipmentType[];
@@ -71,6 +76,20 @@ TYPES D'ÉTAPES :
 POURCENTAGES (course à pied) :
 - Extrais le pourcentage CAP/VMA UNIQUEMENT s'il est explicitement mentionné (ex: "76%-90%" ou "100%")
 - Si aucun pourcentage n'est mentionné, NE PAS ajouter cap_percent_low ni cap_percent_high
+
+ALLURES ET VITESSES EXPLICITES (course à pied) :
+1. pace_min_km_low et pace_min_km_high (allure en min/km, valeur décimale) :
+   - "4:30/km" ou "4'30/km" = pace_min_km_low: 4.5, pace_min_km_high: 4.5
+   - "4:30 - 5:00 /km" = pace_min_km_low: 5.0, pace_min_km_high: 4.5 (low = allure lente, high = allure rapide)
+   - Conversion : 4:30 = 4 + 30/60 = 4.5
+
+2. speed_kmh_low et speed_kmh_high (vitesse en km/h) :
+   - "12 km/h" = speed_kmh_low: 12, speed_kmh_high: 12
+   - "8.25 - 11.25 km/h" = speed_kmh_low: 8.25, speed_kmh_high: 11.25
+   - "VC 15.15 - 15.75 km/h" = speed_kmh_low: 15.15, speed_kmh_high: 15.75
+
+PRIORITÉ : Si les deux sont présents (min/km ET km/h), extraire LES DEUX.
+Le système utilisera min/km en priorité pour l'affichage.
 
 VÉLO - SPÉCIFIQUE :
 1. cadence_rpm (cadence en tours/minute) :
@@ -152,8 +171,8 @@ INCORRECT - mélanger les blocs :
 Chaque bloc "Nx" doit être COMPLÈTEMENT terminé avant de passer au suivant.
 
 IMPORTANT : Dans chaque étape, TOUJOURS inclure les paramètres spécifiques :
-- Vélo : cadence_rpm si mentionné, power_percent_low/high si mentionné
-- Course : cap_percent_low/high si mentionné
+- Vélo : cadence_rpm si mentionné, power_percent_low/high ou watts_low/high si mentionné
+- Course : cap_percent_low/high si mentionné, pace_min_km_low/high ou speed_kmh_low/high si mentionné
 - Natation : swim_stroke, swim_equipment, swim_intensity si mentionnés
 
 TOUJOURS dérouler EXPLICITEMENT chaque étape en objets JSON séparés.
@@ -436,6 +455,27 @@ export async function parseWithGroq(description: string, apiKeys: string | strin
         low: step.cap_percent_low,
         high: step.cap_percent_high || step.cap_percent_low,
       };
+    }
+
+    // Allures explicites (course à pied) - priorité sur les vitesses
+    if (step.pace_min_km_low !== undefined || step.pace_min_km_high !== undefined) {
+      const low = step.pace_min_km_low ?? step.pace_min_km_high!;
+      const high = step.pace_min_km_high ?? step.pace_min_km_low!;
+      workoutStep.details.paceMinKm = { low, high };
+      // Calculer la vitesse en km/h
+      workoutStep.details.speedKmh = {
+        low: 60 / low,
+        high: 60 / high,
+      };
+    } else if (step.speed_kmh_low !== undefined || step.speed_kmh_high !== undefined) {
+      // Convertir km/h en min/km
+      const speedLow = step.speed_kmh_low ?? step.speed_kmh_high!;
+      const speedHigh = step.speed_kmh_high ?? step.speed_kmh_low!;
+      workoutStep.details.paceMinKm = {
+        low: 60 / speedLow,   // Vitesse basse = allure lente
+        high: 60 / speedHigh, // Vitesse haute = allure rapide
+      };
+      workoutStep.details.speedKmh = { low: speedLow, high: speedHigh };
     }
 
     // Ajouter les champs natation

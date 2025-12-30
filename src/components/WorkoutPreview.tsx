@@ -35,6 +35,26 @@ function formatPace(minutes: number): string {
   return `${mins}'${secs.toString().padStart(2, '0')}`;
 }
 
+// Formater une plage d'allures, avec gestion des valeurs uniques
+// Si low ≈ high (moins de 2 secondes d'écart), afficher une petite plage de 1 seconde
+function formatPaceRange(low: number, high: number): string {
+  const diffSeconds = Math.abs(low - high) * 60;
+
+  if (diffSeconds < 2) {
+    // Valeur unique : créer une plage de 1 seconde (ex: 4:59 - 5:00)
+    const baseSeconds = Math.round(Math.max(low, high) * 60);
+    const highMins = Math.floor(baseSeconds / 60);
+    const highSecs = baseSeconds % 60;
+    const lowSeconds = baseSeconds - 1;
+    const lowMins = Math.floor(lowSeconds / 60);
+    const lowSecs = lowSeconds % 60;
+    return `${lowMins}'${lowSecs.toString().padStart(2, '0')} - ${highMins}'${highSecs.toString().padStart(2, '0')}/km`;
+  }
+
+  // Plage normale
+  return `${formatPace(low)} - ${formatPace(high)}/km`;
+}
+
 // Formater la distance
 function formatDistance(meters: number): string {
   if (meters >= 1000) {
@@ -193,16 +213,20 @@ function StepRow({ step, showIndex, index }: { step: WorkoutStep; showIndex?: bo
             </span>
           )}
 
-          {/* Allure */}
+          {/* Allure course à pied : allure /km + (km/h) entre parenthèses si disponible */}
           {step.details.paceMinKm && (
             <span className="flex items-center gap-1">
               <span className="font-medium">Allure:</span>
-              {formatPace(step.details.paceMinKm.low)} - {formatPace(step.details.paceMinKm.high)}/km
+              {formatPaceRange(step.details.paceMinKm.low, step.details.paceMinKm.high)}
+              {step.details.speedKmh && (
+                <span className="text-gray-500">
+                  ({step.details.speedKmh.low.toFixed(1)} - {step.details.speedKmh.high.toFixed(1)} km/h)
+                </span>
+              )}
             </span>
           )}
-
-          {/* Vitesse */}
-          {step.details.speedKmh && (
+          {/* Vitesse seule si pas d'allure (ne devrait pas arriver) */}
+          {!step.details.paceMinKm && step.details.speedKmh && (
             <span className="flex items-center gap-1">
               <span className="font-medium">Vitesse:</span>
               {step.details.speedKmh.low.toFixed(1)} - {step.details.speedKmh.high.toFixed(1)} km/h
