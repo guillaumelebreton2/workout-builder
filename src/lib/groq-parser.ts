@@ -149,46 +149,10 @@ Exemple vélo :
 - "5' récupération 80 rpm" = duration_minutes: 5, type: cooldown, cadence_rpm: 80
 - "Récupération lap" = is_lap: true, type: cooldown
 
-RÉPÉTITIONS - TRÈS CRITIQUE - LIRE ATTENTIVEMENT :
-Tu DOIS créer UN OBJET JSON SÉPARÉ pour CHAQUE répétition. Ne JAMAIS regrouper.
-
-RÈGLE D'OR - COMPTER PRÉCISÉMENT :
-- "3x" → EXACTEMENT 6 objets (3 efforts + 3 récups)
-- "5x" → EXACTEMENT 10 objets (5 efforts + 5 récups)
-- "8x" → EXACTEMENT 16 objets (8 efforts + 8 récups)
-- "10x" → EXACTEMENT 20 objets (10 efforts + 10 récups)
-VÉRIFIE ton comptage ! Le nombre d'efforts doit être ÉGAL au chiffre devant "x".
-
-EXEMPLE CONCRET - "3x 1' vite / 1' lent" (course) :
-Tu DOIS générer EXACTEMENT 6 objets :
-  {"duration_minutes": 1, "type": "active", "name": "Vite"},
-  {"duration_minutes": 1, "type": "recovery", "name": "Récup"},
-  {"duration_minutes": 1, "type": "active", "name": "Vite"},
-  {"duration_minutes": 1, "type": "recovery", "name": "Récup"},
-  {"duration_minutes": 1, "type": "active", "name": "Vite"},
-  {"duration_minutes": 1, "type": "recovery", "name": "Récup"}
-
-EXEMPLE CONCRET - "3x (1' 40rpm / 1' 80rpm)" (vélo) :
-Tu DOIS générer EXACTEMENT 6 objets AVEC cadence_rpm :
-  {"duration_minutes": 1, "type": "active", "name": "Force", "cadence_rpm": 40},
-  {"duration_minutes": 1, "type": "recovery", "name": "Récup", "cadence_rpm": 80},
-  {"duration_minutes": 1, "type": "active", "name": "Force", "cadence_rpm": 40},
-  {"duration_minutes": 1, "type": "recovery", "name": "Récup", "cadence_rpm": 80},
-  {"duration_minutes": 1, "type": "active", "name": "Force", "cadence_rpm": 40},
-  {"duration_minutes": 1, "type": "recovery", "name": "Récup", "cadence_rpm": 80}
-
-EXEMPLE CONCRET - "5x 800m avec 2' récup" :
-Tu DOIS générer EXACTEMENT 10 objets :
-  {"distance_meters": 800, "type": "active", "name": "800m"},
-  {"duration_minutes": 2, "type": "recovery", "name": "Récup"},
-  {"distance_meters": 800, "type": "active", "name": "800m"},
-  {"duration_minutes": 2, "type": "recovery", "name": "Récup"},
-  {"distance_meters": 800, "type": "active", "name": "800m"},
-  {"duration_minutes": 2, "type": "recovery", "name": "Récup"},
-  {"distance_meters": 800, "type": "active", "name": "800m"},
-  {"duration_minutes": 2, "type": "recovery", "name": "Récup"},
-  {"distance_meters": 800, "type": "active", "name": "800m"},
-  {"duration_minutes": 2, "type": "recovery", "name": "Récup"}
+RÉPÉTITIONS :
+- Créer UN OBJET JSON SÉPARÉ pour CHAQUE répétition
+- "Nx" = N efforts + N récups = 2N objets au total
+- Exemple : "3x (1' vite / 1' récup)" → 6 objets : [effort, récup, effort, récup, effort, récup]
 
 CE QUI EST INTERDIT :
 - NE JAMAIS utiliser un champ "repetitions"
