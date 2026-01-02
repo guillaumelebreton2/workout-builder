@@ -73,7 +73,19 @@ TYPES D'ÉTAPES :
 - recovery : récupération ENTRE les efforts (courte, généralement < 5min)
 - cooldown : retour au calme (fin de séance)
 - rest : repos complet
-- other : exercices annexes (gammes, gainage, abdos, renforcement, étirements, PPG, éducatifs hors nage)
+- other : exercices annexes (gammes, gainage, abdos, renforcement, étirements, PPG, circuit, éducatifs hors nage)
+
+RÈGLES POUR TYPE "other" :
+- Les exercices de type "other" ont TOUJOURS is_lap: true (durée libre, appui sur bouton lap)
+- Exemples : gammes, gainage, abdos, renfo, circuit, étirements, PPG → is_lap: true
+
+SÉPARATION DES ÉTAPES :
+- Si une ligne contient "X + Y" ou "X et Y" avec deux activités DIFFÉRENTES, créer 2 étapes séparées
+- Exemple : "Échauffement hors stade + Gammes" → 2 étapes :
+  1. { type: "warmup", name: "Échauffement", notes: "Échauffement hors stade", is_lap: true }
+  2. { type: "other", name: "Gammes", is_lap: true }
+- Exemple : "Circuit abdos gainage" → 1 étape :
+  { type: "other", name: "Circuit abdos gainage", is_lap: true }
 
 NOM ET NOTES :
 - name : nom COURT de l'étape pour l'affichage (ex: "Bloc 1", "Gammes", "Échauffement")
