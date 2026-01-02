@@ -82,7 +82,7 @@ const translations: Record<Language, {
       },
       {
         title: '10. Contact Us',
-        content: 'If you have any questions about this Privacy Policy, please contact us at: <a href="mailto:music.music59music@gmail.com" class="text-blue-600 hover:underline">music.music59music@gmail.com</a>',
+        content: 'If you have any questions about this Privacy Policy, please contact us at: <a href="mailto:workoutbuilder.contact@gmail.com" class="text-blue-600 hover:underline">workoutbuilder.contact@gmail.com</a>',
       },
     ],
   },
@@ -149,7 +149,7 @@ const translations: Record<Language, {
       },
       {
         title: '10. Nous contacter',
-        content: 'Si vous avez des questions concernant cette Politique de Confidentialité, veuillez nous contacter à : <a href="mailto:music.music59music@gmail.com" class="text-blue-600 hover:underline">music.music59music@gmail.com</a>',
+        content: 'Si vous avez des questions concernant cette Politique de Confidentialité, veuillez nous contacter à : <a href="mailto:workoutbuilder.contact@gmail.com" class="text-blue-600 hover:underline">workoutbuilder.contact@gmail.com</a>',
       },
     ],
   },
@@ -216,7 +216,7 @@ const translations: Record<Language, {
       },
       {
         title: '10. Contáctenos',
-        content: 'Si tiene alguna pregunta sobre esta Política de Privacidad, contáctenos en: <a href="mailto:music.music59music@gmail.com" class="text-blue-600 hover:underline">music.music59music@gmail.com</a>',
+        content: 'Si tiene alguna pregunta sobre esta Política de Privacidad, contáctenos en: <a href="mailto:workoutbuilder.contact@gmail.com" class="text-blue-600 hover:underline">workoutbuilder.contact@gmail.com</a>',
       },
     ],
   },
@@ -283,7 +283,7 @@ const translations: Record<Language, {
       },
       {
         title: '10. Kontaktieren Sie uns',
-        content: 'Wenn Sie Fragen zu dieser Datenschutzrichtlinie haben, kontaktieren Sie uns unter: <a href="mailto:music.music59music@gmail.com" class="text-blue-600 hover:underline">music.music59music@gmail.com</a>',
+        content: 'Wenn Sie Fragen zu dieser Datenschutzrichtlinie haben, kontaktieren Sie uns unter: <a href="mailto:workoutbuilder.contact@gmail.com" class="text-blue-600 hover:underline">workoutbuilder.contact@gmail.com</a>',
       },
     ],
   },
@@ -350,7 +350,7 @@ const translations: Record<Language, {
       },
       {
         title: '10. Contattaci',
-        content: 'Se hai domande su questa Informativa sulla Privacy, contattaci all\'indirizzo: <a href="mailto:music.music59music@gmail.com" class="text-blue-600 hover:underline">music.music59music@gmail.com</a>',
+        content: 'Se hai domande su questa Informativa sulla Privacy, contattaci all\'indirizzo: <a href="mailto:workoutbuilder.contact@gmail.com" class="text-blue-600 hover:underline">workoutbuilder.contact@gmail.com</a>',
       },
     ],
   },
