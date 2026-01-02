@@ -152,9 +152,12 @@ Exemple vélo :
 RÉPÉTITIONS - TRÈS CRITIQUE - LIRE ATTENTIVEMENT :
 Tu DOIS créer UN OBJET JSON SÉPARÉ pour CHAQUE répétition. Ne JAMAIS regrouper.
 
-RÈGLE D'OR : Si tu vois "3x", tu DOIS avoir AU MOINS 6 objets dans steps (3 efforts + 3 récups).
-            Si tu vois "5x", tu DOIS avoir AU MOINS 10 objets dans steps (5 efforts + 5 récups).
-            Si tu vois "10x", tu DOIS avoir AU MOINS 20 objets dans steps.
+RÈGLE D'OR - COMPTER PRÉCISÉMENT :
+- "3x" → EXACTEMENT 6 objets (3 efforts + 3 récups)
+- "5x" → EXACTEMENT 10 objets (5 efforts + 5 récups)
+- "8x" → EXACTEMENT 16 objets (8 efforts + 8 récups)
+- "10x" → EXACTEMENT 20 objets (10 efforts + 10 récups)
+VÉRIFIE ton comptage ! Le nombre d'efforts doit être ÉGAL au chiffre devant "x".
 
 EXEMPLE CONCRET - "3x 1' vite / 1' lent" (course) :
 Tu DOIS générer EXACTEMENT 6 objets :
