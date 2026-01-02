@@ -1,7 +1,15 @@
 import { WorkoutForm } from './components/WorkoutForm';
+import { PrivacyPolicy } from './components/PrivacyPolicy';
 import './index.css';
 
 function App() {
+  // Simple routing based on pathname
+  const path = window.location.pathname;
+
+  if (path === '/privacy') {
+    return <PrivacyPolicy />;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-8">
@@ -23,6 +31,9 @@ function App() {
         {/* Footer */}
         <footer className="text-center mt-8 text-sm text-gray-500">
           <p>Compatible avec Garmin Connect et les montres Garmin</p>
+          <a href="/privacy" className="text-blue-600 hover:underline mt-1 inline-block">
+            Privacy Policy
+          </a>
         </footer>
       </div>
     </div>
