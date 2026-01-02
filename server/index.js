@@ -53,6 +53,7 @@ const STEP_TYPE_MAP = {
   active: { stepTypeId: 3, stepTypeKey: 'interval' },
   recovery: { stepTypeId: 4, stepTypeKey: 'recovery' },
   rest: { stepTypeId: 5, stepTypeKey: 'rest' },
+  other: { stepTypeId: 7, stepTypeKey: 'other' },
 };
 
 // Mapping des types de durée (condition de fin)
@@ -144,7 +145,7 @@ function createGarminStep(step, stepOrder, sport) {
     exerciseName: null,
     workoutProvider: null,
     providerExerciseSourceId: null,
-    description: step.name,
+    description: step.notes || step.name,
     estimatedDistanceUnit: null,
     estimatedDurationInSecs: null,
     estimatedDistanceInMeters: null,

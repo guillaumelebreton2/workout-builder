@@ -2,7 +2,7 @@
 
 export type Sport = 'running' | 'cycling' | 'swimming';
 
-export type StepType = 'warmup' | 'active' | 'recovery' | 'cooldown' | 'rest';
+export type StepType = 'warmup' | 'active' | 'recovery' | 'cooldown' | 'rest' | 'other';
 
 export type IntensityType = 'pace' | 'heartRate' | 'power' | 'open';
 
@@ -75,6 +75,7 @@ export interface WorkoutStep {
   id: string;
   type: StepType;
   name: string;
+  notes?: string; // Description détaillée pour Garmin
   duration: Duration;
   intensity?: Intensity;
   details?: StepDetails; // Détails supplémentaires (allure, distance, %CAP)
@@ -104,6 +105,7 @@ export const STEP_TYPE_LABELS: Record<StepType, string> = {
   recovery: 'Récupération',
   cooldown: 'Retour au calme',
   rest: 'Repos',
+  other: 'Autre',
 };
 
 export const DURATION_TYPE_LABELS: Record<DurationType, string> = {

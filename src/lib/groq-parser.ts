@@ -19,8 +19,9 @@ interface ParsedStep {
   duration_seconds?: number;
   distance_meters?: number;
   is_lap: boolean;
-  type: 'warmup' | 'active' | 'recovery' | 'cooldown' | 'rest';
+  type: 'warmup' | 'active' | 'recovery' | 'cooldown' | 'rest' | 'other';
   name: string;
+  notes?: string; // Description détaillée pour Garmin
   cap_percent_low?: number;
   cap_percent_high?: number;
   repetitions?: number;
@@ -72,6 +73,13 @@ TYPES D'ÉTAPES :
 - recovery : récupération ENTRE les efforts (courte, généralement < 5min)
 - cooldown : retour au calme (fin de séance)
 - rest : repos complet
+- other : exercices annexes (gammes, gainage, abdos, renforcement, étirements, PPG, éducatifs hors nage)
+
+NOM ET NOTES :
+- name : nom COURT de l'étape pour l'affichage (ex: "Bloc 1", "Gammes", "Échauffement")
+- notes : description détaillée pour Garmin (ex: "Parcourir max distance en groupe, changer meneur tous les 400m")
+- Si la description contient des instructions spécifiques, les résumer dans notes
+- Si pas d'instructions particulières, notes peut être omis
 
 POURCENTAGES (course à pied) :
 - Extrais le pourcentage CAP/VMA UNIQUEMENT s'il est explicitement mentionné (ex: "76%-90%" ou "100%")
@@ -428,6 +436,7 @@ export async function parseWithGroq(description: string, apiKeys: string | strin
       id: generateId(),
       type: step.type as StepType,
       name: step.name || 'Étape',
+      notes: step.notes, // Description détaillée pour Garmin
       duration: {
         type: step.is_lap ? 'open' : step.distance_meters ? 'distance' : 'time',
         value: step.distance_meters ||

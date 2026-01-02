@@ -18,6 +18,7 @@ const STEP_COLORS: Record<string, string> = {
   recovery: 'bg-green-50 border-green-300 text-green-800',
   cooldown: 'bg-purple-50 border-purple-300 text-purple-800',
   rest: 'bg-gray-50 border-gray-300 text-gray-800',
+  other: 'bg-slate-50 border-slate-300 text-slate-800',
 };
 
 const ZONE_COLORS: Record<number, string> = {

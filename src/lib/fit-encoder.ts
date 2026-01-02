@@ -30,6 +30,7 @@ const FIT_INTENSITY: Record<StepType, number> = {
   warmup: 2,
   cooldown: 3,
   recovery: 4,
+  other: 0, // Traité comme active dans FIT
 };
 
 export function encodeWorkout(workout: Workout): Uint8Array {
