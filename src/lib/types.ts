@@ -177,3 +177,42 @@ export function formatDistance(meters: number): string {
 export function generateId(): string {
   return Math.random().toString(36).substring(2, 9);
 }
+
+// Séance sauvegardée (pour l'historique)
+export type WorkoutSource = 'workouts' | 'coach';
+
+export interface SavedWorkout {
+  id: string;
+  workout: Workout;
+  createdAt: string; // ISO string pour la sérialisation
+  source: WorkoutSource;
+  syncedToGarmin: boolean;
+  syncedAt?: string; // ISO string
+}
+
+// Types pour le Coach IA conversationnel
+export type ChatRole = 'user' | 'assistant';
+
+export interface ChatMessage {
+  id: string;
+  role: ChatRole;
+  content: string;
+  timestamp: string; // ISO string
+  workout?: Workout; // Si l'assistant génère une séance
+}
+
+export interface Conversation {
+  id: string;
+  title: string;
+  messages: ChatMessage[];
+  createdAt: string; // ISO string
+  updatedAt: string; // ISO string
+}
+
+// Générer un titre depuis la première question
+export function generateConversationTitle(firstMessage: string): string {
+  // Nettoyer et tronquer
+  const cleaned = firstMessage.trim().replace(/[?!.,;:]+$/, '');
+  if (cleaned.length <= 30) return cleaned;
+  return cleaned.substring(0, 30) + '...';
+}

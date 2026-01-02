@@ -3,20 +3,23 @@ import { WorkoutForm } from './components/WorkoutForm';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { Header } from './components/Header';
 import { CoachPage } from './components/CoachPage';
+import { StatsPage } from './components/StatsPage';
 import { LandingPage } from './components/LandingPage';
 import './index.css';
 
-type Page = 'home' | 'workouts' | 'coach';
+type Page = 'home' | 'workouts' | 'coach' | 'stats';
 
 function getPageFromPath(path: string): Page {
   if (path === '/workouts') return 'workouts';
   if (path === '/coach') return 'coach';
+  if (path === '/stats') return 'stats';
   return 'home';
 }
 
 function getPathFromPage(page: Page): string {
   if (page === 'workouts') return '/workouts';
   if (page === 'coach') return '/coach';
+  if (page === 'stats') return '/stats';
   return '/';
 }
 
@@ -76,6 +79,10 @@ function App() {
 
       {currentPage === 'coach' && (
         <CoachPage />
+      )}
+
+      {currentPage === 'stats' && (
+        <StatsPage />
       )}
     </div>
   );

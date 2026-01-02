@@ -3,6 +3,7 @@
  * Utilise l'API non-officielle via garmin-connect
  */
 
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import pkg from 'garmin-connect';
@@ -10,6 +11,14 @@ const { GarminConnect } = pkg;
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Config Strava OAuth
+const STRAVA_CLIENT_ID = process.env.STRAVA_CLIENT_ID || '193301';
+const STRAVA_CLIENT_SECRET = process.env.STRAVA_CLIENT_SECRET;
+const FRONTEND_URL = process.env.VITE_APP_URL || 'http://localhost:5173';
+const STRAVA_AUTH_URL = 'https://www.strava.com/oauth/authorize';
+const STRAVA_TOKEN_URL = 'https://www.strava.com/oauth/token';
+const STRAVA_API_URL = 'https://www.strava.com/api/v3';
 
 app.use(cors());
 app.use(express.json());
@@ -650,6 +659,264 @@ app.post('/api/sync-garmin', async (req, res) => {
  */
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
+});
+
+// ============================================
+// STRAVA OAUTH ENDPOINTS
+// ============================================
+
+/**
+ * Démarre le flux OAuth Strava
+ * Redirige l'utilisateur vers Strava pour autorisation
+ */
+app.get('/api/strava/auth', (req, res) => {
+  if (!STRAVA_CLIENT_SECRET) {
+    return res.status(500).json({ error: 'STRAVA_CLIENT_SECRET non configuré' });
+  }
+
+  const redirectUri = `${req.protocol}://${req.get('host')}/api/strava/callback`;
+  const scope = 'activity:read_all,profile:read_all';
+
+  const authUrl = `${STRAVA_AUTH_URL}?` + new URLSearchParams({
+    client_id: STRAVA_CLIENT_ID,
+    redirect_uri: redirectUri,
+    response_type: 'code',
+    scope: scope,
+    approval_prompt: 'auto', // 'force' pour toujours demander
+  });
+
+  console.log('Redirection OAuth Strava:', authUrl);
+  res.redirect(authUrl);
+});
+
+/**
+ * Callback OAuth Strava
+ * Échange le code contre un access_token
+ */
+app.get('/api/strava/callback', async (req, res) => {
+  const { code, error } = req.query;
+
+  if (error) {
+    console.error('Erreur OAuth Strava:', error);
+    return res.redirect(`${FRONTEND_URL}/coach?strava_error=${error}`);
+  }
+
+  if (!code) {
+    return res.redirect(`${FRONTEND_URL}/coach?strava_error=no_code`);
+  }
+
+  try {
+    const redirectUri = `${req.protocol}://${req.get('host')}/api/strava/callback`;
+
+    // Échanger le code contre un token
+    const tokenResponse = await fetch(STRAVA_TOKEN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client_id: STRAVA_CLIENT_ID,
+        client_secret: STRAVA_CLIENT_SECRET,
+        code: code,
+        grant_type: 'authorization_code',
+      }),
+    });
+
+    if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text();
+      console.error('Erreur token Strava:', errorText);
+      return res.redirect(`${FRONTEND_URL}/coach?strava_error=token_exchange_failed`);
+    }
+
+    const tokenData = await tokenResponse.json();
+    console.log('Token Strava reçu pour:', tokenData.athlete?.firstname);
+
+    // Rediriger vers le frontend avec les tokens encodés
+    // Note: En production, utiliser un state/session plutôt que passer les tokens en URL
+    const params = new URLSearchParams({
+      strava_connected: 'true',
+      access_token: tokenData.access_token,
+      refresh_token: tokenData.refresh_token,
+      expires_at: tokenData.expires_at,
+      athlete_id: tokenData.athlete?.id,
+      athlete_name: `${tokenData.athlete?.firstname || ''} ${tokenData.athlete?.lastname || ''}`.trim(),
+    });
+
+    res.redirect(`${FRONTEND_URL}/coach?${params}`);
+  } catch (err) {
+    console.error('Erreur callback Strava:', err);
+    res.redirect(`${FRONTEND_URL}/coach?strava_error=server_error`);
+  }
+});
+
+/**
+ * Rafraîchir le token Strava
+ */
+app.post('/api/strava/refresh', async (req, res) => {
+  const { refresh_token } = req.body;
+
+  if (!refresh_token) {
+    return res.status(400).json({ error: 'refresh_token requis' });
+  }
+
+  try {
+    const tokenResponse = await fetch(STRAVA_TOKEN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client_id: STRAVA_CLIENT_ID,
+        client_secret: STRAVA_CLIENT_SECRET,
+        refresh_token: refresh_token,
+        grant_type: 'refresh_token',
+      }),
+    });
+
+    if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text();
+      console.error('Erreur refresh Strava:', errorText);
+      return res.status(401).json({ error: 'Token refresh failed' });
+    }
+
+    const tokenData = await tokenResponse.json();
+    res.json({
+      access_token: tokenData.access_token,
+      refresh_token: tokenData.refresh_token,
+      expires_at: tokenData.expires_at,
+    });
+  } catch (err) {
+    console.error('Erreur refresh Strava:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+/**
+ * Récupérer les activités Strava
+ */
+app.get('/api/strava/activities', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Token requis' });
+  }
+
+  const accessToken = authHeader.split(' ')[1];
+  const { page = 1, per_page = 30, after, before } = req.query;
+
+  try {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      per_page: per_page.toString(),
+    });
+    if (after) params.append('after', after);
+    if (before) params.append('before', before);
+
+    const response = await fetch(`${STRAVA_API_URL}/athlete/activities?${params}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        return res.status(401).json({ error: 'Token expiré', needsRefresh: true });
+      }
+      throw new Error(`Strava API error: ${response.status}`);
+    }
+
+    const activities = await response.json();
+    res.json(activities);
+  } catch (err) {
+    console.error('Erreur activités Strava:', err);
+    res.status(500).json({ error: 'Failed to fetch activities' });
+  }
+});
+
+/**
+ * Récupérer le profil de l'athlète Strava
+ */
+app.get('/api/strava/athlete', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Token requis' });
+  }
+
+  const accessToken = authHeader.split(' ')[1];
+
+  try {
+    const response = await fetch(`${STRAVA_API_URL}/athlete`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        return res.status(401).json({ error: 'Token expiré', needsRefresh: true });
+      }
+      throw new Error(`Strava API error: ${response.status}`);
+    }
+
+    const athlete = await response.json();
+    res.json(athlete);
+  } catch (err) {
+    console.error('Erreur profil Strava:', err);
+    res.status(500).json({ error: 'Failed to fetch athlete profile' });
+  }
+});
+
+// ============================================
+// AI (GROQ) PROXY ENDPOINT
+// ============================================
+
+const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const GROQ_API_KEYS = [
+  process.env.VITE_GROQ_API_KEY,
+  process.env.VITE_GROQ_API_KEY_2,
+].filter(Boolean);
+
+let currentGroqKeyIndex = 0;
+
+function getNextGroqApiKey() {
+  if (GROQ_API_KEYS.length === 0) {
+    throw new Error('Aucune clé API Groq configurée');
+  }
+  const key = GROQ_API_KEYS[currentGroqKeyIndex];
+  currentGroqKeyIndex = (currentGroqKeyIndex + 1) % GROQ_API_KEYS.length;
+  return key;
+}
+
+/**
+ * Proxy pour l'API Groq (évite les problèmes CORS)
+ */
+app.post('/api/ai/chat', async (req, res) => {
+  const { messages, model = 'llama-3.3-70b-versatile' } = req.body;
+
+  if (!messages || !Array.isArray(messages)) {
+    return res.status(400).json({ error: 'Messages requis' });
+  }
+
+  try {
+    const apiKey = getNextGroqApiKey();
+
+    const response = await fetch(GROQ_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        temperature: 0.7,
+        max_tokens: 1024,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error('Erreur Groq API:', error);
+      return res.status(response.status).json({ error: `Groq API error: ${response.status}` });
+    }
+
+    const data = await response.json();
+    res.json(data);
+  } catch (err) {
+    console.error('Erreur proxy AI:', err);
+    res.status(500).json({ error: 'Erreur serveur AI' });
+  }
 });
 
 app.listen(PORT, () => {

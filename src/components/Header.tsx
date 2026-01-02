@@ -1,6 +1,6 @@
 interface HeaderProps {
-  currentPage: 'home' | 'workouts' | 'coach';
-  onNavigate: (page: 'home' | 'workouts' | 'coach') => void;
+  currentPage: 'home' | 'workouts' | 'coach' | 'stats';
+  onNavigate: (page: 'home' | 'workouts' | 'coach' | 'stats') => void;
 }
 
 export function Header({ currentPage, onNavigate }: HeaderProps) {
@@ -59,6 +59,16 @@ export function Header({ currentPage, onNavigate }: HeaderProps) {
               }`}
             >
               Coach IA
+            </button>
+            <button
+              onClick={() => onNavigate('stats')}
+              className={`px-3 py-2 rounded-lg font-medium transition-colors text-sm md:text-base md:px-4 ${
+                currentPage === 'stats'
+                  ? 'bg-orange-100 text-orange-700'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              Stats
             </button>
           </nav>
         </div>
