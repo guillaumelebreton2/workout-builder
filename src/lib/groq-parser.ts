@@ -62,6 +62,8 @@ DURÉES - TRÈS IMPORTANT :
 - "1'30" ou "1min30" = 1 minute 30 secondes donc duration_minutes: 1, duration_seconds: 30
 - "R°" ou "récup" signifie récupération
 - NE JAMAIS confondre minutes et secondes !
+- Si AUCUNE durée n'est spécifiée → is_lap: true (appui sur bouton lap pour terminer)
+- Exemples sans durée : "Échauffement hors stade", "Gammes", "Gainage" → is_lap: true
 
 DISTANCES :
 - "800m" = 800 mètres donc distance_meters: 800
