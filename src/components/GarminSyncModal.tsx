@@ -31,6 +31,7 @@ async function syncWorkout(email: string, password: string, workout: Workout) {
         steps: workout.steps.map(step => ({
           type: step.type,
           name: step.name,
+          notes: step.notes,
           duration: step.duration,
           details: step.details,
         })),
