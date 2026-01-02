@@ -190,6 +190,25 @@ Tu DOIS générer EXACTEMENT 10 objets :
   {"distance_meters": 800, "type": "active", "name": "800m"},
   {"duration_minutes": 2, "type": "recovery", "name": "Récup"}
 
+EXEMPLE CONCRET - "8x (1' à 95% VMA - 2' à 60% VMA)" :
+Tu DOIS générer EXACTEMENT 16 objets (compte: 1,2,3,4,5,6,7,8 efforts) :
+  {"duration_minutes": 1, "type": "active", "name": "Intervalle", "cap_percent_low": 95, "cap_percent_high": 95},
+  {"duration_minutes": 2, "type": "recovery", "name": "Récup", "cap_percent_low": 60, "cap_percent_high": 60},
+  {"duration_minutes": 1, "type": "active", "name": "Intervalle", "cap_percent_low": 95, "cap_percent_high": 95},
+  {"duration_minutes": 2, "type": "recovery", "name": "Récup", "cap_percent_low": 60, "cap_percent_high": 60},
+  {"duration_minutes": 1, "type": "active", "name": "Intervalle", "cap_percent_low": 95, "cap_percent_high": 95},
+  {"duration_minutes": 2, "type": "recovery", "name": "Récup", "cap_percent_low": 60, "cap_percent_high": 60},
+  {"duration_minutes": 1, "type": "active", "name": "Intervalle", "cap_percent_low": 95, "cap_percent_high": 95},
+  {"duration_minutes": 2, "type": "recovery", "name": "Récup", "cap_percent_low": 60, "cap_percent_high": 60},
+  {"duration_minutes": 1, "type": "active", "name": "Intervalle", "cap_percent_low": 95, "cap_percent_high": 95},
+  {"duration_minutes": 2, "type": "recovery", "name": "Récup", "cap_percent_low": 60, "cap_percent_high": 60},
+  {"duration_minutes": 1, "type": "active", "name": "Intervalle", "cap_percent_low": 95, "cap_percent_high": 95},
+  {"duration_minutes": 2, "type": "recovery", "name": "Récup", "cap_percent_low": 60, "cap_percent_high": 60},
+  {"duration_minutes": 1, "type": "active", "name": "Intervalle", "cap_percent_low": 95, "cap_percent_high": 95},
+  {"duration_minutes": 2, "type": "recovery", "name": "Récup", "cap_percent_low": 60, "cap_percent_high": 60},
+  {"duration_minutes": 1, "type": "active", "name": "Intervalle", "cap_percent_low": 95, "cap_percent_high": 95},
+  {"duration_minutes": 2, "type": "recovery", "name": "Récup", "cap_percent_low": 60, "cap_percent_high": 60}
+
 CE QUI EST INTERDIT :
 - NE JAMAIS utiliser un champ "repetitions"
 - NE JAMAIS créer un seul objet pour représenter plusieurs répétitions
