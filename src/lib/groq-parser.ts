@@ -96,11 +96,17 @@ NOM ET NOTES :
 - Si la description contient des instructions spécifiques, les résumer dans notes
 - Si pas d'instructions particulières, notes peut être omis
 
-POURCENTAGES (course à pied) - CRITIQUE :
-- Extrais le pourcentage CAP/VMA UNIQUEMENT si un CHIFFRE avec % est explicitement mentionné (ex: "76%-90%", "100%", "à 95%")
-- Si aucun pourcentage CHIFFRÉ n'est mentionné, NE PAS ajouter cap_percent_low ni cap_percent_high
-- Le simple mot "VMA" ou "allure" sans chiffre NE SIGNIFIE PAS qu'il faut ajouter un pourcentage
-- JAMAIS inventer de pourcentage ! Seulement extraire ce qui est écrit
+POURCENTAGES (course à pied) - CRITIQUE - LIRE ATTENTIVEMENT :
+- Extrais cap_percent UNIQUEMENT si un CHIFFRE avec % est ÉCRIT (ex: "76%-90%", "100%", "à 95%")
+- INTERDIT d'ajouter cap_percent si pas de chiffre % dans le texte !
+- Exemples où NE PAS ajouter de % :
+  * "parcourir la plus grande distance" → PAS de cap_percent (pas de % écrit)
+  * "groupe homogène en termes de VMA" → PAS de cap_percent (pas de % écrit)
+  * "allure libre" → PAS de cap_percent (pas de % écrit)
+  * "gérer vos allures" → PAS de cap_percent (pas de % écrit)
+- Exemples où ajouter % :
+  * "à 95% VMA" → cap_percent_low: 95, cap_percent_high: 95
+  * "entre 80-90%" → cap_percent_low: 80, cap_percent_high: 90
 
 ALLURES ET VITESSES EXPLICITES (course à pied) - TRÈS IMPORTANT :
 1. pace_min_km_low et pace_min_km_high (allure en min/km, valeur décimale) :
