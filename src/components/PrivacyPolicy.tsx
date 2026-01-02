@@ -34,7 +34,6 @@ const translations: Record<Language, {
           '<strong>Garmin Connect:</strong> If you choose to sync workouts with Garmin Connect, we use Garmin\'s official OAuth authentication. You authorize our app directly on Garmin\'s website - we never see or store your Garmin password. We only receive an access token to sync workouts on your behalf.',
           '<strong>Workout Data:</strong> The workout information you create (exercise names, durations, intensities) is processed to generate training files compatible with Garmin devices.',
           '<strong>Activity Data:</strong> If you connect your Garmin or Strava account, we may access your training activities to provide personalized coaching and analysis features.',
-          '<strong>API Keys:</strong> If you provide your own API keys (e.g., Groq), they are stored locally in your browser and never transmitted to our servers.',
         ],
       },
       {
@@ -68,7 +67,7 @@ const translations: Record<Language, {
       {
         title: '7. Your Rights',
         content: [
-          '<strong>Delete your data:</strong> Clear your browser\'s local storage to remove all stored credentials and preferences.',
+          '<strong>Delete your data:</strong> Contact us to request deletion of any data associated with your account.',
           '<strong>Disconnect services:</strong> Revoke access to Garmin Connect or Strava at any time through their respective account settings.',
           '<strong>Access your data:</strong> Contact us to request information about what data we process.',
         ],
@@ -102,7 +101,6 @@ const translations: Record<Language, {
           '<strong>Garmin Connect :</strong> Si vous choisissez de synchroniser vos séances avec Garmin Connect, nous utilisons l\'authentification OAuth officielle de Garmin. Vous autorisez notre application directement sur le site de Garmin - nous ne voyons ni ne stockons jamais votre mot de passe Garmin. Nous recevons uniquement un jeton d\'accès pour synchroniser les séances en votre nom.',
           '<strong>Données d\'entraînement :</strong> Les informations de séances que vous créez (noms d\'exercices, durées, intensités) sont traitées pour générer des fichiers compatibles avec les appareils Garmin.',
           '<strong>Données d\'activité :</strong> Si vous connectez votre compte Garmin ou Strava, nous pouvons accéder à vos activités d\'entraînement pour fournir des recommandations personnalisées.',
-          '<strong>Clés API :</strong> Si vous fournissez vos propres clés API (ex: Groq), elles sont stockées localement dans votre navigateur et ne sont jamais transmises à nos serveurs.',
         ],
       },
       {
@@ -136,7 +134,7 @@ const translations: Record<Language, {
       {
         title: '7. Vos droits',
         content: [
-          '<strong>Supprimer vos données :</strong> Effacez le stockage local de votre navigateur pour supprimer tous les identifiants et préférences stockés.',
+          '<strong>Supprimer vos données :</strong> Contactez-nous pour demander la suppression de toutes les données associées à votre compte.',
           '<strong>Déconnecter les services :</strong> Révoquez l\'accès à Garmin Connect ou Strava à tout moment via leurs paramètres de compte respectifs.',
           '<strong>Accéder à vos données :</strong> Contactez-nous pour demander des informations sur les données que nous traitons.',
         ],
@@ -170,7 +168,6 @@ const translations: Record<Language, {
           '<strong>Garmin Connect:</strong> Si elige sincronizar entrenamientos con Garmin Connect, utilizamos la autenticación OAuth oficial de Garmin. Usted autoriza nuestra aplicación directamente en el sitio web de Garmin - nunca vemos ni almacenamos su contraseña de Garmin. Solo recibimos un token de acceso para sincronizar entrenamientos en su nombre.',
           '<strong>Datos de entrenamiento:</strong> La información de entrenamiento que crea (nombres de ejercicios, duraciones, intensidades) se procesa para generar archivos compatibles con dispositivos Garmin.',
           '<strong>Datos de actividad:</strong> Si conecta su cuenta de Garmin o Strava, podemos acceder a sus actividades de entrenamiento para proporcionar recomendaciones personalizadas.',
-          '<strong>Claves API:</strong> Si proporciona sus propias claves API (ej: Groq), se almacenan localmente en su navegador y nunca se transmiten a nuestros servidores.',
         ],
       },
       {
@@ -204,7 +201,7 @@ const translations: Record<Language, {
       {
         title: '7. Sus derechos',
         content: [
-          '<strong>Eliminar sus datos:</strong> Borre el almacenamiento local de su navegador para eliminar todas las credenciales y preferencias almacenadas.',
+          '<strong>Eliminar sus datos:</strong> Contáctenos para solicitar la eliminación de cualquier dato asociado con su cuenta.',
           '<strong>Desconectar servicios:</strong> Revoque el acceso a Garmin Connect o Strava en cualquier momento a través de sus respectivas configuraciones de cuenta.',
           '<strong>Acceder a sus datos:</strong> Contáctenos para solicitar información sobre los datos que procesamos.',
         ],
@@ -238,7 +235,6 @@ const translations: Record<Language, {
           '<strong>Garmin Connect:</strong> Wenn Sie Workouts mit Garmin Connect synchronisieren, verwenden wir die offizielle OAuth-Authentifizierung von Garmin. Sie autorisieren unsere App direkt auf der Garmin-Website - wir sehen oder speichern niemals Ihr Garmin-Passwort. Wir erhalten nur ein Zugriffstoken, um Workouts in Ihrem Namen zu synchronisieren.',
           '<strong>Trainingsdaten:</strong> Die Trainingsinformationen, die Sie erstellen (Übungsnamen, Dauer, Intensitäten), werden verarbeitet, um Dateien zu generieren, die mit Garmin-Geräten kompatibel sind.',
           '<strong>Aktivitätsdaten:</strong> Wenn Sie Ihr Garmin- oder Strava-Konto verbinden, können wir auf Ihre Trainingsaktivitäten zugreifen, um personalisierte Empfehlungen zu geben.',
-          '<strong>API-Schlüssel:</strong> Wenn Sie Ihre eigenen API-Schlüssel angeben (z.B. Groq), werden diese lokal in Ihrem Browser gespeichert und niemals an unsere Server übertragen.',
         ],
       },
       {
@@ -272,7 +268,7 @@ const translations: Record<Language, {
       {
         title: '7. Ihre Rechte',
         content: [
-          '<strong>Ihre Daten löschen:</strong> Löschen Sie den lokalen Speicher Ihres Browsers, um alle gespeicherten Anmeldedaten und Einstellungen zu entfernen.',
+          '<strong>Ihre Daten löschen:</strong> Kontaktieren Sie uns, um die Löschung aller mit Ihrem Konto verbundenen Daten zu beantragen.',
           '<strong>Dienste trennen:</strong> Widerrufen Sie den Zugriff auf Garmin Connect oder Strava jederzeit über deren jeweilige Kontoeinstellungen.',
           '<strong>Auf Ihre Daten zugreifen:</strong> Kontaktieren Sie uns, um Informationen über die von uns verarbeiteten Daten anzufordern.',
         ],
@@ -306,7 +302,6 @@ const translations: Record<Language, {
           '<strong>Garmin Connect:</strong> Se scegli di sincronizzare gli allenamenti con Garmin Connect, utilizziamo l\'autenticazione OAuth ufficiale di Garmin. Autorizzi la nostra app direttamente sul sito web di Garmin - non vediamo né memorizziamo mai la tua password Garmin. Riceviamo solo un token di accesso per sincronizzare gli allenamenti per tuo conto.',
           '<strong>Dati di allenamento:</strong> Le informazioni sugli allenamenti che crei (nomi degli esercizi, durate, intensità) vengono elaborate per generare file compatibili con i dispositivi Garmin.',
           '<strong>Dati delle attività:</strong> Se colleghi il tuo account Garmin o Strava, potremmo accedere alle tue attività di allenamento per fornire raccomandazioni personalizzate.',
-          '<strong>Chiavi API:</strong> Se fornisci le tue chiavi API (es: Groq), vengono memorizzate localmente nel tuo browser e non vengono mai trasmesse ai nostri server.',
         ],
       },
       {
@@ -340,7 +335,7 @@ const translations: Record<Language, {
       {
         title: '7. I tuoi diritti',
         content: [
-          '<strong>Eliminare i tuoi dati:</strong> Cancella la memoria locale del tuo browser per rimuovere tutte le credenziali e preferenze memorizzate.',
+          '<strong>Eliminare i tuoi dati:</strong> Contattaci per richiedere l\'eliminazione di qualsiasi dato associato al tuo account.',
           '<strong>Disconnettere i servizi:</strong> Revoca l\'accesso a Garmin Connect o Strava in qualsiasi momento attraverso le rispettive impostazioni dell\'account.',
           '<strong>Accedere ai tuoi dati:</strong> Contattaci per richiedere informazioni sui dati che elaboriamo.',
         ],
