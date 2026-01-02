@@ -187,11 +187,18 @@ function StepRow({ step, showIndex, index }: { step: WorkoutStep; showIndex?: bo
           </span>
         )}
         <div className="flex-1">
-          <span className="font-medium">{step.name}</span>
-          {step.intensity?.zone && (
-            <span className="ml-2 text-xs opacity-75">
-              Zone {step.intensity.zone}
-            </span>
+          <div>
+            <span className="font-medium">{step.name}</span>
+            {step.intensity?.zone && (
+              <span className="ml-2 text-xs opacity-75">
+                Zone {step.intensity.zone}
+              </span>
+            )}
+          </div>
+          {step.notes && step.notes !== step.name && (
+            <div className="text-xs text-gray-500 mt-0.5 line-clamp-2">
+              {step.notes}
+            </div>
           )}
         </div>
         <span className="text-sm font-mono font-medium">
