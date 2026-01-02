@@ -31,7 +31,7 @@ const translations: Record<Language, {
       {
         title: '2. Information We Collect',
         content: [
-          '<strong>Garmin Connect Credentials:</strong> If you choose to sync workouts with Garmin Connect, we temporarily process your Garmin credentials to authenticate with Garmin\'s services. These credentials are encrypted locally on your device and are never stored on our servers.',
+          '<strong>Garmin Connect:</strong> If you choose to sync workouts with Garmin Connect, we use Garmin\'s official OAuth authentication. You authorize our app directly on Garmin\'s website - we never see or store your Garmin password. We only receive an access token to sync workouts on your behalf.',
           '<strong>Workout Data:</strong> The workout information you create (exercise names, durations, intensities) is processed to generate training files compatible with Garmin devices.',
           '<strong>Activity Data:</strong> If you connect your Garmin or Strava account, we may access your training activities to provide personalized coaching and analysis features.',
           '<strong>API Keys:</strong> If you provide your own API keys (e.g., Groq), they are stored locally in your browser and never transmitted to our servers.',
@@ -49,8 +49,8 @@ const translations: Record<Language, {
       {
         title: '4. Data Storage and Security',
         content: [
-          'Your Garmin credentials are encrypted using AES-GCM encryption with a PIN you choose. The encrypted data is stored only in your browser\'s local storage.',
-          'We do not store your personal data, workout history, or credentials on our servers.',
+          'Access tokens from Garmin and Strava are stored securely and used only to sync data on your behalf.',
+          'We do not store your personal data, workout history, or passwords on our servers.',
           'Workout data is processed in real-time and is not retained after your session ends.',
         ],
       },
@@ -99,7 +99,7 @@ const translations: Record<Language, {
       {
         title: '2. Informations que nous collectons',
         content: [
-          '<strong>Identifiants Garmin Connect :</strong> Si vous choisissez de synchroniser vos séances avec Garmin Connect, nous traitons temporairement vos identifiants Garmin pour l\'authentification. Ces identifiants sont chiffrés localement sur votre appareil et ne sont jamais stockés sur nos serveurs.',
+          '<strong>Garmin Connect :</strong> Si vous choisissez de synchroniser vos séances avec Garmin Connect, nous utilisons l\'authentification OAuth officielle de Garmin. Vous autorisez notre application directement sur le site de Garmin - nous ne voyons ni ne stockons jamais votre mot de passe Garmin. Nous recevons uniquement un jeton d\'accès pour synchroniser les séances en votre nom.',
           '<strong>Données d\'entraînement :</strong> Les informations de séances que vous créez (noms d\'exercices, durées, intensités) sont traitées pour générer des fichiers compatibles avec les appareils Garmin.',
           '<strong>Données d\'activité :</strong> Si vous connectez votre compte Garmin ou Strava, nous pouvons accéder à vos activités d\'entraînement pour fournir des recommandations personnalisées.',
           '<strong>Clés API :</strong> Si vous fournissez vos propres clés API (ex: Groq), elles sont stockées localement dans votre navigateur et ne sont jamais transmises à nos serveurs.',
@@ -117,8 +117,8 @@ const translations: Record<Language, {
       {
         title: '4. Stockage et sécurité des données',
         content: [
-          'Vos identifiants Garmin sont chiffrés avec un algorithme AES-GCM et un code PIN que vous choisissez. Les données chiffrées sont stockées uniquement dans le stockage local de votre navigateur.',
-          'Nous ne stockons pas vos données personnelles, historique d\'entraînement ou identifiants sur nos serveurs.',
+          'Les jetons d\'accès de Garmin et Strava sont stockés de manière sécurisée et utilisés uniquement pour synchroniser les données en votre nom.',
+          'Nous ne stockons pas vos données personnelles, historique d\'entraînement ou mots de passe sur nos serveurs.',
           'Les données d\'entraînement sont traitées en temps réel et ne sont pas conservées après la fin de votre session.',
         ],
       },
@@ -167,7 +167,7 @@ const translations: Record<Language, {
       {
         title: '2. Información que recopilamos',
         content: [
-          '<strong>Credenciales de Garmin Connect:</strong> Si elige sincronizar entrenamientos con Garmin Connect, procesamos temporalmente sus credenciales de Garmin para autenticación. Estas credenciales se cifran localmente en su dispositivo y nunca se almacenan en nuestros servidores.',
+          '<strong>Garmin Connect:</strong> Si elige sincronizar entrenamientos con Garmin Connect, utilizamos la autenticación OAuth oficial de Garmin. Usted autoriza nuestra aplicación directamente en el sitio web de Garmin - nunca vemos ni almacenamos su contraseña de Garmin. Solo recibimos un token de acceso para sincronizar entrenamientos en su nombre.',
           '<strong>Datos de entrenamiento:</strong> La información de entrenamiento que crea (nombres de ejercicios, duraciones, intensidades) se procesa para generar archivos compatibles con dispositivos Garmin.',
           '<strong>Datos de actividad:</strong> Si conecta su cuenta de Garmin o Strava, podemos acceder a sus actividades de entrenamiento para proporcionar recomendaciones personalizadas.',
           '<strong>Claves API:</strong> Si proporciona sus propias claves API (ej: Groq), se almacenan localmente en su navegador y nunca se transmiten a nuestros servidores.',
@@ -185,8 +185,8 @@ const translations: Record<Language, {
       {
         title: '4. Almacenamiento y seguridad de datos',
         content: [
-          'Sus credenciales de Garmin se cifran usando encriptación AES-GCM con un PIN que usted elige. Los datos cifrados se almacenan solo en el almacenamiento local de su navegador.',
-          'No almacenamos sus datos personales, historial de entrenamientos o credenciales en nuestros servidores.',
+          'Los tokens de acceso de Garmin y Strava se almacenan de forma segura y se utilizan solo para sincronizar datos en su nombre.',
+          'No almacenamos sus datos personales, historial de entrenamientos o contraseñas en nuestros servidores.',
           'Los datos de entrenamiento se procesan en tiempo real y no se retienen después de que termina su sesión.',
         ],
       },
@@ -235,7 +235,7 @@ const translations: Record<Language, {
       {
         title: '2. Informationen, die wir sammeln',
         content: [
-          '<strong>Garmin Connect-Anmeldedaten:</strong> Wenn Sie Workouts mit Garmin Connect synchronisieren, verarbeiten wir vorübergehend Ihre Garmin-Anmeldedaten zur Authentifizierung. Diese Anmeldedaten werden lokal auf Ihrem Gerät verschlüsselt und niemals auf unseren Servern gespeichert.',
+          '<strong>Garmin Connect:</strong> Wenn Sie Workouts mit Garmin Connect synchronisieren, verwenden wir die offizielle OAuth-Authentifizierung von Garmin. Sie autorisieren unsere App direkt auf der Garmin-Website - wir sehen oder speichern niemals Ihr Garmin-Passwort. Wir erhalten nur ein Zugriffstoken, um Workouts in Ihrem Namen zu synchronisieren.',
           '<strong>Trainingsdaten:</strong> Die Trainingsinformationen, die Sie erstellen (Übungsnamen, Dauer, Intensitäten), werden verarbeitet, um Dateien zu generieren, die mit Garmin-Geräten kompatibel sind.',
           '<strong>Aktivitätsdaten:</strong> Wenn Sie Ihr Garmin- oder Strava-Konto verbinden, können wir auf Ihre Trainingsaktivitäten zugreifen, um personalisierte Empfehlungen zu geben.',
           '<strong>API-Schlüssel:</strong> Wenn Sie Ihre eigenen API-Schlüssel angeben (z.B. Groq), werden diese lokal in Ihrem Browser gespeichert und niemals an unsere Server übertragen.',
@@ -253,8 +253,8 @@ const translations: Record<Language, {
       {
         title: '4. Datenspeicherung und Sicherheit',
         content: [
-          'Ihre Garmin-Anmeldedaten werden mit AES-GCM-Verschlüsselung und einer von Ihnen gewählten PIN verschlüsselt. Die verschlüsselten Daten werden nur im lokalen Speicher Ihres Browsers gespeichert.',
-          'Wir speichern keine persönlichen Daten, Trainingshistorie oder Anmeldedaten auf unseren Servern.',
+          'Zugriffstoken von Garmin und Strava werden sicher gespeichert und nur verwendet, um Daten in Ihrem Namen zu synchronisieren.',
+          'Wir speichern keine persönlichen Daten, Trainingshistorie oder Passwörter auf unseren Servern.',
           'Trainingsdaten werden in Echtzeit verarbeitet und nach Ende Ihrer Sitzung nicht aufbewahrt.',
         ],
       },
@@ -303,7 +303,7 @@ const translations: Record<Language, {
       {
         title: '2. Informazioni che raccogliamo',
         content: [
-          '<strong>Credenziali Garmin Connect:</strong> Se scegli di sincronizzare gli allenamenti con Garmin Connect, elaboriamo temporaneamente le tue credenziali Garmin per l\'autenticazione. Queste credenziali sono crittografate localmente sul tuo dispositivo e non vengono mai memorizzate sui nostri server.',
+          '<strong>Garmin Connect:</strong> Se scegli di sincronizzare gli allenamenti con Garmin Connect, utilizziamo l\'autenticazione OAuth ufficiale di Garmin. Autorizzi la nostra app direttamente sul sito web di Garmin - non vediamo né memorizziamo mai la tua password Garmin. Riceviamo solo un token di accesso per sincronizzare gli allenamenti per tuo conto.',
           '<strong>Dati di allenamento:</strong> Le informazioni sugli allenamenti che crei (nomi degli esercizi, durate, intensità) vengono elaborate per generare file compatibili con i dispositivi Garmin.',
           '<strong>Dati delle attività:</strong> Se colleghi il tuo account Garmin o Strava, potremmo accedere alle tue attività di allenamento per fornire raccomandazioni personalizzate.',
           '<strong>Chiavi API:</strong> Se fornisci le tue chiavi API (es: Groq), vengono memorizzate localmente nel tuo browser e non vengono mai trasmesse ai nostri server.',
@@ -321,8 +321,8 @@ const translations: Record<Language, {
       {
         title: '4. Archiviazione e sicurezza dei dati',
         content: [
-          'Le tue credenziali Garmin sono crittografate utilizzando la crittografia AES-GCM con un PIN che scegli tu. I dati crittografati sono memorizzati solo nella memoria locale del tuo browser.',
-          'Non memorizziamo i tuoi dati personali, la cronologia degli allenamenti o le credenziali sui nostri server.',
+          'I token di accesso di Garmin e Strava sono memorizzati in modo sicuro e utilizzati solo per sincronizzare i dati per tuo conto.',
+          'Non memorizziamo i tuoi dati personali, la cronologia degli allenamenti o le password sui nostri server.',
           'I dati degli allenamenti vengono elaborati in tempo reale e non vengono conservati dopo la fine della sessione.',
         ],
       },
