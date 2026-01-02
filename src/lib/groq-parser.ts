@@ -18,13 +18,16 @@ interface ParsedStep {
   duration_minutes?: number;
   duration_seconds?: number;
   distance_meters?: number;
-  is_lap: boolean;
-  type: 'warmup' | 'active' | 'recovery' | 'cooldown' | 'rest' | 'other';
-  name: string;
+  is_lap?: boolean;
+  type: 'warmup' | 'active' | 'recovery' | 'cooldown' | 'rest' | 'other' | 'repeat';
+  name?: string;
   notes?: string; // Description détaillée pour Garmin
   cap_percent_low?: number;
   cap_percent_high?: number;
   repetitions?: number;
+  // Nouveau format pour les répétitions
+  count?: number;
+  pattern?: ParsedStep[];
   // Allures/vitesses explicites (course à pied)
   pace_min_km_low?: number;  // Allure en min/km (ex: 4.5 = 4:30/km)
   pace_min_km_high?: number;
@@ -149,69 +152,48 @@ Exemple vélo :
 - "5' récupération 80 rpm" = duration_minutes: 5, type: cooldown, cadence_rpm: 80
 - "Récupération lap" = is_lap: true, type: cooldown
 
-RÉPÉTITIONS - TRÈS CRITIQUE - LIRE ATTENTIVEMENT :
-Tu DOIS créer UN OBJET JSON SÉPARÉ pour CHAQUE répétition. Ne JAMAIS regrouper.
+RÉPÉTITIONS - UTILISER type: "repeat" :
+Pour les répétitions (Nx), créer UN SEUL objet avec type: "repeat", count: N, et pattern: [...]
+Le code se chargera de dérouler les répétitions.
 
-RÈGLE D'OR - COMPTER PRÉCISÉMENT :
-- "3x" → EXACTEMENT 6 objets (3 efforts + 3 récups)
-- "5x" → EXACTEMENT 10 objets (5 efforts + 5 récups)
-- "8x" → EXACTEMENT 16 objets (8 efforts + 8 récups)
-- "10x" → EXACTEMENT 20 objets (10 efforts + 10 récups)
-VÉRIFIE ton comptage ! Le nombre d'efforts doit être ÉGAL au chiffre devant "x".
+EXEMPLE - "8x (1' à 95% VMA - 2' à 60% VMA)" :
+{
+  "type": "repeat",
+  "count": 8,
+  "pattern": [
+    {"duration_minutes": 1, "type": "active", "name": "Intervalle", "cap_percent_low": 95, "cap_percent_high": 95},
+    {"duration_minutes": 2, "type": "recovery", "name": "Récup", "cap_percent_low": 60, "cap_percent_high": 60}
+  ]
+}
 
-EXEMPLE CONCRET - "3x 1' vite / 1' lent" (course) :
-Tu DOIS générer EXACTEMENT 6 objets :
-  {"duration_minutes": 1, "type": "active", "name": "Vite"},
-  {"duration_minutes": 1, "type": "recovery", "name": "Récup"},
-  {"duration_minutes": 1, "type": "active", "name": "Vite"},
-  {"duration_minutes": 1, "type": "recovery", "name": "Récup"},
-  {"duration_minutes": 1, "type": "active", "name": "Vite"},
-  {"duration_minutes": 1, "type": "recovery", "name": "Récup"}
+EXEMPLE - "5x 800m avec 2' récup" :
+{
+  "type": "repeat",
+  "count": 5,
+  "pattern": [
+    {"distance_meters": 800, "type": "active", "name": "800m"},
+    {"duration_minutes": 2, "type": "recovery", "name": "Récup"}
+  ]
+}
 
-EXEMPLE CONCRET - "3x (1' 40rpm / 1' 80rpm)" (vélo) :
-Tu DOIS générer EXACTEMENT 6 objets AVEC cadence_rpm :
-  {"duration_minutes": 1, "type": "active", "name": "Force", "cadence_rpm": 40},
-  {"duration_minutes": 1, "type": "recovery", "name": "Récup", "cadence_rpm": 80},
-  {"duration_minutes": 1, "type": "active", "name": "Force", "cadence_rpm": 40},
-  {"duration_minutes": 1, "type": "recovery", "name": "Récup", "cadence_rpm": 80},
-  {"duration_minutes": 1, "type": "active", "name": "Force", "cadence_rpm": 40},
-  {"duration_minutes": 1, "type": "recovery", "name": "Récup", "cadence_rpm": 80}
+EXEMPLE - "3x (1' 40rpm / 1' 80rpm)" (vélo) :
+{
+  "type": "repeat",
+  "count": 3,
+  "pattern": [
+    {"duration_minutes": 1, "type": "active", "name": "Force", "cadence_rpm": 40},
+    {"duration_minutes": 1, "type": "recovery", "name": "Récup", "cadence_rpm": 80}
+  ]
+}
 
-EXEMPLE CONCRET - "5x 800m avec 2' récup" :
-Tu DOIS générer EXACTEMENT 10 objets :
-  {"distance_meters": 800, "type": "active", "name": "800m"},
-  {"duration_minutes": 2, "type": "recovery", "name": "Récup"},
-  {"distance_meters": 800, "type": "active", "name": "800m"},
-  {"duration_minutes": 2, "type": "recovery", "name": "Récup"},
-  {"distance_meters": 800, "type": "active", "name": "800m"},
-  {"duration_minutes": 2, "type": "recovery", "name": "Récup"},
-  {"distance_meters": 800, "type": "active", "name": "800m"},
-  {"duration_minutes": 2, "type": "recovery", "name": "Récup"},
-  {"distance_meters": 800, "type": "active", "name": "800m"},
-  {"duration_minutes": 2, "type": "recovery", "name": "Récup"}
-
-CE QUI EST INTERDIT :
-- NE JAMAIS utiliser un champ "repetitions"
-- NE JAMAIS créer un seul objet pour représenter plusieurs répétitions
-- NE JAMAIS numéroter (pas de "1/5", "2/5", etc.)
-- NE JAMAIS mélanger des blocs de répétitions différents
-
-EXEMPLE - "5x (1' à 40rpm / 1' à 80rpm) puis 5x (1' à 110rpm / 1' à 80rpm)" :
-CORRECT - garder les blocs séparés :
-  40rpm, 80rpm, 40rpm, 80rpm, 40rpm, 80rpm, 40rpm, 80rpm, 40rpm, 80rpm,  <- bloc 1 complet
-  110rpm, 80rpm, 110rpm, 80rpm, 110rpm, 80rpm, 110rpm, 80rpm, 110rpm, 80rpm  <- bloc 2 complet
-
-INCORRECT - mélanger les blocs :
-  40rpm, 80rpm, 110rpm, 80rpm, 40rpm, 80rpm...  <- INTERDIT !
-
-Chaque bloc "Nx" doit être COMPLÈTEMENT terminé avant de passer au suivant.
+Pour plusieurs blocs de répétitions, créer plusieurs objets "repeat" séparés.
 
 IMPORTANT : Dans chaque étape, TOUJOURS inclure les paramètres spécifiques :
 - Vélo : cadence_rpm si mentionné, power_percent_low/high ou watts_low/high si mentionné
 - Course : cap_percent_low/high si mentionné, pace_min_km_low/high ou speed_kmh_low/high si mentionné
 - Natation : swim_stroke, swim_equipment, swim_intensity si mentionnés
 
-TOUJOURS dérouler EXPLICITEMENT chaque étape en objets JSON séparés.
+NE JAMAIS dérouler les répétitions manuellement - TOUJOURS utiliser le format "repeat" avec count et pattern.
 
 NATATION - SPÉCIFIQUE :
 Chaque étape de natation DOIT avoir ces champs (si applicable) :
@@ -456,8 +438,23 @@ export async function parseWithGroq(description: string, apiKeys: string | strin
     throw new Error('Impossible de parser la réponse JSON');
   }
 
+  // Dérouler les blocs "repeat" (pattern + count)
+  const expandedSteps: ParsedStep[] = [];
+  for (const step of parsed.steps) {
+    if (step.type === 'repeat' && step.count && step.pattern) {
+      console.log(`Déroulement de ${step.count}x répétitions avec ${step.pattern.length} étapes par pattern`);
+      for (let i = 0; i < step.count; i++) {
+        for (const patternStep of step.pattern) {
+          expandedSteps.push(patternStep);
+        }
+      }
+    } else {
+      expandedSteps.push(step);
+    }
+  }
+
   // Convertir en WorkoutStep[]
-  const steps = parsed.steps.map((step): WorkoutStep => {
+  const steps = expandedSteps.map((step): WorkoutStep => {
     const workoutStep: WorkoutStep = {
       id: generateId(),
       type: step.type as StepType,
