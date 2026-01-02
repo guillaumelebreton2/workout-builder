@@ -1,6 +1,6 @@
 interface HeaderProps {
-  currentPage: 'home' | 'coach';
-  onNavigate: (page: 'home' | 'coach') => void;
+  currentPage: 'home' | 'workouts' | 'coach';
+  onNavigate: (page: 'home' | 'workouts' | 'coach') => void;
 }
 
 export function Header({ currentPage, onNavigate }: HeaderProps) {
@@ -32,8 +32,18 @@ export function Header({ currentPage, onNavigate }: HeaderProps) {
           <nav className="flex gap-1">
             <button
               onClick={() => onNavigate('home')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              className={`px-3 py-2 rounded-lg font-medium transition-colors text-sm md:text-base md:px-4 ${
                 currentPage === 'home'
+                  ? 'bg-orange-100 text-orange-700'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              Accueil
+            </button>
+            <button
+              onClick={() => onNavigate('workouts')}
+              className={`px-3 py-2 rounded-lg font-medium transition-colors text-sm md:text-base md:px-4 ${
+                currentPage === 'workouts'
                   ? 'bg-orange-100 text-orange-700'
                   : 'text-gray-600 hover:bg-gray-100'
               }`}
@@ -42,7 +52,7 @@ export function Header({ currentPage, onNavigate }: HeaderProps) {
             </button>
             <button
               onClick={() => onNavigate('coach')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              className={`px-3 py-2 rounded-lg font-medium transition-colors text-sm md:text-base md:px-4 ${
                 currentPage === 'coach'
                   ? 'bg-orange-100 text-orange-700'
                   : 'text-gray-600 hover:bg-gray-100'
