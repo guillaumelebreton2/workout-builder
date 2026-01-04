@@ -2,7 +2,7 @@
  * Composants de widgets pour le dashboard
  */
 
-import { TrainingMetrics } from '../../lib/metricsService';
+import { TrainingMetrics, STRAVA_SPORTS, getSportConfig } from '../../lib/metricsService';
 import { DashboardWidget } from '../../lib/dashboardStore';
 
 interface WidgetProps {
@@ -137,6 +137,19 @@ export function VolumeChartWidget({ widget, metrics, onRemove }: WidgetProps) {
   );
 }
 
+// Helper pour obtenir la config d'un sport par sa clé interne
+function getSportConfigByKey(key: string) {
+  return Object.values(STRAVA_SPORTS).find(s => s.key === key) || {
+    key: 'other',
+    label: 'Autre',
+    icon: '🏃',
+    category: 'other' as const,
+    hasDistance: true,
+    hasPace: false,
+    hasPower: false,
+  };
+}
+
 // Widget: Répartition par sport
 export function SportBreakdownWidget({ widget, metrics, onRemove }: WidgetProps) {
   if (!metrics) {
@@ -148,22 +161,6 @@ export function SportBreakdownWidget({ widget, metrics, onRemove }: WidgetProps)
   }
 
   const sports = Object.entries(metrics.currentWeek.bySport);
-  const sportIcons: Record<string, string> = {
-    running: '🏃',
-    cycling: '🚴',
-    swimming: '🏊',
-    walking: '🚶',
-    hiking: '🥾',
-    other: '🏋️',
-  };
-  const sportLabels: Record<string, string> = {
-    running: 'Course',
-    cycling: 'Vélo',
-    swimming: 'Natation',
-    walking: 'Marche',
-    hiking: 'Rando',
-    other: 'Autre',
-  };
 
   if (sports.length === 0) {
     return (
@@ -173,21 +170,29 @@ export function SportBreakdownWidget({ widget, metrics, onRemove }: WidgetProps)
     );
   }
 
+  // Calculer le total (durée pour les sports sans distance)
   const totalDistance = sports.reduce((sum, [, data]) => sum + data.distance, 0);
+  const totalDuration = sports.reduce((sum, [, data]) => sum + data.duration, 0);
 
   return (
     <WidgetContainer widget={widget} onRemove={onRemove}>
       <div className="space-y-3">
-        {sports.map(([sport, data]) => {
-          const percent = totalDistance > 0 ? Math.round((data.distance / totalDistance) * 100) : 0;
+        {sports.map(([sportKey, data]) => {
+          const sportConfig = getSportConfigByKey(sportKey);
+          const hasDistance = sportConfig.hasDistance && data.distance > 0;
+          const percent = hasDistance
+            ? (totalDistance > 0 ? Math.round((data.distance / totalDistance) * 100) : 0)
+            : (totalDuration > 0 ? Math.round((data.duration / totalDuration) * 100) : 0);
 
           return (
-            <div key={sport}>
+            <div key={sportKey}>
               <div className="flex items-center justify-between mb-1">
                 <span className="text-sm font-medium">
-                  {sportIcons[sport] || '🏋️'} {sportLabels[sport] || sport}
+                  {sportConfig.icon} {sportConfig.label}
                 </span>
-                <span className="text-sm text-gray-600">{data.distance.toFixed(1)} km</span>
+                <span className="text-sm text-gray-600">
+                  {hasDistance ? `${data.distance.toFixed(1)} km` : `${Math.round(data.duration)} min`}
+                </span>
               </div>
               <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                 <div
@@ -213,20 +218,11 @@ export function RecentActivitiesWidget({ widget, metrics, onRemove }: WidgetProp
     );
   }
 
-  const sportIcons: Record<string, string> = {
-    Run: '🏃',
-    Ride: '🚴',
-    Swim: '🏊',
-    Walk: '🚶',
-    Hike: '🥾',
-    VirtualRun: '🏃',
-    VirtualRide: '🚴',
-  };
-
   return (
     <WidgetContainer widget={widget} onRemove={onRemove}>
       <div className="space-y-2">
         {metrics.recentActivities.slice(0, 5).map((activity) => {
+          const sportConfig = getSportConfig(activity.type);
           const date = new Date(activity.start_date_local);
           const dateStr = date.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
           const dist = (activity.distance / 1000).toFixed(1);
@@ -234,14 +230,20 @@ export function RecentActivitiesWidget({ widget, metrics, onRemove }: WidgetProp
 
           return (
             <div key={activity.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg">
-              <span className="text-xl">{sportIcons[activity.type] || '🏋️'}</span>
+              <span className="text-xl">{sportConfig.icon}</span>
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm truncate">{activity.name}</p>
                 <p className="text-xs text-gray-500">{dateStr}</p>
               </div>
               <div className="text-right text-sm">
-                <p className="font-medium">{dist} km</p>
-                <p className="text-xs text-gray-500">{dur} min</p>
+                {sportConfig.hasDistance ? (
+                  <p className="font-medium">{dist} km</p>
+                ) : (
+                  <p className="font-medium">{dur} min</p>
+                )}
+                {sportConfig.hasDistance && (
+                  <p className="text-xs text-gray-500">{dur} min</p>
+                )}
               </div>
             </div>
           );

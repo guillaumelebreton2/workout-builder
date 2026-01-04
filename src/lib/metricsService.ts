@@ -62,21 +62,103 @@ function getWeekEnd(date: Date): Date {
   return end;
 }
 
-// Mapper les types Strava vers nos catégories
+// Configuration complète des sports Strava
+export interface SportConfig {
+  key: string;          // Clé interne
+  label: string;        // Label français
+  icon: string;         // Emoji
+  category: 'endurance' | 'strength' | 'outdoor' | 'water' | 'winter' | 'other';
+  hasDistance: boolean; // Sport avec distance mesurable
+  hasPace: boolean;     // Afficher allure (min/km ou min/100m)
+  hasPower: boolean;    // Sport avec puissance (watts)
+  paceUnit?: string;    // Unité d'allure si applicable
+}
+
+export const STRAVA_SPORTS: Record<string, SportConfig> = {
+  // Course à pied
+  'Run': { key: 'running', label: 'Course à pied', icon: '🏃', category: 'endurance', hasDistance: true, hasPace: true, hasPower: false, paceUnit: 'min/km' },
+  'TrailRun': { key: 'trail', label: 'Trail', icon: '🏔️', category: 'endurance', hasDistance: true, hasPace: true, hasPower: false, paceUnit: 'min/km' },
+  'VirtualRun': { key: 'running', label: 'Course virtuelle', icon: '🏃‍♂️', category: 'endurance', hasDistance: true, hasPace: true, hasPower: false, paceUnit: 'min/km' },
+  'Treadmill': { key: 'running', label: 'Tapis de course', icon: '🏃', category: 'endurance', hasDistance: true, hasPace: true, hasPower: false, paceUnit: 'min/km' },
+
+  // Vélo
+  'Ride': { key: 'cycling', label: 'Vélo', icon: '🚴', category: 'endurance', hasDistance: true, hasPace: false, hasPower: true },
+  'VirtualRide': { key: 'cycling', label: 'Vélo virtuel', icon: '🚴‍♂️', category: 'endurance', hasDistance: true, hasPace: false, hasPower: true },
+  'GravelRide': { key: 'gravel', label: 'Gravel', icon: '🚴', category: 'endurance', hasDistance: true, hasPace: false, hasPower: true },
+  'MountainBikeRide': { key: 'mtb', label: 'VTT', icon: '🚵', category: 'endurance', hasDistance: true, hasPace: false, hasPower: true },
+  'EBikeRide': { key: 'ebike', label: 'Vélo électrique', icon: '🔋🚴', category: 'endurance', hasDistance: true, hasPace: false, hasPower: true },
+  'EMountainBikeRide': { key: 'emtb', label: 'VTT électrique', icon: '🔋🚵', category: 'endurance', hasDistance: true, hasPace: false, hasPower: true },
+  'Handcycle': { key: 'handcycle', label: 'Handbike', icon: '♿🚴', category: 'endurance', hasDistance: true, hasPace: false, hasPower: true },
+  'Velomobile': { key: 'velomobile', label: 'Vélomobile', icon: '🚴', category: 'endurance', hasDistance: true, hasPace: false, hasPower: true },
+
+  // Natation
+  'Swim': { key: 'swimming', label: 'Natation', icon: '🏊', category: 'water', hasDistance: true, hasPace: true, hasPower: false, paceUnit: 'min/100m' },
+
+  // Marche / Randonnée
+  'Walk': { key: 'walking', label: 'Marche', icon: '🚶', category: 'outdoor', hasDistance: true, hasPace: true, hasPower: false, paceUnit: 'min/km' },
+  'Hike': { key: 'hiking', label: 'Randonnée', icon: '🥾', category: 'outdoor', hasDistance: true, hasPace: true, hasPower: false, paceUnit: 'min/km' },
+
+  // Sports d'hiver
+  'AlpineSki': { key: 'alpine_ski', label: 'Ski alpin', icon: '⛷️', category: 'winter', hasDistance: true, hasPace: false, hasPower: false },
+  'BackcountrySki': { key: 'backcountry_ski', label: 'Ski de randonnée', icon: '🎿', category: 'winter', hasDistance: true, hasPace: false, hasPower: false },
+  'NordicSki': { key: 'nordic_ski', label: 'Ski de fond', icon: '🎿', category: 'winter', hasDistance: true, hasPace: true, hasPower: false, paceUnit: 'min/km' },
+  'Snowboard': { key: 'snowboard', label: 'Snowboard', icon: '🏂', category: 'winter', hasDistance: true, hasPace: false, hasPower: false },
+  'Snowshoe': { key: 'snowshoe', label: 'Raquettes', icon: '🥾❄️', category: 'winter', hasDistance: true, hasPace: true, hasPower: false, paceUnit: 'min/km' },
+  'IceSkate': { key: 'ice_skate', label: 'Patinage', icon: '⛸️', category: 'winter', hasDistance: true, hasPace: false, hasPower: false },
+
+  // Sports nautiques
+  'Rowing': { key: 'rowing', label: 'Aviron', icon: '🚣', category: 'water', hasDistance: true, hasPace: true, hasPower: true, paceUnit: 'min/500m' },
+  'Kayaking': { key: 'kayaking', label: 'Kayak', icon: '🛶', category: 'water', hasDistance: true, hasPace: false, hasPower: false },
+  'Canoeing': { key: 'canoeing', label: 'Canoë', icon: '🛶', category: 'water', hasDistance: true, hasPace: false, hasPower: false },
+  'StandUpPaddling': { key: 'sup', label: 'Stand Up Paddle', icon: '🏄', category: 'water', hasDistance: true, hasPace: false, hasPower: false },
+  'Surfing': { key: 'surfing', label: 'Surf', icon: '🏄', category: 'water', hasDistance: false, hasPace: false, hasPower: false },
+  'Kitesurfing': { key: 'kitesurf', label: 'Kitesurf', icon: '🪁', category: 'water', hasDistance: true, hasPace: false, hasPower: false },
+  'Windsurfing': { key: 'windsurf', label: 'Planche à voile', icon: '🏄‍♂️', category: 'water', hasDistance: true, hasPace: false, hasPower: false },
+  'Sailing': { key: 'sailing', label: 'Voile', icon: '⛵', category: 'water', hasDistance: true, hasPace: false, hasPower: false },
+
+  // Musculation / Fitness
+  'WeightTraining': { key: 'weight_training', label: 'Musculation', icon: '🏋️', category: 'strength', hasDistance: false, hasPace: false, hasPower: false },
+  'Workout': { key: 'workout', label: 'Entraînement', icon: '💪', category: 'strength', hasDistance: false, hasPace: false, hasPower: false },
+  'CrossFit': { key: 'crossfit', label: 'CrossFit', icon: '🏋️‍♂️', category: 'strength', hasDistance: false, hasPace: false, hasPower: false },
+  'Yoga': { key: 'yoga', label: 'Yoga', icon: '🧘', category: 'strength', hasDistance: false, hasPace: false, hasPower: false },
+  'Pilates': { key: 'pilates', label: 'Pilates', icon: '🧘‍♀️', category: 'strength', hasDistance: false, hasPace: false, hasPower: false },
+  'Elliptical': { key: 'elliptical', label: 'Elliptique', icon: '🏃', category: 'endurance', hasDistance: true, hasPace: false, hasPower: false },
+  'StairStepper': { key: 'stair_stepper', label: 'Stepper', icon: '🪜', category: 'strength', hasDistance: false, hasPace: false, hasPower: false },
+  'HIIT': { key: 'hiit', label: 'HIIT', icon: '🔥', category: 'strength', hasDistance: false, hasPace: false, hasPower: false },
+
+  // Autres sports
+  'InlineSkate': { key: 'inline_skate', label: 'Roller', icon: '🛼', category: 'outdoor', hasDistance: true, hasPace: false, hasPower: false },
+  'Skateboard': { key: 'skateboard', label: 'Skateboard', icon: '🛹', category: 'outdoor', hasDistance: true, hasPace: false, hasPower: false },
+  'RollerSki': { key: 'roller_ski', label: 'Ski roues', icon: '🎿', category: 'outdoor', hasDistance: true, hasPace: true, hasPower: false, paceUnit: 'min/km' },
+  'RockClimbing': { key: 'climbing', label: 'Escalade', icon: '🧗', category: 'outdoor', hasDistance: false, hasPace: false, hasPower: false },
+  'Golf': { key: 'golf', label: 'Golf', icon: '⛳', category: 'other', hasDistance: true, hasPace: false, hasPower: false },
+  'Soccer': { key: 'soccer', label: 'Football', icon: '⚽', category: 'other', hasDistance: true, hasPace: false, hasPower: false },
+  'Tennis': { key: 'tennis', label: 'Tennis', icon: '🎾', category: 'other', hasDistance: false, hasPace: false, hasPower: false },
+  'Badminton': { key: 'badminton', label: 'Badminton', icon: '🏸', category: 'other', hasDistance: false, hasPace: false, hasPower: false },
+  'Squash': { key: 'squash', label: 'Squash', icon: '🎾', category: 'other', hasDistance: false, hasPace: false, hasPower: false },
+  'TableTennis': { key: 'table_tennis', label: 'Ping-pong', icon: '🏓', category: 'other', hasDistance: false, hasPace: false, hasPower: false },
+  'Wheelchair': { key: 'wheelchair', label: 'Fauteuil roulant', icon: '♿', category: 'endurance', hasDistance: true, hasPace: true, hasPower: false, paceUnit: 'min/km' },
+};
+
+// Sport par défaut pour les types inconnus
+const DEFAULT_SPORT: SportConfig = {
+  key: 'other',
+  label: 'Autre',
+  icon: '🏃',
+  category: 'other',
+  hasDistance: true,
+  hasPace: false,
+  hasPower: false,
+};
+
+// Obtenir la config d'un sport
+export function getSportConfig(type: string): SportConfig {
+  return STRAVA_SPORTS[type] || DEFAULT_SPORT;
+}
+
+// Mapper les types Strava vers nos catégories (pour compatibilité)
 function mapSportType(type: string): string {
-  const mapping: Record<string, string> = {
-    'Run': 'running',
-    'TrailRun': 'running',
-    'VirtualRun': 'running',
-    'Ride': 'cycling',
-    'VirtualRide': 'cycling',
-    'GravelRide': 'cycling',
-    'MountainBikeRide': 'cycling',
-    'Swim': 'swimming',
-    'Walk': 'walking',
-    'Hike': 'hiking',
-  };
-  return mapping[type] || 'other';
+  return getSportConfig(type).key;
 }
 
 // Calculer les métriques pour une semaine
@@ -183,25 +265,32 @@ function generateSummary(metrics: TrainingMetrics): string {
     summary += `- FC moyenne: ${currentWeek.avgHeartRate} bpm\n`;
   }
 
-  // Par sport
-  for (const [sport, data] of Object.entries(currentWeek.bySport)) {
-    const sportLabels: Record<string, string> = {
-      running: 'Course',
-      cycling: 'Vélo',
-      swimming: 'Natation',
-      walking: 'Marche',
-      hiking: 'Randonnée',
-    };
-    const label = sportLabels[sport] || sport;
-    summary += `\n### ${label}\n`;
-    summary += `- ${data.count} séance(s), ${data.distance.toFixed(1)} km, ${Math.round(data.duration)} min\n`;
-    if (data.avgPace && sport === 'running') {
+  // Par sport - trouver le label depuis la config
+  for (const [sportKey, data] of Object.entries(currentWeek.bySport)) {
+    // Trouver la config du sport (chercher par key)
+    const sportConfig = Object.values(STRAVA_SPORTS).find(s => s.key === sportKey) || DEFAULT_SPORT;
+    const label = sportConfig.label;
+    const icon = sportConfig.icon;
+
+    summary += `\n### ${icon} ${label}\n`;
+    if (sportConfig.hasDistance) {
+      summary += `- ${data.count} séance(s), ${data.distance.toFixed(1)} km, ${Math.round(data.duration)} min\n`;
+    } else {
+      summary += `- ${data.count} séance(s), ${Math.round(data.duration)} min\n`;
+    }
+    if (data.avgPace && sportConfig.hasPace) {
       const paceMin = Math.floor(data.avgPace);
       const paceSec = Math.round((data.avgPace - paceMin) * 60);
-      summary += `- Allure moyenne: ${paceMin}'${paceSec.toString().padStart(2, '0')}/km\n`;
+      summary += `- Allure moyenne: ${paceMin}'${paceSec.toString().padStart(2, '0')}/${sportConfig.paceUnit || 'km'}\n`;
     }
-    if (data.avgPower) {
+    if (data.avgPower && sportConfig.hasPower) {
       summary += `- Puissance moyenne: ${data.avgPower}W\n`;
+    }
+    if (data.avgCadence) {
+      summary += `- Cadence moyenne: ${data.avgCadence} ${sportKey === 'cycling' ? 'rpm' : 'spm'}\n`;
+    }
+    if (data.avgHeartRate) {
+      summary += `- FC moyenne: ${data.avgHeartRate} bpm\n`;
     }
   }
 
