@@ -2,10 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import { Conversation } from '../lib/types';
 import { conversationStore } from '../lib/conversationStore';
 import { stravaApi } from '../lib/stravaApi';
-import { metricsService, TrainingMetrics } from '../lib/metricsService';
+import { metricsService, TrainingMetrics, getSportConfig } from '../lib/metricsService';
 import { aiService } from '../lib/aiService';
 import { ChatSidebar } from './ChatSidebar';
 import { ChatMessageBubble, ChatLoadingIndicator } from './ChatMessageBubble';
+import { getPendingAnalysis, clearPendingAnalysis } from './StatsPage';
 
 const SUGGESTED_QUESTIONS = [
   "Suis-je prêt pour mon objectif ?",
@@ -73,6 +74,23 @@ export function CoachPage() {
       loadMetrics();
     }
   }, [stravaConnected]);
+
+  // Vérifier s'il y a une analyse en attente (venant de Stats)
+  useEffect(() => {
+    if (!stravaConnected || isLoading) return;
+
+    const pendingAnalysis = getPendingAnalysis();
+    if (pendingAnalysis) {
+      // Effacer l'analyse en attente pour éviter de la rejouer
+      clearPendingAnalysis();
+      // Créer la question d'analyse
+      const question = `Analyse ma séance "${pendingAnalysis.activityName}" (activité #${pendingAnalysis.activityId})`;
+      // Lancer l'analyse après un court délai pour laisser le composant se stabiliser
+      setTimeout(() => {
+        handleAskQuestion(question);
+      }, 100);
+    }
+  }, [stravaConnected, isLoading]);
 
   // Scroll vers le bas quand les messages changent
   useEffect(() => {
@@ -299,6 +317,50 @@ export function CoachPage() {
                 <div className="mb-8 flex items-center gap-2 text-gray-500">
                   <div className="w-5 h-5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
                   <span className="text-sm">Chargement de tes stats...</span>
+                </div>
+              )}
+
+              {/* Activités récentes à analyser */}
+              {stravaConnected && metrics && metrics.recentActivities.length > 0 && (
+                <div className="mb-8 w-full max-w-lg">
+                  <h3 className="text-sm font-medium text-gray-700 mb-3 text-left">Analyser une séance</h3>
+                  <div className="space-y-2">
+                    {metrics.recentActivities
+                      .filter(a => [
+                        // Running
+                        'Run', 'TrailRun', 'VirtualRun', 'Treadmill',
+                        // Cycling
+                        'Ride', 'VirtualRide', 'GravelRide', 'MountainBikeRide', 'EBikeRide',
+                        // Swimming
+                        'Swim',
+                      ].includes(a.type))
+                      .slice(0, 3)
+                      .map((activity) => {
+                        const sportConfig = getSportConfig(activity.type);
+                        const date = new Date(activity.start_date_local);
+                        const dateStr = date.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
+                        const dist = (activity.distance / 1000).toFixed(1);
+                        const dur = Math.round(activity.moving_time / 60);
+
+                        return (
+                          <button
+                            key={activity.id}
+                            onClick={() => handleAskQuestion(`Analyse ma séance "${activity.name}" (activité #${activity.id})`)}
+                            disabled={isLoading}
+                            className="w-full flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-xl hover:bg-orange-50 hover:border-orange-300 transition-colors text-left disabled:opacity-50"
+                          >
+                            <span className="text-xl">{sportConfig.icon}</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm truncate">{activity.name}</p>
+                              <p className="text-xs text-gray-500">{dateStr} • {dist} km • {dur} min</p>
+                            </div>
+                            <span className="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded-full">
+                              Analyser
+                            </span>
+                          </button>
+                        );
+                      })}
+                  </div>
                 </div>
               )}
 

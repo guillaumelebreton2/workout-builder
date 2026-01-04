@@ -210,6 +210,197 @@ export function isConnected(): boolean {
   return tokens !== null && tokens.access_token !== '';
 }
 
+// Types pour les données détaillées
+export interface StravaActivityDetails extends StravaActivity {
+  description?: string;
+  calories?: number;
+  splits_metric?: StravaSplit[];
+  splits_standard?: StravaSplit[];
+  laps?: StravaLap[];
+  segment_efforts?: unknown[];
+  best_efforts?: StravaBestEffort[];
+  device_name?: string;
+  embed_token?: string;
+  photos?: unknown;
+}
+
+export interface StravaSplit {
+  distance: number;
+  elapsed_time: number;
+  moving_time: number;
+  average_speed: number;
+  average_heartrate?: number;
+  pace_zone?: number;
+  split: number;
+}
+
+export interface StravaLap {
+  id: number;
+  name: string;
+  elapsed_time: number;
+  moving_time: number;
+  start_date: string;
+  start_date_local: string;
+  distance: number;
+  average_speed: number;
+  max_speed: number;
+  average_cadence?: number;
+  average_heartrate?: number;
+  max_heartrate?: number;
+  lap_index: number;
+  split: number;
+  pace_zone?: number;
+}
+
+export interface StravaBestEffort {
+  id: number;
+  name: string;
+  elapsed_time: number;
+  moving_time: number;
+  start_date: string;
+  start_date_local: string;
+  distance: number;
+  pr_rank?: number;
+}
+
+export interface StravaStream {
+  type: string;
+  data: number[];
+  series_type: string;
+  original_size: number;
+  resolution: string;
+}
+
+export interface StravaStreams {
+  time?: StravaStream;
+  distance?: StravaStream;
+  altitude?: StravaStream;
+  velocity_smooth?: StravaStream;
+  heartrate?: StravaStream;
+  cadence?: StravaStream;
+  watts?: StravaStream;
+  temp?: StravaStream;
+  moving?: StravaStream;
+  grade_smooth?: StravaStream;
+}
+
+// Récupérer les détails d'une activité
+export async function getActivityDetails(activityId: number): Promise<StravaActivityDetails> {
+  const token = await getValidToken();
+  if (!token) throw new Error('Non connecté à Strava');
+
+  const response = await fetch(`${API_BASE}/api/strava/activities/${activityId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      clearTokens();
+      throw new Error('Session expirée');
+    }
+    throw new Error('Erreur lors de la récupération des détails');
+  }
+
+  return response.json();
+}
+
+// Récupérer les streams d'une activité (données seconde par seconde)
+export async function getActivityStreams(activityId: number): Promise<StravaStreams> {
+  const token = await getValidToken();
+  if (!token) throw new Error('Non connecté à Strava');
+
+  const response = await fetch(`${API_BASE}/api/strava/activities/${activityId}/streams`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      clearTokens();
+      throw new Error('Session expirée');
+    }
+    throw new Error('Erreur lors de la récupération des streams');
+  }
+
+  return response.json();
+}
+
+// Récupérer les laps d'une activité
+export async function getActivityLaps(activityId: number): Promise<StravaLap[]> {
+  const token = await getValidToken();
+  if (!token) throw new Error('Non connecté à Strava');
+
+  const response = await fetch(`${API_BASE}/api/strava/activities/${activityId}/laps`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      clearTokens();
+      throw new Error('Session expirée');
+    }
+    throw new Error('Erreur lors de la récupération des laps');
+  }
+
+  return response.json();
+}
+
+// Types pour les zones de l'athlète
+export interface StravaZoneRange {
+  min: number;
+  max: number;
+}
+
+export interface StravaHeartRateZones {
+  custom_zones: boolean;
+  zones: StravaZoneRange[];
+}
+
+export interface StravaPowerZones {
+  zones: StravaZoneRange[];
+}
+
+export interface StravaAthleteZones {
+  heart_rate?: StravaHeartRateZones;
+  power?: StravaPowerZones;
+}
+
+// Erreur spécifique pour les problèmes de scope
+export class StravaScopeError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'StravaScopeError';
+  }
+}
+
+// Récupérer les zones de l'athlète (FC et puissance)
+export async function getAthleteZones(): Promise<StravaAthleteZones> {
+  const token = await getValidToken();
+  if (!token) throw new Error('Non connecté à Strava');
+
+  const response = await fetch(`${API_BASE}/api/strava/athlete/zones`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      clearTokens();
+      throw new Error('Session expirée');
+    }
+    if (response.status === 403) {
+      throw new StravaScopeError('Accès refusé. Reconnecte-toi à Strava pour autoriser l\'accès aux zones.');
+    }
+    throw new Error('Erreur lors de la récupération des zones');
+  }
+
+  return response.json();
+}
+
+// Forcer une nouvelle authentification Strava (pour mettre à jour les scopes)
+export function forceReauthentication(): void {
+  clearTokens();
+  startOAuthFlow();
+}
+
 // Export groupé
 export const stravaApi = {
   getStoredTokens,
@@ -221,6 +412,11 @@ export const stravaApi = {
   startOAuthFlow,
   handleOAuthCallback,
   getActivities,
+  getActivityDetails,
+  getActivityStreams,
+  getActivityLaps,
   getAthlete,
+  getAthleteZones,
+  forceReauthentication,
   isConnected,
 };

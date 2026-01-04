@@ -5,14 +5,16 @@ import { Header } from './components/Header';
 import { CoachPage } from './components/CoachPage';
 import { StatsPage } from './components/StatsPage';
 import { LandingPage } from './components/LandingPage';
+import { AthleteProfilePage } from './components/AthleteProfilePage';
 import './index.css';
 
-type Page = 'home' | 'workouts' | 'coach' | 'stats';
+type Page = 'home' | 'workouts' | 'coach' | 'stats' | 'profile';
 
 function getPageFromPath(path: string): Page {
   if (path === '/workouts') return 'workouts';
   if (path === '/coach') return 'coach';
   if (path === '/stats') return 'stats';
+  if (path === '/profile') return 'profile';
   return 'home';
 }
 
@@ -20,6 +22,7 @@ function getPathFromPage(page: Page): string {
   if (page === 'workouts') return '/workouts';
   if (page === 'coach') return '/coach';
   if (page === 'stats') return '/stats';
+  if (page === 'profile') return '/profile';
   return '/';
 }
 
@@ -82,7 +85,11 @@ function App() {
       )}
 
       {currentPage === 'stats' && (
-        <StatsPage />
+        <StatsPage onNavigate={setCurrentPage} />
+      )}
+
+      {currentPage === 'profile' && (
+        <AthleteProfilePage onNavigate={setCurrentPage} />
       )}
     </div>
   );

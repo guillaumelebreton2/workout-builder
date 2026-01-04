@@ -4,7 +4,44 @@ import { metricsService, TrainingMetrics } from '../lib/metricsService';
 import { dashboardStore, DashboardWidget, WIDGET_LABELS, WidgetType } from '../lib/dashboardStore';
 import { renderWidget } from './widgets';
 
-export function StatsPage() {
+interface StatsPageProps {
+  onNavigate?: (page: 'home' | 'workouts' | 'coach' | 'stats' | 'profile') => void;
+}
+
+// Stockage de l'analyse en attente
+const PENDING_ANALYSIS_KEY = 'workout-builder-pending-analysis';
+
+export interface PendingAnalysis {
+  activityId: number;
+  activityName: string;
+  timestamp: number;
+}
+
+export function setPendingAnalysis(analysis: PendingAnalysis): void {
+  localStorage.setItem(PENDING_ANALYSIS_KEY, JSON.stringify(analysis));
+}
+
+export function getPendingAnalysis(): PendingAnalysis | null {
+  try {
+    const data = localStorage.getItem(PENDING_ANALYSIS_KEY);
+    if (!data) return null;
+    const analysis = JSON.parse(data) as PendingAnalysis;
+    // Expire après 5 minutes
+    if (Date.now() - analysis.timestamp > 5 * 60 * 1000) {
+      clearPendingAnalysis();
+      return null;
+    }
+    return analysis;
+  } catch {
+    return null;
+  }
+}
+
+export function clearPendingAnalysis(): void {
+  localStorage.removeItem(PENDING_ANALYSIS_KEY);
+}
+
+export function StatsPage({ onNavigate }: StatsPageProps) {
   const [stravaConnected, setStravaConnected] = useState(false);
   const [metrics, setMetrics] = useState<TrainingMetrics | null>(null);
   const [metricsLoading, setMetricsLoading] = useState(false);
@@ -64,6 +101,19 @@ export function StatsPage() {
     }
   };
 
+  const handleAnalyzeActivity = (activityId: number, activityName: string) => {
+    // Stocker l'analyse en attente
+    setPendingAnalysis({
+      activityId,
+      activityName,
+      timestamp: Date.now(),
+    });
+    // Naviguer vers le coach
+    if (onNavigate) {
+      onNavigate('coach');
+    }
+  };
+
   // Widgets disponibles (non encore ajoutés)
   const existingTypes = new Set(widgets.map(w => w.type));
   const availableWidgets = (Object.keys(WIDGET_LABELS) as WidgetType[]).filter(
@@ -83,6 +133,16 @@ export function StatsPage() {
           <div className="flex items-center gap-2">
             {stravaConnected ? (
               <>
+                <button
+                  onClick={() => onNavigate?.('profile')}
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                  title="Profil Athlète"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  Profil
+                </button>
                 <button
                   onClick={() => setShowAddWidget(!showAddWidget)}
                   className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors"
@@ -184,7 +244,12 @@ export function StatsPage() {
         {/* Widgets */}
         {stravaConnected && !metricsLoading && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {widgets.map(widget => renderWidget(widget, metrics, () => handleRemoveWidget(widget.id)))}
+            {widgets.map(widget => renderWidget(
+              widget,
+              metrics,
+              () => handleRemoveWidget(widget.id),
+              handleAnalyzeActivity
+            ))}
           </div>
         )}
 
@@ -204,6 +269,7 @@ export function StatsPage() {
           </div>
         )}
       </div>
+
     </div>
   );
 }

@@ -1,5 +1,5 @@
 interface LandingPageProps {
-  onNavigate: (page: 'home' | 'workouts' | 'coach') => void;
+  onNavigate: (page: 'home' | 'workouts' | 'coach' | 'stats' | 'profile') => void;
 }
 
 export function LandingPage({ onNavigate }: LandingPageProps) {

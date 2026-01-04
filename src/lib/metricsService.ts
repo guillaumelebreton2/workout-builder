@@ -322,14 +322,24 @@ function generateSummary(metrics: TrainingMetrics): string {
 
 // Fonction principale : calculer toutes les métriques
 export async function calculateTrainingMetrics(): Promise<TrainingMetrics> {
-  // Récupérer les activités des 5 dernières semaines
+  // Récupérer les activités des 5 dernières semaines pour les stats
   const fiveWeeksAgo = new Date();
   fiveWeeksAgo.setDate(fiveWeeksAgo.getDate() - 35);
 
-  const activities = await stravaApi.getActivities({
-    after: fiveWeeksAgo,
-    perPage: 100,
-  });
+  // Deux appels en parallèle :
+  // 1. Activités filtrées pour les stats hebdo
+  // 2. Activités récentes sans filtre pour l'affichage
+  const [statsActivities, recentActivities] = await Promise.all([
+    stravaApi.getActivities({
+      after: fiveWeeksAgo,
+      perPage: 100,
+    }),
+    stravaApi.getActivities({
+      perPage: 15, // Les 15 plus récentes, sans filtre de date
+    }),
+  ]);
+
+  const activities = statsActivities;
 
   const now = new Date();
 
@@ -382,7 +392,7 @@ export async function calculateTrainingMetrics(): Promise<TrainingMetrics> {
       durationChange,
       trend,
     },
-    recentActivities: activities.slice(0, 10),
+    recentActivities, // Activités les plus récentes (sans filtre de date)
     summary: '',
   };
 

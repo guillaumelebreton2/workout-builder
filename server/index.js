@@ -857,6 +857,151 @@ app.get('/api/strava/athlete', async (req, res) => {
   }
 });
 
+/**
+ * Récupérer les zones de l'athlète (FC et puissance)
+ */
+app.get('/api/strava/athlete/zones', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Token requis' });
+  }
+
+  const accessToken = authHeader.split(' ')[1];
+
+  try {
+    const response = await fetch(`${STRAVA_API_URL}/athlete/zones`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Strava zones API error: ${response.status}`, errorText);
+
+      if (response.status === 401) {
+        return res.status(401).json({ error: 'Token expiré', needsRefresh: true });
+      }
+      if (response.status === 403) {
+        return res.status(403).json({ error: 'Accès refusé. Re-connecte Strava pour autoriser l\'accès aux zones.' });
+      }
+      return res.status(response.status).json({ error: `Erreur Strava: ${response.status}` });
+    }
+
+    const zones = await response.json();
+    console.log('Zones Strava récupérées:', JSON.stringify(zones));
+    res.json(zones);
+  } catch (err) {
+    console.error('Erreur zones Strava:', err);
+    res.status(500).json({ error: 'Failed to fetch athlete zones' });
+  }
+});
+
+/**
+ * Récupérer les détails d'une activité Strava
+ */
+app.get('/api/strava/activities/:id', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Token requis' });
+  }
+
+  const accessToken = authHeader.split(' ')[1];
+  const { id } = req.params;
+
+  try {
+    const response = await fetch(`${STRAVA_API_URL}/activities/${id}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        return res.status(401).json({ error: 'Token expiré', needsRefresh: true });
+      }
+      throw new Error(`Strava API error: ${response.status}`);
+    }
+
+    const activity = await response.json();
+    res.json(activity);
+  } catch (err) {
+    console.error('Erreur détails activité Strava:', err);
+    res.status(500).json({ error: 'Failed to fetch activity details' });
+  }
+});
+
+/**
+ * Récupérer les streams d'une activité (données seconde par seconde)
+ */
+app.get('/api/strava/activities/:id/streams', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Token requis' });
+  }
+
+  const accessToken = authHeader.split(' ')[1];
+  const { id } = req.params;
+
+  try {
+    // Récupérer tous les types de streams disponibles
+    const streamTypes = [
+      'time', 'distance', 'latlng', 'altitude', 'velocity_smooth',
+      'heartrate', 'cadence', 'watts', 'temp', 'moving', 'grade_smooth'
+    ].join(',');
+
+    const response = await fetch(
+      `${STRAVA_API_URL}/activities/${id}/streams?keys=${streamTypes}&key_by_type=true`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        return res.status(401).json({ error: 'Token expiré', needsRefresh: true });
+      }
+      // 404 = pas de streams (activité manuelle)
+      if (response.status === 404) {
+        return res.json({});
+      }
+      throw new Error(`Strava API error: ${response.status}`);
+    }
+
+    const streams = await response.json();
+    res.json(streams);
+  } catch (err) {
+    console.error('Erreur streams Strava:', err);
+    res.status(500).json({ error: 'Failed to fetch activity streams' });
+  }
+});
+
+/**
+ * Récupérer les laps/splits d'une activité
+ */
+app.get('/api/strava/activities/:id/laps', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Token requis' });
+  }
+
+  const accessToken = authHeader.split(' ')[1];
+  const { id } = req.params;
+
+  try {
+    const response = await fetch(`${STRAVA_API_URL}/activities/${id}/laps`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        return res.status(401).json({ error: 'Token expiré', needsRefresh: true });
+      }
+      throw new Error(`Strava API error: ${response.status}`);
+    }
+
+    const laps = await response.json();
+    res.json(laps);
+  } catch (err) {
+    console.error('Erreur laps Strava:', err);
+    res.status(500).json({ error: 'Failed to fetch activity laps' });
+  }
+});
+
 // ============================================
 // AI (GROQ) PROXY ENDPOINT
 // ============================================

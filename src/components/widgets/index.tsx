@@ -2,13 +2,16 @@
  * Composants de widgets pour le dashboard
  */
 
+import { useState } from 'react';
 import { TrainingMetrics, STRAVA_SPORTS, getSportConfig } from '../../lib/metricsService';
 import { DashboardWidget } from '../../lib/dashboardStore';
+import { AllActivitiesModal } from '../AllActivitiesModal';
 
 interface WidgetProps {
   widget: DashboardWidget;
   metrics: TrainingMetrics | null;
   onRemove?: () => void;
+  onAnalyze?: (activityId: number, activityName: string) => void;
 }
 
 // Wrapper commun pour tous les widgets
@@ -209,7 +212,9 @@ export function SportBreakdownWidget({ widget, metrics, onRemove }: WidgetProps)
 }
 
 // Widget: Dernières activités
-export function RecentActivitiesWidget({ widget, metrics, onRemove }: WidgetProps) {
+export function RecentActivitiesWidget({ widget, metrics, onRemove, onAnalyze }: WidgetProps) {
+  const [showAllActivities, setShowAllActivities] = useState(false);
+
   if (!metrics || metrics.recentActivities.length === 0) {
     return (
       <WidgetContainer widget={widget} onRemove={onRemove}>
@@ -218,38 +223,87 @@ export function RecentActivitiesWidget({ widget, metrics, onRemove }: WidgetProp
     );
   }
 
-  return (
-    <WidgetContainer widget={widget} onRemove={onRemove}>
-      <div className="space-y-2">
-        {metrics.recentActivities.slice(0, 5).map((activity) => {
-          const sportConfig = getSportConfig(activity.type);
-          const date = new Date(activity.start_date_local);
-          const dateStr = date.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
-          const dist = (activity.distance / 1000).toFixed(1);
-          const dur = Math.round(activity.moving_time / 60);
+  // Types d'activités analysables
+  const analyzableTypes = [
+    // Running
+    'Run', 'TrailRun', 'VirtualRun', 'Treadmill',
+    // Cycling
+    'Ride', 'VirtualRide', 'GravelRide', 'MountainBikeRide', 'EBikeRide',
+    // Swimming
+    'Swim',
+  ];
 
-          return (
-            <div key={activity.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg">
-              <span className="text-xl">{sportConfig.icon}</span>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm truncate">{activity.name}</p>
-                <p className="text-xs text-gray-500">{dateStr}</p>
+  const handleAnalyzeFromModal = (activityId: number, activityName: string) => {
+    if (onAnalyze) {
+      onAnalyze(activityId, activityName);
+    }
+  };
+
+  return (
+    <>
+      <WidgetContainer widget={widget} onRemove={onRemove}>
+        <div className="space-y-2">
+          {metrics.recentActivities.slice(0, 5).map((activity) => {
+            const sportConfig = getSportConfig(activity.type);
+            const date = new Date(activity.start_date_local);
+            const dateStr = date.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
+            const dist = (activity.distance / 1000).toFixed(1);
+            const dur = Math.round(activity.moving_time / 60);
+            const canAnalyze = analyzableTypes.includes(activity.type) && onAnalyze;
+
+            return (
+              <div key={activity.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg group">
+                <span className="text-xl">{sportConfig.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm truncate">{activity.name}</p>
+                  <p className="text-xs text-gray-500">{dateStr}</p>
+                </div>
+                <div className="text-right text-sm flex items-center gap-2">
+                  <div>
+                    {sportConfig.hasDistance ? (
+                      <p className="font-medium">{dist} km</p>
+                    ) : (
+                      <p className="font-medium">{dur} min</p>
+                    )}
+                    {sportConfig.hasDistance && (
+                      <p className="text-xs text-gray-500">{dur} min</p>
+                    )}
+                  </div>
+                  {canAnalyze && (
+                    <button
+                      onClick={() => onAnalyze(activity.id, activity.name)}
+                      className="px-2 py-1 text-xs bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors"
+                      title="Analyser cette séance"
+                    >
+                      Analyser
+                    </button>
+                  )}
+                </div>
               </div>
-              <div className="text-right text-sm">
-                {sportConfig.hasDistance ? (
-                  <p className="font-medium">{dist} km</p>
-                ) : (
-                  <p className="font-medium">{dur} min</p>
-                )}
-                {sportConfig.hasDistance && (
-                  <p className="text-xs text-gray-500">{dur} min</p>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </WidgetContainer>
+            );
+          })}
+        </div>
+        {/* Bouton pour voir toutes les activités */}
+        <div className="mt-3 pt-3 border-t border-gray-100 text-center">
+          <button
+            onClick={() => setShowAllActivities(true)}
+            className="text-sm text-orange-600 hover:text-orange-700 hover:underline inline-flex items-center gap-1"
+          >
+            Voir toutes mes activités
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+      </WidgetContainer>
+
+      {/* Modal toutes les activités */}
+      <AllActivitiesModal
+        isOpen={showAllActivities}
+        onClose={() => setShowAllActivities(false)}
+        onAnalyze={handleAnalyzeFromModal}
+      />
+    </>
   );
 }
 
@@ -294,7 +348,12 @@ export function WeeklyComparisonWidget({ widget, metrics, onRemove }: WidgetProp
 }
 
 // Composant pour rendre le bon widget selon le type
-export function renderWidget(widget: DashboardWidget, metrics: TrainingMetrics | null, onRemove?: () => void) {
+export function renderWidget(
+  widget: DashboardWidget,
+  metrics: TrainingMetrics | null,
+  onRemove?: () => void,
+  onAnalyze?: (activityId: number, activityName: string) => void
+) {
   const props = { widget, metrics, onRemove };
 
   switch (widget.type) {
@@ -305,7 +364,7 @@ export function renderWidget(widget: DashboardWidget, metrics: TrainingMetrics |
     case 'sport-breakdown':
       return <SportBreakdownWidget key={widget.id} {...props} />;
     case 'recent-activities':
-      return <RecentActivitiesWidget key={widget.id} {...props} />;
+      return <RecentActivitiesWidget key={widget.id} {...props} onAnalyze={onAnalyze} />;
     case 'weekly-comparison':
       return <WeeklyComparisonWidget key={widget.id} {...props} />;
     default:

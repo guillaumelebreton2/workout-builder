@@ -1,6 +1,6 @@
 interface HeaderProps {
-  currentPage: 'home' | 'workouts' | 'coach' | 'stats';
-  onNavigate: (page: 'home' | 'workouts' | 'coach' | 'stats') => void;
+  currentPage: 'home' | 'workouts' | 'coach' | 'stats' | 'profile';
+  onNavigate: (page: 'home' | 'workouts' | 'coach' | 'stats' | 'profile') => void;
 }
 
 export function Header({ currentPage, onNavigate }: HeaderProps) {

@@ -5,6 +5,34 @@
 
 import { TrainingMetrics } from './metricsService';
 import { Workout } from './types';
+import { activityAnalysisService, RunningAnalysis, CyclingAnalysis, SwimmingAnalysis } from './activityAnalysisService';
+import { stravaApi } from './stravaApi';
+
+// Types d'activité par sport
+const RUNNING_TYPES = ['Run', 'TrailRun', 'VirtualRun', 'Treadmill'];
+const CYCLING_TYPES = ['Ride', 'VirtualRide', 'GravelRide', 'MountainBikeRide', 'EBikeRide'];
+const SWIMMING_TYPES = ['Swim'];
+
+type ActivityAnalysis = RunningAnalysis | CyclingAnalysis | SwimmingAnalysis;
+
+// Helper pour analyser une activité selon son type
+async function analyzeActivityByType(
+  activityType: string,
+  activityId: number
+): Promise<{ analysis: ActivityAnalysis; sportLabel: string }> {
+  if (RUNNING_TYPES.includes(activityType)) {
+    const analysis = await activityAnalysisService.analyzeRunningActivity(activityId);
+    return { analysis, sportLabel: 'Course à pied' };
+  } else if (CYCLING_TYPES.includes(activityType)) {
+    const analysis = await activityAnalysisService.analyzeCyclingActivity(activityId);
+    return { analysis, sportLabel: 'Vélo' };
+  } else if (SWIMMING_TYPES.includes(activityType)) {
+    const analysis = await activityAnalysisService.analyzeSwimmingActivity(activityId);
+    return { analysis, sportLabel: 'Natation' };
+  } else {
+    throw new Error(`Type d'activité non supporté: ${activityType}`);
+  }
+}
 
 // URL du proxy backend pour l'API Groq
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
@@ -19,6 +47,7 @@ interface ChatMessage {
 export interface AIResponse {
   content: string;
   workout?: Workout;
+  analysis?: ActivityAnalysis;
 }
 
 // Créer le prompt système avec le contexte des métriques
@@ -152,6 +181,54 @@ function isWorkoutRequest(message: string): boolean {
     /pr[ée]pare.*s[ée]ance/i,
   ];
   return patterns.some(p => p.test(message));
+}
+
+// Détecter si c'est une demande d'analyse de séance
+function isAnalysisRequest(message: string): boolean {
+  const patterns = [
+    /analyse.*s[ée]ance/i,
+    /analyse.*sortie/i,
+    /analyse.*course/i,
+    /analyse.*entra[iî]nement/i,
+    /comment.*[ée]tait.*s[ée]ance/i,
+    /comment.*[ée]tait.*sortie/i,
+    /comment.*[ée]tait.*course/i,
+    /derni[èe]re.*s[ée]ance/i,
+    /derni[èe]re.*sortie/i,
+    /derni[èe]re.*course/i,
+    /analyse.*derni[èe]re/i,
+    /feedback.*s[ée]ance/i,
+    /avis.*sur.*s[ée]ance/i,
+    /activit[ée]\s*#?\d+/i, // Activité avec ID directement fourni
+  ];
+  return patterns.some(p => p.test(message));
+}
+
+// Extraire un ID d'activité directement fourni dans le message
+function extractActivityId(message: string): number | undefined {
+  const match = message.match(/activit[ée]\s*#?(\d+)/i);
+  if (match) {
+    return parseInt(match[1], 10);
+  }
+  return undefined;
+}
+
+// Extraire le type de sport demandé dans l'analyse
+function extractSportType(message: string): string | undefined {
+  const sportPatterns: { pattern: RegExp; type: string }[] = [
+    { pattern: /course|running|footing|run/i, type: 'course' },
+    { pattern: /v[ée]lo|cycling|bike|vtt/i, type: 'vélo' },
+    { pattern: /natation|swim|piscine/i, type: 'natation' },
+    { pattern: /trail/i, type: 'course' },
+  ];
+
+  for (const { pattern, type } of sportPatterns) {
+    if (pattern.test(message)) {
+      return type;
+    }
+  }
+
+  return undefined; // Toutes les activités
 }
 
 // Parser le JSON de workout depuis la réponse de l'IA
@@ -311,9 +388,57 @@ export async function generateAIResponse(
   conversationHistory: { role: 'user' | 'assistant'; content: string }[],
   metrics: TrainingMetrics | null
 ): Promise<AIResponse> {
+  // Vérifier si c'est une demande d'analyse
+  let analysis: ActivityAnalysis | undefined;
+  let analysisContext = '';
+
+  if (isAnalysisRequest(userMessage) && stravaApi.isConnected()) {
+    try {
+      // Vérifier si un ID d'activité est directement fourni
+      const directActivityId = extractActivityId(userMessage);
+
+      if (directActivityId) {
+        // Analyser l'activité spécifique - on doit d'abord récupérer son type
+        console.log(`Analyse de l'activité avec ID: ${directActivityId}`);
+        try {
+          // Récupérer les détails pour connaître le type
+          const activityDetails = await stravaApi.getActivityDetails(directActivityId);
+          const analysisResult = await analyzeActivityByType(activityDetails.type, directActivityId);
+          analysis = analysisResult.analysis;
+          analysisContext = `\n\n## ANALYSE DE SÉANCE ${analysisResult.sportLabel.toUpperCase()} À COMMENTER\n\n${analysis.summary}\n\nUtilise ces données pour donner une analyse personnalisée et des conseils concrets à l'athlète. Sois encourageant mais honnête sur les axes d'amélioration.`;
+        } catch (activityError) {
+          console.error('Erreur analyse activité:', activityError);
+          analysisContext = `\n\nL'activité demandée n'a pas pu être analysée. Vérifie que l'activité existe et est accessible. Propose à l'utilisateur de réessayer ou d'analyser une autre séance.`;
+        }
+      } else {
+        // Extraire le type de sport demandé et trouver la dernière activité
+        const sportType = extractSportType(userMessage);
+        const activity = await activityAnalysisService.findLastActivity(sportType);
+
+        if (activity) {
+          try {
+            console.log(`Analyse de l'activité: ${activity.name} (${activity.id}) - Type: ${activity.type}`);
+            const analysisResult = await analyzeActivityByType(activity.type, activity.id);
+            analysis = analysisResult.analysis;
+            analysisContext = `\n\n## ANALYSE DE SÉANCE ${analysisResult.sportLabel.toUpperCase()} À COMMENTER\n\n${analysis.summary}\n\nUtilise ces données pour donner une analyse personnalisée et des conseils concrets à l'athlète. Sois encourageant mais honnête sur les axes d'amélioration.`;
+          } catch (activityError) {
+            console.error('Erreur analyse activité:', activityError);
+            analysisContext = `\n\nL'activité (${activity.name}) n'a pas pu être analysée. Propose à l'utilisateur de réessayer.`;
+          }
+        } else {
+          analysisContext = `\n\nL'utilisateur demande une analyse mais aucune activité correspondante n'a été trouvée. Demande-lui de préciser ou de vérifier sa connexion Strava.`;
+        }
+      }
+    } catch (error) {
+      console.error('Erreur lors de l\'analyse:', error);
+      analysisContext = `\n\nUne erreur s'est produite lors de la récupération des données de l'activité. Indique à l'utilisateur de réessayer.`;
+    }
+  }
+
   // Construire les messages pour l'API
+  const systemPrompt = createSystemPrompt(metrics) + analysisContext;
   const messages: ChatMessage[] = [
-    { role: 'system', content: createSystemPrompt(metrics) },
+    { role: 'system', content: systemPrompt },
   ];
 
   // Ajouter l'historique de conversation (limité aux 10 derniers messages)
@@ -341,6 +466,7 @@ export async function generateAIResponse(
     return {
       content,
       workout: finalWorkout,
+      analysis,
     };
   } catch (error) {
     console.error('Erreur génération IA:', error);
