@@ -151,6 +151,8 @@ Exemple vélo :
 - "15' 75% - 90% 90rpm" = duration_minutes: 15, power_percent_low: 75, power_percent_high: 90, cadence_rpm: 90
 - "5' récupération 80 rpm" = duration_minutes: 5, type: cooldown, cadence_rpm: 80
 - "Récupération lap" = is_lap: true, type: cooldown
+- "15' 91%-106% Puissance critique 197-229W 90rpm" = duration_minutes: 15, watts_low: 197, watts_high: 229, cadence_rpm: 90, type: active
+- "5' Zone 1 0-127W 90rpm Récupération" = duration_minutes: 5, watts_low: 0, watts_high: 127, cadence_rpm: 90, type: recovery
 
 RÉPÉTITIONS - UTILISER type: "repeat" :
 Pour les répétitions (Nx), créer UN SEUL objet avec type: "repeat", count: N, et pattern: [...]
@@ -176,7 +178,7 @@ EXEMPLE - "5x 800m avec 2' récup" :
   ]
 }
 
-EXEMPLE - "3x (1' 40rpm / 1' 80rpm)" (vélo) :
+EXEMPLE - "3x (1' 40rpm / 1' 80rpm)" (vélo cadence) :
 {
   "type": "repeat",
   "count": 3,
@@ -186,7 +188,23 @@ EXEMPLE - "3x (1' 40rpm / 1' 80rpm)" (vélo) :
   ]
 }
 
+EXEMPLE - "2x (5' Zone 5 228-242W 100rpm / 2'30 Zone 1 0-127W)" (vélo puissance) :
+{
+  "type": "repeat",
+  "count": 2,
+  "pattern": [
+    {"duration_minutes": 5, "type": "active", "name": "Zone 5", "watts_low": 228, "watts_high": 242, "cadence_rpm": 100},
+    {"duration_minutes": 2, "duration_seconds": 30, "type": "recovery", "name": "Récupération", "watts_low": 0, "watts_high": 127}
+  ]
+}
+
 Pour plusieurs blocs de répétitions, créer plusieurs objets "repeat" séparés.
+
+RÈGLE CRITIQUE RÉPÉTITIONS :
+- Tout format "Nx (...)" ou "Nx(" DOIT être parsé comme type: "repeat" avec count: N
+- "2x (5' Zone 5 / 2'30 récup)" = type: "repeat", count: 2, pattern: [...]
+- Ne JAMAIS ignorer les répétitions, même avec des formats complexes
+- Si tu vois "2x", "3x", "4x" etc. suivi de parenthèses, c'est TOUJOURS une répétition
 
 IMPORTANT : Dans chaque étape, TOUJOURS inclure les paramètres spécifiques :
 - Vélo : cadence_rpm si mentionné, power_percent_low/high ou watts_low/high si mentionné
