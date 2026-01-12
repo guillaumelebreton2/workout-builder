@@ -139,13 +139,13 @@ function detectRepeatBlocks(steps: WorkoutStep[]): DisplayBlock[] {
         }
       }
 
-      // On garde le meilleur pattern (au moins 3 répétitions pour être significatif)
-      if (repeatCount >= 3 && (!bestPattern || repeatCount * patternSize > bestPattern.count * bestPattern.size)) {
+      // On garde le meilleur pattern (au moins 2 répétitions pour être significatif)
+      if (repeatCount >= 2 && (!bestPattern || repeatCount * patternSize > bestPattern.count * bestPattern.size)) {
         bestPattern = { size: patternSize, count: repeatCount, hasPartialEnd };
       }
     }
 
-    if (bestPattern && bestPattern.count >= 3) {
+    if (bestPattern && bestPattern.count >= 2) {
       // On a trouvé un pattern répété
       // Déterminer quels steps inclure dans le pattern affiché
       const patternToShow = steps.slice(i, i + bestPattern.size);
