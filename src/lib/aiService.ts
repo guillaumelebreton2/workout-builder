@@ -35,7 +35,8 @@ async function analyzeActivityByType(
 }
 
 // URL du proxy backend pour l'API Groq
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+// En production, l'API est sur le même domaine (URL relative)
+const API_URL = import.meta.env.PROD ? '' : 'http://localhost:3001';
 const MODEL = 'llama-3.3-70b-versatile';
 
 // Types

@@ -3,7 +3,8 @@
  * Gère l'authentification et les appels API
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+// En production, l'API est sur le même domaine (URL relative)
+const API_BASE = import.meta.env.PROD ? '' : 'http://localhost:3001';
 const STORAGE_KEY = 'workout-builder-strava';
 
 export interface StravaTokens {
