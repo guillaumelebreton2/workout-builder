@@ -943,23 +943,24 @@ function detectWorkoutStructure(
     }
   }
 
-  // 2. Détecter les points de changement de rythme (variation > 15%)
+  // 2. Détecter les points de changement de rythme (variation > 20%)
   const changePoints: number[] = [0]; // Commence au début
-  const minSegmentDuration = 20; // Au moins 20 secondes entre changements
+  const minSegmentDuration = 45; // Au moins 45 secondes entre changements
+  const windowSize2 = 20; // Fenêtre de comparaison plus large
 
   let lastChangeIdx = 0;
   for (let i = minSegmentDuration; i < smoothedVelocity.length - minSegmentDuration; i++) {
     if (i - lastChangeIdx < minSegmentDuration) continue;
 
-    const before = smoothedVelocity.slice(Math.max(0, i - 10), i);
-    const after = smoothedVelocity.slice(i, Math.min(smoothedVelocity.length, i + 10));
+    const before = smoothedVelocity.slice(Math.max(0, i - windowSize2), i);
+    const after = smoothedVelocity.slice(i, Math.min(smoothedVelocity.length, i + windowSize2));
 
     const avgBefore = before.filter(v => v > 0).reduce((a, b) => a + b, 0) / before.length || 0;
     const avgAfter = after.filter(v => v > 0).reduce((a, b) => a + b, 0) / after.length || 0;
 
     if (avgBefore > 0 && avgAfter > 0) {
       const changePercent = Math.abs(avgAfter - avgBefore) / avgBefore;
-      if (changePercent > 0.12) { // 12% de variation = changement de segment
+      if (changePercent > 0.20) { // 20% de variation = changement significatif
         changePoints.push(i);
         lastChangeIdx = i;
       }
@@ -976,7 +977,7 @@ function detectWorkoutStructure(
     const startIdx = changePoints[i];
     const endIdx = changePoints[i + 1];
 
-    if (endIdx - startIdx < 10) continue; // Segment trop court
+    if (endIdx - startIdx < 30) continue; // Segment trop court (< 30 sec)
 
     const startDist = distanceData[startIdx] || 0;
     const endDist = distanceData[endIdx] || 0;
@@ -1012,26 +1013,51 @@ function detectWorkoutStructure(
     return { mainSegments: allSegments, isStructuredInterval: false };
   }
 
-  // 4. Calculer l'allure moyenne globale pour classifier les segments
-  const totalDist = allSegments.reduce((sum, s) => sum + s.distance, 0);
-  const totalTime = allSegments.reduce((sum, s) => sum + s.duration, 0);
+  // 4. Fusionner les segments adjacents de pace similaire (< 10% de différence)
+  const mergedSegments: IntervalSegment[] = [];
+  for (const seg of allSegments) {
+    const lastMerged = mergedSegments[mergedSegments.length - 1];
+    if (lastMerged) {
+      const paceDiff = Math.abs(seg.avgPace - lastMerged.avgPace) / lastMerged.avgPace;
+      if (paceDiff < 0.10) {
+        // Fusionner avec le segment précédent
+        const totalDist = lastMerged.distance + seg.distance;
+        const totalDur = lastMerged.duration + seg.duration;
+        lastMerged.endTime = seg.endTime;
+        lastMerged.distance = totalDist;
+        lastMerged.duration = totalDur;
+        lastMerged.avgPace = (totalDur / 60) / (totalDist / 1000);
+        if (seg.avgHr && lastMerged.avgHr) {
+          lastMerged.avgHr = Math.round((lastMerged.avgHr + seg.avgHr) / 2);
+        }
+        continue;
+      }
+    }
+    mergedSegments.push({ ...seg });
+  }
+
+  console.log('[IntervalDetection] Segments après fusion:', mergedSegments.length);
+
+  // 5. Calculer l'allure moyenne globale pour classifier les segments
+  const totalDist = mergedSegments.reduce((sum, s) => sum + s.distance, 0);
+  const totalTime = mergedSegments.reduce((sum, s) => sum + s.duration, 0);
   const globalAvgPace = totalTime > 0 ? (totalTime / 60) / (totalDist / 1000) : 0;
 
-  // 5. Classifier chaque segment (rapide/lent par rapport à la moyenne)
-  for (const seg of allSegments) {
-    if (seg.avgPace < globalAvgPace * 0.92) {
+  // 6. Classifier chaque segment (rapide/lent par rapport à la moyenne)
+  for (const seg of mergedSegments) {
+    if (seg.avgPace < globalAvgPace * 0.90) {
       seg.type = 'fast';
-    } else if (seg.avgPace > globalAvgPace * 1.08) {
+    } else if (seg.avgPace > globalAvgPace * 1.10) {
       seg.type = 'recovery';
     } else {
       seg.type = 'steady';
     }
   }
 
-  // 6. Identifier warmup (premier segment si lent) et cooldown (dernier si lent)
+  // 8. Identifier warmup (premier segment si lent) et cooldown (dernier si lent)
   let warmup: IntervalSegment | undefined;
   let cooldown: IntervalSegment | undefined;
-  let mainSegments = [...allSegments];
+  let mainSegments = [...mergedSegments];
 
   // Warmup : premier segment si > 2min et plus lent que la moyenne
   if (mainSegments[0] && mainSegments[0].duration > 120 && mainSegments[0].avgPace > globalAvgPace) {
@@ -1046,18 +1072,19 @@ function detectWorkoutStructure(
     mainSegments = mainSegments.slice(0, lastIdx);
   }
 
-  // 7. Détecter les patterns de répétition par distance ou durée similaire
+  // 9. Détecter les patterns de répétition par distance ou durée similaire
+  // Ne considérer que les segments > 100m pour éviter le bruit
   let intervalPattern: IntervalPattern | undefined;
-  const fastSegments = mainSegments.filter(s => s.type === 'fast');
-  const recoverySegments = mainSegments.filter(s => s.type === 'recovery' || s.type === 'steady');
+  const significantFastSegments = mainSegments.filter(s => s.type === 'fast' && s.distance >= 100);
+  const recoverySegments = mainSegments.filter(s => (s.type === 'recovery' || s.type === 'steady') && s.distance >= 50);
 
-  // Chercher des groupes de segments avec distance similaire (±15%)
-  if (fastSegments.length >= 2) {
-    const distGroups = groupBySimilarity(fastSegments.map(s => s.distance), 0.15);
+  // Chercher des groupes de segments avec distance similaire (±20%)
+  if (significantFastSegments.length >= 2) {
+    const distGroups = groupBySimilarity(significantFastSegments.map(s => s.distance), 0.20);
     const largestGroup = distGroups.reduce((max, g) => g.length > max.length ? g : max, []);
 
     if (largestGroup.length >= 2) {
-      const matchingSegments = largestGroup.map(idx => fastSegments[idx]);
+      const matchingSegments = largestGroup.map(idx => significantFastSegments[idx]);
       const avgDist = matchingSegments.reduce((sum, s) => sum + s.distance, 0) / matchingSegments.length;
       const avgDur = matchingSegments.reduce((sum, s) => sum + s.duration, 0) / matchingSegments.length;
       const avgPace = matchingSegments.reduce((sum, s) => sum + s.avgPace, 0) / matchingSegments.length;
