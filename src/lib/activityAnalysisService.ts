@@ -943,10 +943,10 @@ function detectWorkoutStructure(
     }
   }
 
-  // 2. Détecter les points de changement de rythme (variation > 20%)
+  // 2. Détecter les points de changement de rythme (variation > 15%)
   const changePoints: number[] = [0]; // Commence au début
-  const minSegmentDuration = 45; // Au moins 45 secondes entre changements
-  const windowSize2 = 20; // Fenêtre de comparaison plus large
+  const minSegmentDuration = 30; // Au moins 30 secondes (pour intervalles courts type 1')
+  const windowSize2 = 15; // Fenêtre de comparaison
 
   let lastChangeIdx = 0;
   for (let i = minSegmentDuration; i < smoothedVelocity.length - minSegmentDuration; i++) {
@@ -960,7 +960,7 @@ function detectWorkoutStructure(
 
     if (avgBefore > 0 && avgAfter > 0) {
       const changePercent = Math.abs(avgAfter - avgBefore) / avgBefore;
-      if (changePercent > 0.20) { // 20% de variation = changement significatif
+      if (changePercent > 0.15) { // 15% de variation pour détecter 95% VMA → 60% VMA
         changePoints.push(i);
         lastChangeIdx = i;
       }
@@ -1013,13 +1013,16 @@ function detectWorkoutStructure(
     return { mainSegments: allSegments, isStructuredInterval: false };
   }
 
-  // 4. Fusionner les segments adjacents de pace similaire (< 10% de différence)
+  // 4. Fusionner les segments adjacents TRÈS similaires (< 8% de différence)
+  // On fusionne moins agressivement pour garder la structure fast/slow
   const mergedSegments: IntervalSegment[] = [];
   for (const seg of allSegments) {
     const lastMerged = mergedSegments[mergedSegments.length - 1];
     if (lastMerged) {
       const paceDiff = Math.abs(seg.avgPace - lastMerged.avgPace) / lastMerged.avgPace;
-      if (paceDiff < 0.10) {
+      // Ne fusionner que si très similaire ET pas de grande différence de durée
+      const durDiff = Math.abs(seg.duration - lastMerged.duration) / lastMerged.duration;
+      if (paceDiff < 0.08 && durDiff < 0.5) {
         // Fusionner avec le segment précédent
         const totalDist = lastMerged.distance + seg.distance;
         const totalDur = lastMerged.duration + seg.duration;
@@ -1072,16 +1075,29 @@ function detectWorkoutStructure(
     mainSegments = mainSegments.slice(0, lastIdx);
   }
 
-  // 9. Détecter les patterns de répétition par distance ou durée similaire
-  // Ne considérer que les segments > 100m pour éviter le bruit
+  // 9. Détecter les patterns de répétition par distance OU durée similaire
+  // Ne considérer que les segments > 100m ou > 45s pour éviter le bruit
   let intervalPattern: IntervalPattern | undefined;
-  const significantFastSegments = mainSegments.filter(s => s.type === 'fast' && s.distance >= 100);
-  const recoverySegments = mainSegments.filter(s => (s.type === 'recovery' || s.type === 'steady') && s.distance >= 50);
+  const significantFastSegments = mainSegments.filter(s => s.type === 'fast' && (s.distance >= 100 || s.duration >= 45));
+  const recoverySegments = mainSegments.filter(s => (s.type === 'recovery' || s.type === 'steady') && (s.distance >= 50 || s.duration >= 30));
 
-  // Chercher des groupes de segments avec distance similaire (±20%)
+  console.log('[IntervalDetection] Segments rapides significatifs:', significantFastSegments.length);
+  console.log('[IntervalDetection] Segments récup:', recoverySegments.length);
+
   if (significantFastSegments.length >= 2) {
-    const distGroups = groupBySimilarity(significantFastSegments.map(s => s.distance), 0.20);
-    const largestGroup = distGroups.reduce((max, g) => g.length > max.length ? g : max, []);
+    // Essayer d'abord par DURÉE (pour intervalles temps-basés comme 1' / 2')
+    const durationGroups = groupBySimilarity(significantFastSegments.map(s => s.duration), 0.25);
+    const largestDurGroup = durationGroups.reduce((max, g) => g.length > max.length ? g : max, []);
+
+    // Ensuite par DISTANCE (pour intervalles distance-basés comme 400m)
+    const distGroups = groupBySimilarity(significantFastSegments.map(s => s.distance), 0.25);
+    const largestDistGroup = distGroups.reduce((max, g) => g.length > max.length ? g : max, []);
+
+    // Prendre le meilleur groupe (celui avec le plus de segments)
+    const largestGroup = largestDurGroup.length >= largestDistGroup.length ? largestDurGroup : largestDistGroup;
+    const groupType = largestDurGroup.length >= largestDistGroup.length ? 'duration' : 'distance';
+
+    console.log('[IntervalDetection] Meilleur groupe par', groupType, ':', largestGroup.length, 'segments');
 
     if (largestGroup.length >= 2) {
       const matchingSegments = largestGroup.map(idx => significantFastSegments[idx]);
@@ -1354,9 +1370,16 @@ function generateSummary(analysis: RunningAnalysis): string {
     // Pattern résumé si détecté
     if (workoutStructure.intervalPattern && workoutStructure.intervalPattern.count >= 2) {
       const p = workoutStructure.intervalPattern;
-      summary += `**Pattern détecté** : ${p.count} x ~${formatDistance(p.avgDistance)} à ${formatPace(p.avgPace)}/km`;
-      if (p.avgRecoveryDistance > 0) {
-        summary += ` (récup ~${formatDistance(p.avgRecoveryDistance)} à ${formatPace(p.avgRecoveryPace)}/km)`;
+      // Afficher durée si intervalles courts (< 3min), sinon distance
+      const intervalLabel = p.avgDuration < 180
+        ? `${p.count} x ~${formatDuration(p.avgDuration)}`
+        : `${p.count} x ~${formatDistance(p.avgDistance)}`;
+      summary += `**Pattern détecté** : ${intervalLabel} à ${formatPace(p.avgPace)}/km`;
+      if (p.avgRecoveryDuration > 0) {
+        const recupLabel = p.avgRecoveryDuration < 180
+          ? formatDuration(p.avgRecoveryDuration)
+          : formatDistance(p.avgRecoveryDistance);
+        summary += ` (récup ~${recupLabel} à ${formatPace(p.avgRecoveryPace)}/km)`;
       }
       summary += '\n\n';
     }
