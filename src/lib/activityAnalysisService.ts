@@ -917,7 +917,15 @@ function detectWorkoutStructure(
   velocityData: number[],
   hrData?: number[]
 ): WorkoutStructure | undefined {
+  console.log('[IntervalDetection] Données reçues:', {
+    distancePoints: distanceData?.length || 0,
+    timePoints: timeData?.length || 0,
+    velocityPoints: velocityData?.length || 0,
+    hrPoints: hrData?.length || 0,
+  });
+
   if (!velocityData || velocityData.length < 60) {
+    console.log('[IntervalDetection] Pas assez de données velocity (<60 points)');
     return undefined;
   }
 
@@ -958,6 +966,8 @@ function detectWorkoutStructure(
     }
   }
   changePoints.push(smoothedVelocity.length - 1); // Termine à la fin
+
+  console.log('[IntervalDetection] Points de changement détectés:', changePoints.length, changePoints);
 
   // 3. Créer les segments à partir des points de changement
   const allSegments: IntervalSegment[] = [];
@@ -1074,13 +1084,29 @@ function detectWorkoutStructure(
 
   const isStructuredInterval = (intervalPattern?.count ?? 0) >= 2;
 
-  return {
+  const result = {
     warmup,
     cooldown,
     mainSegments,
     intervalPattern,
     isStructuredInterval,
   };
+
+  console.log('[IntervalDetection] Résultat final:', {
+    hasWarmup: !!warmup,
+    hasCooldown: !!cooldown,
+    mainSegmentsCount: mainSegments.length,
+    intervalPattern: intervalPattern ? `${intervalPattern.count}x ~${intervalPattern.avgDistance}m` : 'aucun',
+    isStructuredInterval,
+    segments: mainSegments.map(s => ({
+      type: s.type,
+      dist: s.distance,
+      dur: s.duration,
+      pace: s.avgPace.toFixed(2),
+    })),
+  });
+
+  return result;
 }
 
 /**
@@ -1240,6 +1266,14 @@ function formatDistance(meters: number): string {
 // Générer le résumé texte pour l'IA
 function generateSummary(analysis: RunningAnalysis): string {
   const { activity, splits, metrics, strengths, improvements, workoutStructure } = analysis;
+
+  console.log('[GenerateSummary] workoutStructure reçu:', workoutStructure ? {
+    hasWarmup: !!workoutStructure.warmup,
+    hasCooldown: !!workoutStructure.cooldown,
+    mainSegments: workoutStructure.mainSegments?.length || 0,
+    isStructuredInterval: workoutStructure.isStructuredInterval,
+  } : 'undefined');
+
   const date = new Date(activity.start_date_local).toLocaleDateString('fr-FR', {
     weekday: 'long',
     day: 'numeric',
