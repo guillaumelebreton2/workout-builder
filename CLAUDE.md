@@ -8,6 +8,10 @@ Application web pour créer des séances d'entraînement (course, vélo, natatio
 ## Tâches techniques restantes
 
 ### Priorité haute
+- [ ] **Gestion de compte utilisateur avec Auth0**
+  - Authentification (login/signup)
+  - Persistance des données utilisateur côté serveur
+  - Lier le profil athlète au compte
 - [ ] Utiliser le FTP réel de l'athlète au lieu du hardcodé 200W (`server/index.js:207`)
 - [ ] Validation/sanitization des credentials Garmin
 - [ ] Tester les rate limits Groq sous charge
