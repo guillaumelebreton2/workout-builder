@@ -97,6 +97,9 @@ export interface RunningAnalysis {
   strengths: string[];
   improvements: string[];
 
+  // Structure de la séance (intervalles détectés)
+  workoutStructure?: WorkoutStructure;
+
   // Résumé texte pour l'IA
   summary: string;
 }
@@ -125,6 +128,36 @@ export interface SessionTypeResult {
   type: SessionType;
   confidence: number;     // 0-100
   characteristics: string[];
+}
+
+// ======== STRUCTURE D'INTERVALLES ========
+
+export interface IntervalSegment {
+  type: 'warmup' | 'cooldown' | 'fast' | 'recovery' | 'steady';
+  startTime: number;      // secondes depuis le début
+  endTime: number;        // secondes depuis le début
+  duration: number;       // secondes
+  distance: number;       // mètres
+  avgPace: number;        // min/km
+  avgHr?: number;         // bpm
+}
+
+export interface IntervalPattern {
+  count: number;          // nombre de répétitions
+  avgDistance: number;    // distance moyenne des intervalles rapides
+  avgDuration: number;    // durée moyenne
+  avgPace: number;        // allure moyenne
+  avgRecoveryDistance: number;  // distance moyenne des récup
+  avgRecoveryDuration: number;  // durée moyenne des récup
+  avgRecoveryPace: number;      // allure moyenne des récup
+}
+
+export interface WorkoutStructure {
+  warmup?: IntervalSegment;
+  cooldown?: IntervalSegment;
+  mainSegments: IntervalSegment[];
+  intervalPattern?: IntervalPattern;  // Si un pattern répétitif est détecté
+  isStructuredInterval: boolean;      // True si séance de fractionné détectée
 }
 
 // ======== ANALYSE VÉLO ========
@@ -874,6 +907,202 @@ function calculateSplitsFromStreams(
   return splits;
 }
 
+/**
+ * Détecte la structure d'une séance (échauffement, intervalles, récup)
+ * Analyse les variations de pace pour identifier les différentes phases
+ */
+function detectWorkoutStructure(
+  distanceData: number[],
+  timeData: number[],
+  velocityData: number[],
+  hrData?: number[]
+): WorkoutStructure | undefined {
+  if (!velocityData || velocityData.length < 100) {
+    return undefined;
+  }
+
+  // Convertir les vitesses en pace (min/km) et lisser les données
+  const windowSize = 30; // Moyenne glissante sur 30 secondes
+  const smoothedPaces: number[] = [];
+
+  for (let i = 0; i < velocityData.length; i++) {
+    const start = Math.max(0, i - windowSize);
+    const end = Math.min(velocityData.length, i + windowSize);
+    const slice = velocityData.slice(start, end).filter(v => v > 0.5); // Ignorer les arrêts
+    if (slice.length > 0) {
+      const avgVelocity = slice.reduce((a, b) => a + b, 0) / slice.length;
+      smoothedPaces.push(avgVelocity > 0 ? (1000 / 60) / avgVelocity : 0);
+    } else {
+      smoothedPaces.push(0);
+    }
+  }
+
+  // Calculer les statistiques de pace
+  const validPaces = smoothedPaces.filter(p => p > 2 && p < 15); // Entre 2 et 15 min/km
+  if (validPaces.length < 50) return undefined;
+
+  const avgPace = validPaces.reduce((a, b) => a + b, 0) / validPaces.length;
+  const sortedPaces = [...validPaces].sort((a, b) => a - b);
+  const fastPaceThreshold = sortedPaces[Math.floor(sortedPaces.length * 0.25)]; // 25e percentile
+  const slowPaceThreshold = sortedPaces[Math.floor(sortedPaces.length * 0.75)]; // 75e percentile
+
+  // Si pas assez de variation, ce n'est pas du fractionné
+  const paceRange = slowPaceThreshold - fastPaceThreshold;
+  if (paceRange < 0.3) { // Moins de 18 sec/km de variation
+    return { mainSegments: [], isStructuredInterval: false };
+  }
+
+  // Identifier les segments
+  const segments: IntervalSegment[] = [];
+  let currentSegmentStart = 0;
+  let currentType: IntervalSegment['type'] = 'steady';
+
+  // Déterminer le type initial basé sur les premières minutes
+  const firstMinutePaces = smoothedPaces.slice(0, Math.min(60, smoothedPaces.length));
+  const firstMinuteAvg = firstMinutePaces.filter(p => p > 0).reduce((a, b) => a + b, 0) / firstMinutePaces.length || avgPace;
+
+  if (firstMinuteAvg > avgPace + 0.2) {
+    currentType = 'warmup';
+  }
+
+  for (let i = 1; i < smoothedPaces.length; i++) {
+    const pace = smoothedPaces[i];
+    if (pace <= 0) continue;
+
+    let newType: IntervalSegment['type'] = currentType;
+
+    // Détecter le changement de type
+    if (pace < fastPaceThreshold - 0.1) {
+      newType = 'fast';
+    } else if (pace > slowPaceThreshold + 0.1) {
+      // Vérifier si c'est un warmup (début) ou cooldown (fin) ou recovery
+      const progress = i / smoothedPaces.length;
+      if (progress < 0.15 && currentType === 'warmup') {
+        newType = 'warmup';
+      } else if (progress > 0.85) {
+        newType = 'cooldown';
+      } else {
+        newType = 'recovery';
+      }
+    } else {
+      newType = 'steady';
+    }
+
+    // Changement de segment détecté
+    if (newType !== currentType && i > currentSegmentStart + 20) {
+      const startDist = distanceData[currentSegmentStart] || 0;
+      const endDist = distanceData[i] || 0;
+      const startTime = timeData[currentSegmentStart] || 0;
+      const endTime = timeData[i] || 0;
+
+      const segmentPaces = smoothedPaces.slice(currentSegmentStart, i).filter(p => p > 0);
+      const segmentAvgPace = segmentPaces.length > 0
+        ? segmentPaces.reduce((a, b) => a + b, 0) / segmentPaces.length
+        : avgPace;
+
+      let segmentAvgHr: number | undefined;
+      if (hrData) {
+        const hrSlice = hrData.slice(currentSegmentStart, i).filter(h => h > 0);
+        if (hrSlice.length > 0) {
+          segmentAvgHr = Math.round(hrSlice.reduce((a, b) => a + b, 0) / hrSlice.length);
+        }
+      }
+
+      segments.push({
+        type: currentType,
+        startTime,
+        endTime,
+        duration: endTime - startTime,
+        distance: Math.round(endDist - startDist),
+        avgPace: segmentAvgPace,
+        avgHr: segmentAvgHr,
+      });
+
+      currentSegmentStart = i;
+      currentType = newType;
+    }
+  }
+
+  // Ajouter le dernier segment
+  const lastIdx = smoothedPaces.length - 1;
+  const lastSegmentPaces = smoothedPaces.slice(currentSegmentStart).filter(p => p > 0);
+  if (lastSegmentPaces.length > 20) {
+    const startDist = distanceData[currentSegmentStart] || 0;
+    const endDist = distanceData[lastIdx] || 0;
+    const startTime = timeData[currentSegmentStart] || 0;
+    const endTime = timeData[lastIdx] || 0;
+
+    let segmentAvgHr: number | undefined;
+    if (hrData) {
+      const hrSlice = hrData.slice(currentSegmentStart).filter(h => h > 0);
+      if (hrSlice.length > 0) {
+        segmentAvgHr = Math.round(hrSlice.reduce((a, b) => a + b, 0) / hrSlice.length);
+      }
+    }
+
+    segments.push({
+      type: currentType,
+      startTime,
+      endTime,
+      duration: endTime - startTime,
+      distance: Math.round(endDist - startDist),
+      avgPace: lastSegmentPaces.reduce((a, b) => a + b, 0) / lastSegmentPaces.length,
+      avgHr: segmentAvgHr,
+    });
+  }
+
+  if (segments.length < 2) {
+    return { mainSegments: [], isStructuredInterval: false };
+  }
+
+  // Extraire warmup et cooldown
+  let warmup: IntervalSegment | undefined;
+  let cooldown: IntervalSegment | undefined;
+  let mainSegments = [...segments];
+
+  if (mainSegments[0]?.type === 'warmup') {
+    warmup = mainSegments.shift();
+  }
+  if (mainSegments[mainSegments.length - 1]?.type === 'cooldown') {
+    cooldown = mainSegments.pop();
+  }
+
+  // Détecter un pattern répétitif d'intervalles
+  const fastSegments = mainSegments.filter(s => s.type === 'fast');
+  const recoverySegments = mainSegments.filter(s => s.type === 'recovery');
+
+  let intervalPattern: IntervalPattern | undefined;
+  const isStructuredInterval = fastSegments.length >= 3 && recoverySegments.length >= 2;
+
+  if (isStructuredInterval) {
+    const avgFastDist = fastSegments.reduce((sum, s) => sum + s.distance, 0) / fastSegments.length;
+    const avgFastDur = fastSegments.reduce((sum, s) => sum + s.duration, 0) / fastSegments.length;
+    const avgFastPace = fastSegments.reduce((sum, s) => sum + s.avgPace, 0) / fastSegments.length;
+
+    const avgRecDist = recoverySegments.reduce((sum, s) => sum + s.distance, 0) / recoverySegments.length;
+    const avgRecDur = recoverySegments.reduce((sum, s) => sum + s.duration, 0) / recoverySegments.length;
+    const avgRecPace = recoverySegments.reduce((sum, s) => sum + s.avgPace, 0) / recoverySegments.length;
+
+    intervalPattern = {
+      count: fastSegments.length,
+      avgDistance: Math.round(avgFastDist),
+      avgDuration: Math.round(avgFastDur),
+      avgPace: avgFastPace,
+      avgRecoveryDistance: Math.round(avgRecDist),
+      avgRecoveryDuration: Math.round(avgRecDur),
+      avgRecoveryPace: avgRecPace,
+    };
+  }
+
+  return {
+    warmup,
+    cooldown,
+    mainSegments,
+    intervalPattern,
+    isStructuredInterval,
+  };
+}
+
 // Estimer le niveau d'effort
 function estimateEffort(
   avgPace: number,
@@ -978,9 +1207,29 @@ function identifyInsights(
   return { strengths, improvements };
 }
 
+// Formater une durée en mm:ss ou hh:mm:ss
+function formatDuration(seconds: number): string {
+  if (seconds < 3600) {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.round(seconds % 60);
+    return `${mins}'${secs.toString().padStart(2, '0')}`;
+  }
+  const hours = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  return `${hours}h${mins.toString().padStart(2, '0')}`;
+}
+
+// Formater une distance en mètres ou km
+function formatDistance(meters: number): string {
+  if (meters >= 1000) {
+    return `${(meters / 1000).toFixed(2)} km`;
+  }
+  return `${Math.round(meters)}m`;
+}
+
 // Générer le résumé texte pour l'IA
 function generateSummary(analysis: RunningAnalysis): string {
-  const { activity, splits, metrics, strengths, improvements } = analysis;
+  const { activity, splits, metrics, strengths, improvements, workoutStructure } = analysis;
   const date = new Date(activity.start_date_local).toLocaleDateString('fr-FR', {
     weekday: 'long',
     day: 'numeric',
@@ -1025,6 +1274,43 @@ function generateSummary(analysis: RunningAnalysis): string {
       summary += ` (confiance: ${metrics.sessionTypeConfidence}%)`;
     }
     summary += '\n';
+  }
+
+  // Structure de la séance (intervalles détectés)
+  if (workoutStructure && workoutStructure.isStructuredInterval) {
+    summary += `\n## Structure de la séance\n`;
+
+    // Échauffement
+    if (workoutStructure.warmup) {
+      const w = workoutStructure.warmup;
+      summary += `- **Échauffement** : ${formatDistance(w.distance)} en ${formatDuration(w.duration)} à ${formatPace(w.avgPace)}/km`;
+      if (w.avgHr) summary += ` (FC: ${w.avgHr})`;
+      summary += '\n';
+    }
+
+    // Pattern d'intervalles
+    if (workoutStructure.intervalPattern) {
+      const p = workoutStructure.intervalPattern;
+      summary += `- **Corps de séance** : ${p.count} x ${formatDistance(p.avgDistance)} à ${formatPace(p.avgPace)}/km`;
+      summary += ` (récup ${formatDistance(p.avgRecoveryDistance)} à ${formatPace(p.avgRecoveryPace)}/km)\n`;
+    } else if (workoutStructure.mainSegments.length > 0) {
+      // Lister les segments individuels
+      summary += `- **Corps de séance** :\n`;
+      for (const seg of workoutStructure.mainSegments) {
+        const typeLabel = seg.type === 'fast' ? '🔴 Rapide' : seg.type === 'recovery' ? '🟢 Récup' : '⚪ Steady';
+        summary += `  - ${typeLabel}: ${formatDistance(seg.distance)} à ${formatPace(seg.avgPace)}/km`;
+        if (seg.avgHr) summary += ` (FC: ${seg.avgHr})`;
+        summary += '\n';
+      }
+    }
+
+    // Retour au calme
+    if (workoutStructure.cooldown) {
+      const c = workoutStructure.cooldown;
+      summary += `- **Retour au calme** : ${formatDistance(c.distance)} en ${formatDuration(c.duration)} à ${formatPace(c.avgPace)}/km`;
+      if (c.avgHr) summary += ` (FC: ${c.avgHr})`;
+      summary += '\n';
+    }
   }
 
   // Efficacité et dérive cardiaque
@@ -1560,6 +1846,11 @@ export async function analyzeRunningActivity(
     sessionTypeResult.type
   );
 
+  // Détecter la structure de la séance (intervalles)
+  const workoutStructure = velocityData && distanceData.length > 0 && timeData.length > 0
+    ? detectWorkoutStructure(distanceData, timeData, velocityData, hrData)
+    : undefined;
+
   const metrics: RunningAnalysis['metrics'] = {
     avgPace,
     bestPace: paces.length > 0 ? Math.min(...paces) : avgPace,
@@ -1603,6 +1894,7 @@ export async function analyzeRunningActivity(
     metrics,
     strengths,
     improvements,
+    workoutStructure,
     summary: '',
   };
 
