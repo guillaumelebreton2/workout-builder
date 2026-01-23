@@ -6,6 +6,8 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import crypto from 'crypto';
+import cookieParser from 'cookie-parser';
 import pkg from 'garmin-connect';
 const { GarminConnect } = pkg;
 
@@ -20,8 +22,12 @@ const STRAVA_AUTH_URL = 'https://www.strava.com/oauth/authorize';
 const STRAVA_TOKEN_URL = 'https://www.strava.com/oauth/token';
 const STRAVA_API_URL = 'https://www.strava.com/api/v3';
 
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://localhost:3000', 'https://enduzo.com'],
+  credentials: true
+}));
 app.use(express.json());
+app.use(cookieParser());
 
 // Cache des sessions Garmin (durée: 1 heure)
 const SESSION_DURATION = 60 * 60 * 1000; // 1 heure en ms
@@ -999,6 +1005,483 @@ app.get('/api/strava/activities/:id/laps', async (req, res) => {
   } catch (err) {
     console.error('Erreur laps Strava:', err);
     res.status(500).json({ error: 'Failed to fetch activity laps' });
+  }
+});
+
+// ============================================
+// GARMIN OAUTH2 PKCE ENDPOINTS (API officielle)
+// ============================================
+
+// Config Garmin OAuth
+const GARMIN_CLIENT_ID = process.env.GARMIN_CLIENT_ID;
+const GARMIN_CLIENT_SECRET = process.env.GARMIN_CLIENT_SECRET;
+const GARMIN_AUTH_URL = 'https://connect.garmin.com/oauth2Confirm';
+const GARMIN_TOKEN_URL = 'https://diauth.garmin.com/di-oauth2-service/oauth/token';
+const GARMIN_WORKOUT_API = 'https://apis.garmin.com/workoutportal/workout/v2';
+const GARMIN_SCHEDULE_API = 'https://apis.garmin.com/training-api/schedule/';
+
+// Stockage en mémoire des tokens Garmin (pour le dev local)
+const garminTokensCache = new Map();
+
+// Génère un code verifier pour PKCE
+function generateCodeVerifier() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+  let verifier = '';
+  const randomBytes = crypto.randomBytes(64);
+  for (let i = 0; i < 64; i++) {
+    verifier += chars[randomBytes[i] % chars.length];
+  }
+  return verifier;
+}
+
+// Génère le code challenge (SHA-256 + base64url)
+function generateCodeChallenge(verifier) {
+  return crypto.createHash('sha256').update(verifier).digest('base64url');
+}
+
+/**
+ * Démarre le flux OAuth Garmin (PKCE)
+ */
+app.get('/api/garmin/auth', (req, res) => {
+  if (!GARMIN_CLIENT_ID) {
+    return res.status(500).json({ error: 'GARMIN_CLIENT_ID non configuré' });
+  }
+
+  const redirectUri = `http://localhost:${PORT}/api/garmin/callback`;
+  const codeVerifier = generateCodeVerifier();
+  const codeChallenge = generateCodeChallenge(codeVerifier);
+  const state = crypto.randomBytes(32).toString('base64url');
+
+  // Stocker le code_verifier dans un cookie
+  res.cookie('garmin_code_verifier', codeVerifier, {
+    httpOnly: true,
+    maxAge: 600000, // 10 minutes
+    sameSite: 'lax'
+  });
+  res.cookie('garmin_oauth_state', state, {
+    httpOnly: true,
+    maxAge: 600000,
+    sameSite: 'lax'
+  });
+
+  const params = new URLSearchParams({
+    response_type: 'code',
+    client_id: GARMIN_CLIENT_ID,
+    code_challenge: codeChallenge,
+    code_challenge_method: 'S256',
+    redirect_uri: redirectUri,
+    state: state
+  });
+
+  const authUrl = `${GARMIN_AUTH_URL}?${params.toString()}`;
+  console.log('Redirection OAuth Garmin:', authUrl);
+  res.redirect(authUrl);
+});
+
+/**
+ * Callback OAuth Garmin
+ */
+app.get('/api/garmin/callback', async (req, res) => {
+  const { code, state, error, error_description } = req.query;
+
+  if (error) {
+    console.error('Erreur OAuth Garmin:', error, error_description);
+    return res.redirect(`${FRONTEND_URL}?garmin_error=${encodeURIComponent(error_description || error)}`);
+  }
+
+  if (!code) {
+    return res.redirect(`${FRONTEND_URL}?garmin_error=no_code`);
+  }
+
+  const codeVerifier = req.cookies.garmin_code_verifier;
+  const storedState = req.cookies.garmin_oauth_state;
+
+  if (!codeVerifier) {
+    return res.redirect(`${FRONTEND_URL}?garmin_error=session_expired`);
+  }
+
+  if (state !== storedState) {
+    return res.redirect(`${FRONTEND_URL}?garmin_error=invalid_state`);
+  }
+
+  const redirectUri = `http://localhost:${PORT}/api/garmin/callback`;
+
+  try {
+    // Échanger le code contre des tokens
+    const tokenResponse = await fetch(GARMIN_TOKEN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        client_id: GARMIN_CLIENT_ID,
+        client_secret: GARMIN_CLIENT_SECRET,
+        code: code,
+        code_verifier: codeVerifier,
+        redirect_uri: redirectUri
+      }).toString()
+    });
+
+    if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text();
+      console.error('Erreur token Garmin:', tokenResponse.status, errorText);
+      return res.redirect(`${FRONTEND_URL}?garmin_error=token_exchange_failed`);
+    }
+
+    const tokens = await tokenResponse.json();
+    console.log('Tokens Garmin reçus:', { hasAccessToken: !!tokens.access_token, expiresIn: tokens.expires_in });
+
+    // Récupérer l'ID utilisateur Garmin
+    let garminUserId = null;
+    try {
+      const userResponse = await fetch('https://apis.garmin.com/wellness-api/rest/user/id', {
+        headers: { 'Authorization': `Bearer ${tokens.access_token}` }
+      });
+      if (userResponse.ok) {
+        const userData = await userResponse.json();
+        garminUserId = userData.userId;
+        console.log('Garmin User ID:', garminUserId);
+      }
+    } catch (e) {
+      console.warn('Impossible de récupérer le user ID Garmin:', e.message);
+      garminUserId = 'local_user_' + Date.now();
+    }
+
+    // Stocker les tokens en mémoire
+    garminTokensCache.set(garminUserId, {
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+      expires_at: Date.now() + (tokens.expires_in - 600) * 1000,
+      refresh_token_expires_at: Date.now() + (tokens.refresh_token_expires_in - 600) * 1000
+    });
+
+    // Effacer les cookies PKCE
+    res.clearCookie('garmin_code_verifier');
+    res.clearCookie('garmin_oauth_state');
+
+    // Créer un cookie de session
+    const sessionData = { garminUserId, connectedAt: Date.now() };
+    res.cookie('garmin_session', Buffer.from(JSON.stringify(sessionData)).toString('base64'), {
+      httpOnly: true,
+      maxAge: tokens.refresh_token_expires_in * 1000,
+      sameSite: 'lax'
+    });
+
+    res.redirect(`${FRONTEND_URL}?garmin_connected=true`);
+  } catch (err) {
+    console.error('Erreur callback Garmin:', err);
+    res.redirect(`${FRONTEND_URL}?garmin_error=server_error`);
+  }
+});
+
+/**
+ * Statut de connexion Garmin
+ */
+app.get('/api/garmin/status', (req, res) => {
+  const sessionCookie = req.cookies.garmin_session;
+
+  if (!sessionCookie) {
+    return res.json({ connected: false, reason: 'no_session' });
+  }
+
+  try {
+    const session = JSON.parse(Buffer.from(sessionCookie, 'base64').toString());
+    const { garminUserId } = session;
+
+    if (!garminUserId) {
+      return res.json({ connected: false, reason: 'no_user_id' });
+    }
+
+    const tokenData = garminTokensCache.get(garminUserId);
+    if (!tokenData) {
+      return res.json({ connected: false, reason: 'tokens_not_found' });
+    }
+
+    const now = Date.now();
+    const accessTokenValid = tokenData.expires_at && now < tokenData.expires_at;
+    const refreshTokenValid = tokenData.refresh_token_expires_at && now < tokenData.refresh_token_expires_at;
+
+    if (!refreshTokenValid) {
+      return res.json({ connected: false, reason: 'refresh_token_expired' });
+    }
+
+    res.json({
+      connected: true,
+      garminUserId,
+      connectedAt: session.connectedAt,
+      accessTokenValid,
+      needsRefresh: !accessTokenValid
+    });
+  } catch (e) {
+    res.json({ connected: false, reason: 'invalid_session' });
+  }
+});
+
+/**
+ * Déconnexion Garmin
+ */
+app.post('/api/garmin/disconnect', (req, res) => {
+  const sessionCookie = req.cookies.garmin_session;
+
+  if (sessionCookie) {
+    try {
+      const session = JSON.parse(Buffer.from(sessionCookie, 'base64').toString());
+      if (session.garminUserId) {
+        garminTokensCache.delete(session.garminUserId);
+      }
+    } catch (e) {}
+  }
+
+  res.clearCookie('garmin_session');
+  res.json({ success: true, message: 'Disconnected from Garmin' });
+});
+
+/**
+ * Récupère un access token valide (refresh si nécessaire)
+ */
+async function getValidGarminToken(garminUserId) {
+  const tokenData = garminTokensCache.get(garminUserId);
+  if (!tokenData) {
+    throw new Error('No tokens found. Please reconnect to Garmin.');
+  }
+
+  // Token encore valide ?
+  if (tokenData.expires_at && Date.now() < tokenData.expires_at) {
+    return tokenData.access_token;
+  }
+
+  // Besoin de refresh
+  console.log('Refreshing Garmin token...');
+  const tokenResponse = await fetch(GARMIN_TOKEN_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'refresh_token',
+      client_id: GARMIN_CLIENT_ID,
+      client_secret: GARMIN_CLIENT_SECRET,
+      refresh_token: tokenData.refresh_token
+    }).toString()
+  });
+
+  if (!tokenResponse.ok) {
+    garminTokensCache.delete(garminUserId);
+    throw new Error('Token refresh failed. Please reconnect to Garmin.');
+  }
+
+  const newTokens = await tokenResponse.json();
+
+  garminTokensCache.set(garminUserId, {
+    access_token: newTokens.access_token,
+    refresh_token: newTokens.refresh_token,
+    expires_at: Date.now() + (newTokens.expires_in - 600) * 1000,
+    refresh_token_expires_at: Date.now() + (newTokens.refresh_token_expires_in - 600) * 1000
+  });
+
+  return newTokens.access_token;
+}
+
+/**
+ * Convertit un workout au format Garmin Training API V2
+ */
+function convertToGarminApiV2Format(workout) {
+  const sportMap = { running: 'RUNNING', cycling: 'CYCLING', swimming: 'LAP_SWIMMING' };
+  const sport = sportMap[workout.sport] || 'RUNNING';
+
+  let stepOrder = 0;
+  const steps = [];
+
+  for (const step of workout.steps) {
+    stepOrder++;
+    const garminStep = buildGarminApiV2Step(step, stepOrder, sport);
+    if (garminStep) {
+      if (garminStep.type === 'WorkoutRepeatStep' && garminStep.steps) {
+        garminStep.steps.forEach((s, i) => { s.stepOrder = stepOrder + i + 1; });
+        stepOrder += garminStep.steps.length;
+      }
+      steps.push(garminStep);
+    }
+  }
+
+  const garminWorkout = {
+    workoutName: workout.name || 'Enduzo Workout',
+    description: workout.description || 'Created with Enduzo',
+    sport: sport,
+    workoutProvider: 'Enduzo',
+    workoutSourceId: 'Enduzo',
+    isSessionTransitionEnabled: false,
+    segments: [{
+      segmentOrder: 1,
+      sport: sport,
+      poolLength: sport === 'LAP_SWIMMING' ? (workout.poolLength || 25) : null,
+      poolLengthUnit: sport === 'LAP_SWIMMING' ? 'METER' : null,
+      steps: steps
+    }]
+  };
+
+  if (sport === 'LAP_SWIMMING') {
+    garminWorkout.poolLength = workout.poolLength || 25;
+    garminWorkout.poolLengthUnit = 'METER';
+  }
+
+  return garminWorkout;
+}
+
+function buildGarminApiV2Step(step, stepOrder, sport) {
+  const intensityMap = {
+    warmup: 'WARMUP', cooldown: 'COOLDOWN', active: 'ACTIVE',
+    recovery: 'RECOVERY', rest: 'REST', interval: 'INTERVAL'
+  };
+  const intensity = intensityMap[step.type] || 'ACTIVE';
+
+  // Handle repeat steps
+  if (step.type === 'repeat' && step.steps) {
+    const nestedSteps = step.steps.map((s, i) => buildGarminApiV2Step(s, i + 1, sport));
+    return {
+      type: 'WorkoutRepeatStep',
+      stepOrder,
+      repeatType: 'REPEAT_UNTIL_STEPS_CMPLT',
+      repeatValue: step.iterations || 1,
+      steps: nestedSteps.filter(Boolean)
+    };
+  }
+
+  let durationType = 'OPEN', durationValue = null, durationValueType = null;
+  if (step.duration) {
+    if (step.duration.type === 'time') {
+      durationType = 'TIME';
+      durationValue = step.duration.value;
+    } else if (step.duration.type === 'distance') {
+      durationType = 'DISTANCE';
+      durationValue = step.duration.value;
+      durationValueType = 'METER';
+    }
+  }
+
+  let targetType = 'OPEN', targetValueLow = null, targetValueHigh = null;
+  const details = step.details || {};
+
+  if (sport === 'RUNNING' && details.paceMinKm) {
+    targetType = 'PACE';
+    if (details.paceMinKm.low) targetValueHigh = 1000 / (details.paceMinKm.low * 60);
+    if (details.paceMinKm.high) targetValueLow = 1000 / (details.paceMinKm.high * 60);
+  } else if (sport === 'CYCLING') {
+    if (details.watts) {
+      targetType = 'POWER';
+      targetValueLow = details.watts.low;
+      targetValueHigh = details.watts.high;
+    }
+  }
+
+  return {
+    type: 'WorkoutStep',
+    stepOrder,
+    intensity,
+    description: step.notes || null,
+    durationType,
+    durationValue,
+    durationValueType,
+    targetType: targetType === 'OPEN' ? 'OPEN' : targetType,
+    targetValue: null,
+    targetValueLow,
+    targetValueHigh,
+    targetValueType: null,
+    secondaryTargetType: null,
+    secondaryTargetValue: null,
+    secondaryTargetValueLow: null,
+    secondaryTargetValueHigh: null,
+    secondaryTargetValueType: null,
+    strokeType: null,
+    drillType: null,
+    equipmentType: null,
+    exerciseCategory: null,
+    exerciseName: null,
+    weightValue: null,
+    weightDisplayUnit: null
+  };
+}
+
+/**
+ * Sync workout vers Garmin (API officielle V2)
+ */
+app.post('/api/garmin/sync-workout', async (req, res) => {
+  const { workout, scheduleDate } = req.body;
+
+  if (!workout) {
+    return res.status(400).json({ error: 'Workout data is required' });
+  }
+
+  const sessionCookie = req.cookies.garmin_session;
+  if (!sessionCookie) {
+    return res.status(401).json({ error: 'Not connected to Garmin. Please connect first.' });
+  }
+
+  let session;
+  try {
+    session = JSON.parse(Buffer.from(sessionCookie, 'base64').toString());
+  } catch (e) {
+    return res.status(401).json({ error: 'Invalid session. Please reconnect to Garmin.' });
+  }
+
+  const { garminUserId } = session;
+  if (!garminUserId) {
+    return res.status(401).json({ error: 'No Garmin user ID. Please reconnect.' });
+  }
+
+  try {
+    const accessToken = await getValidGarminToken(garminUserId);
+    const garminWorkout = convertToGarminApiV2Format(workout);
+
+    console.log('Creating Garmin workout (API V2):', JSON.stringify(garminWorkout, null, 2));
+
+    const createResponse = await fetch(GARMIN_WORKOUT_API, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(garminWorkout)
+    });
+
+    if (!createResponse.ok) {
+      const errorText = await createResponse.text();
+      console.error('Garmin create workout failed:', createResponse.status, errorText);
+      if (createResponse.status === 401) {
+        return res.status(401).json({ error: 'Session expired. Please reconnect to Garmin.' });
+      }
+      return res.status(500).json({ error: 'Failed to create workout', details: errorText });
+    }
+
+    const createdWorkout = await createResponse.json();
+    console.log('Workout created:', createdWorkout.workoutId);
+
+    let scheduleResult = null;
+    if (scheduleDate && createdWorkout.workoutId) {
+      try {
+        const scheduleResponse = await fetch(GARMIN_SCHEDULE_API, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ workoutId: createdWorkout.workoutId, date: scheduleDate })
+        });
+        if (scheduleResponse.ok) {
+          scheduleResult = await scheduleResponse.json();
+          console.log('Workout scheduled:', scheduleResult);
+        }
+      } catch (e) {
+        console.warn('Failed to schedule workout:', e.message);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: scheduleResult ? 'Workout created and scheduled' : 'Workout created',
+      workoutId: createdWorkout.workoutId,
+      scheduled: !!scheduleResult
+    });
+  } catch (error) {
+    console.error('Garmin sync error:', error);
+    res.status(500).json({ error: error.message || 'Internal server error' });
   }
 });
 
