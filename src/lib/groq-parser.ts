@@ -456,23 +456,8 @@ export async function parseWithGroq(description: string, apiKeys: string | strin
     throw new Error('Impossible de parser la réponse JSON');
   }
 
-  // Dérouler les blocs "repeat" (pattern + count)
-  const expandedSteps: ParsedStep[] = [];
-  for (const step of parsed.steps) {
-    if (step.type === 'repeat' && step.count && step.pattern) {
-      console.log(`Déroulement de ${step.count}x répétitions avec ${step.pattern.length} étapes par pattern`);
-      for (let i = 0; i < step.count; i++) {
-        for (const patternStep of step.pattern) {
-          expandedSteps.push(patternStep);
-        }
-      }
-    } else {
-      expandedSteps.push(step);
-    }
-  }
-
-  // Convertir en WorkoutStep[]
-  const steps = expandedSteps.map((step): WorkoutStep => {
+  // Fonction pour convertir un ParsedStep en WorkoutStep
+  const convertStep = (step: ParsedStep): WorkoutStep => {
     const workoutStep: WorkoutStep = {
       id: generateId(),
       type: step.type as StepType,
@@ -610,7 +595,27 @@ export async function parseWithGroq(description: string, apiKeys: string | strin
     }
 
     return workoutStep;
-  });
+  };
+
+  // Convertir les steps en préservant la structure des répétitions
+  const steps: WorkoutStep[] = [];
+  for (const step of parsed.steps) {
+    if (step.type === 'repeat' && step.count && step.pattern) {
+      // Créer un bloc de répétition avec steps imbriqués
+      console.log(`Création bloc répétition: ${step.count}x avec ${step.pattern.length} étapes`);
+      const repeatStep: WorkoutStep = {
+        id: generateId(),
+        type: 'active', // Le type du bloc parent
+        name: step.name || `${step.count}x`,
+        duration: { type: 'open' },
+        repetitions: step.count,
+        steps: step.pattern.map(convertStep),
+      };
+      steps.push(repeatStep);
+    } else {
+      steps.push(convertStep(step));
+    }
+  }
 
   return {
     steps,
