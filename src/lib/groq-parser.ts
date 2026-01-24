@@ -614,13 +614,16 @@ export async function parseWithGroq(description: string, apiKeys: string | strin
     if (step.type === 'repeat' && step.count && step.pattern) {
       // Créer un bloc de répétition avec steps imbriqués
       console.log(`Création bloc répétition: ${step.count}x avec ${step.pattern.length} étapes`);
+      console.log('Pattern brut de l\'IA:', JSON.stringify(step.pattern, null, 2));
+      const convertedPattern = step.pattern.map(convertStep);
+      console.log('Pattern converti:', JSON.stringify(convertedPattern, null, 2));
       const repeatStep: WorkoutStep = {
         id: generateId(),
         type: 'active', // Le type du bloc parent
         name: step.name || `${step.count}x`,
         duration: { type: 'open' },
         repetitions: step.count,
-        steps: step.pattern.map(convertStep),
+        steps: convertedPattern,
       };
       steps.push(repeatStep);
     } else {
