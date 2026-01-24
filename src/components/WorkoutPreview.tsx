@@ -101,6 +101,19 @@ function detectRepeatBlocks(steps: WorkoutStep[]): DisplayBlock[] {
   let i = 0;
 
   while (i < steps.length) {
+    const currentStep = steps[i];
+
+    // NOUVEAU : Vérifier si le step a déjà une structure de répétition imbriquée
+    if (currentStep.repetitions && currentStep.steps && currentStep.steps.length > 0) {
+      blocks.push({
+        type: 'repeat',
+        steps: currentStep.steps,
+        repeatCount: currentStep.repetitions,
+      });
+      i++;
+      continue;
+    }
+
     // Chercher un pattern de répétition à partir de la position actuelle
     // On essaie différentes tailles de pattern (1-4 steps par répétition)
     let bestPattern: { size: number; count: number; hasPartialEnd: boolean } | null = null;
@@ -337,8 +350,26 @@ export function WorkoutPreview({ steps }: WorkoutPreviewProps) {
   // Détecter les blocs de répétition
   const displayBlocks = detectRepeatBlocks(steps);
 
+  // Fonction pour aplatir les steps (pour les calculs de totaux et la timeline)
+  const flattenSteps = (stepsToFlatten: WorkoutStep[]): WorkoutStep[] => {
+    const result: WorkoutStep[] = [];
+    for (const step of stepsToFlatten) {
+      if (step.repetitions && step.steps && step.steps.length > 0) {
+        // Dérouler les répétitions pour le calcul
+        for (let i = 0; i < step.repetitions; i++) {
+          result.push(...step.steps);
+        }
+      } else {
+        result.push(step);
+      }
+    }
+    return result;
+  };
+
+  const flatSteps = flattenSteps(steps);
+
   // Calculer la durée/distance totale
-  const totals = steps.reduce(
+  const totals = flatSteps.reduce(
     (acc, step) => {
       if (step.duration.value) {
         if (step.duration.type === 'time') {
@@ -362,7 +393,7 @@ export function WorkoutPreview({ steps }: WorkoutPreviewProps) {
         <div className="flex justify-between items-center flex-wrap gap-2">
           <h3 className="font-medium text-gray-900">Prévisualisation</h3>
           <div className="text-sm text-gray-600">
-            {steps.length} étape{steps.length > 1 ? 's' : ''}
+            {flatSteps.length} étape{flatSteps.length > 1 ? 's' : ''}
             {totals.time > 0 && (
               <span className="ml-2">
                 • {formatDurationDisplay('time', totals.time)}
@@ -380,19 +411,19 @@ export function WorkoutPreview({ steps }: WorkoutPreviewProps) {
       {/* Timeline visuelle */}
       <div className="p-4">
         <div className="flex gap-0.5 mb-4 h-8 rounded overflow-hidden">
-          {steps.map((step) => {
+          {flatSteps.map((step, idx) => {
             const totalValue = totals.time > 0 ? totals.time : totals.distance;
             const stepValue = step.duration.value || 0;
             const widthPercent = totalValue > 0
               ? (stepValue / totalValue) * 100
-              : 100 / steps.length;
+              : 100 / flatSteps.length;
             const zoneColor = step.intensity?.zone
               ? ZONE_COLORS[step.intensity.zone]
               : 'bg-blue-200';
 
             return (
               <div
-                key={step.id}
+                key={`${step.id}-${idx}`}
                 className={`${zoneColor} flex items-center justify-center text-xs font-medium min-w-[4px]`}
                 style={{ width: `${Math.max(widthPercent, 1)}%` }}
                 title={`${step.name}: ${formatDurationDisplay(step.duration.type, step.duration.value || 0)}`}
