@@ -1041,21 +1041,57 @@ function detectWorkoutStructure(
 
   console.log('[IntervalDetection] Segments après fusion:', mergedSegments.length);
 
-  // 5. Calculer l'allure moyenne globale pour classifier les segments
-  const totalDist = mergedSegments.reduce((sum, s) => sum + s.distance, 0);
-  const totalTime = mergedSegments.reduce((sum, s) => sum + s.duration, 0);
-  const globalAvgPace = totalTime > 0 ? (totalTime / 60) / (totalDist / 1000) : 0;
+  // 5. Classification bimodale : détecter les deux bandes d'allure (rapide vs récup)
+  // Au lieu d'utiliser la moyenne globale, on cherche la séparation naturelle
+  const paces = mergedSegments.map(s => s.avgPace).filter(p => p > 0 && p < 20); // Exclure les allures aberrantes
+  const sortedPaces = [...paces].sort((a, b) => a - b);
 
-  // 6. Classifier chaque segment (rapide/lent par rapport à la moyenne)
+  let classificationThreshold: number;
+
+  if (sortedPaces.length >= 4) {
+    // Chercher le plus grand écart dans les allures triées (bimodal)
+    let maxGap = 0;
+    let gapIndex = Math.floor(sortedPaces.length / 2);
+    for (let i = 0; i < sortedPaces.length - 1; i++) {
+      const gap = sortedPaces[i + 1] - sortedPaces[i];
+      // Le gap doit représenter au moins 15% de différence pour être significatif
+      const gapPercent = gap / sortedPaces[i];
+      if (gap > maxGap && gapPercent > 0.10) {
+        maxGap = gap;
+        gapIndex = i;
+      }
+    }
+
+    // Le seuil est au milieu du plus grand écart
+    if (maxGap > 0.3) { // Au moins 20 sec/km d'écart
+      classificationThreshold = (sortedPaces[gapIndex] + sortedPaces[gapIndex + 1]) / 2;
+    } else {
+      // Pas de bimodalité claire : utiliser la médiane
+      classificationThreshold = sortedPaces[Math.floor(sortedPaces.length / 2)];
+    }
+  } else {
+    // Peu de segments : utiliser la médiane
+    classificationThreshold = sortedPaces[Math.floor(sortedPaces.length / 2)] || 5;
+  }
+
+  console.log('[IntervalDetection] Seuil de classification:', classificationThreshold.toFixed(2), 'min/km');
+  console.log('[IntervalDetection] Allures triées:', sortedPaces.map(p => p.toFixed(2)).join(', '));
+
+  // 6. Classifier chaque segment par rapport au seuil bimodal
   for (const seg of mergedSegments) {
-    if (seg.avgPace < globalAvgPace * 0.90) {
+    if (seg.avgPace < classificationThreshold * 0.95) {
       seg.type = 'fast';
-    } else if (seg.avgPace > globalAvgPace * 1.10) {
+    } else if (seg.avgPace > classificationThreshold * 1.05) {
       seg.type = 'recovery';
     } else {
       seg.type = 'steady';
     }
   }
+
+  // Calculer la moyenne globale pour warmup/cooldown detection
+  const totalDist = mergedSegments.reduce((sum, s) => sum + s.distance, 0);
+  const totalTime = mergedSegments.reduce((sum, s) => sum + s.duration, 0);
+  const globalAvgPace = totalTime > 0 ? (totalTime / 60) / (totalDist / 1000) : 0;
 
   // 8. Identifier warmup (premier segment si lent) et cooldown (dernier si lent)
   let warmup: IntervalSegment | undefined;
