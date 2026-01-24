@@ -158,13 +158,23 @@ RÉPÉTITIONS - UTILISER type: "repeat" :
 Pour les répétitions (Nx), créer UN SEUL objet avec type: "repeat", count: N, et pattern: [...]
 Le code se chargera de dérouler les répétitions.
 
-EXEMPLE - "8x (1' à 95% VMA - 2' à 60% VMA)" :
+EXEMPLE - "8x (1' à 95% VMA 14-15 km/h - 2' à 60% VMA)" :
 {
   "type": "repeat",
   "count": 8,
   "pattern": [
-    {"duration_minutes": 1, "type": "active", "name": "Intervalle", "cap_percent_low": 95, "cap_percent_high": 95},
+    {"duration_minutes": 1, "type": "active", "name": "Intervalle", "cap_percent_low": 95, "cap_percent_high": 95, "speed_kmh_low": 14, "speed_kmh_high": 15},
     {"duration_minutes": 2, "type": "recovery", "name": "Récup", "cap_percent_low": 60, "cap_percent_high": 60}
+  ]
+}
+
+EXEMPLE - "5x 800m à 4'00-4'15/km avec 2' récup" :
+{
+  "type": "repeat",
+  "count": 5,
+  "pattern": [
+    {"distance_meters": 800, "type": "active", "name": "800m", "pace_min_km_low": 4.25, "pace_min_km_high": 4.0},
+    {"duration_minutes": 2, "type": "recovery", "name": "Récup"}
   ]
 }
 
@@ -206,10 +216,11 @@ RÈGLE CRITIQUE RÉPÉTITIONS :
 - Ne JAMAIS ignorer les répétitions, même avec des formats complexes
 - Si tu vois "2x", "3x", "4x" etc. suivi de parenthèses, c'est TOUJOURS une répétition
 
-IMPORTANT : Dans chaque étape, TOUJOURS inclure les paramètres spécifiques :
+IMPORTANT : Dans chaque étape (Y COMPRIS dans les patterns de répétition), TOUJOURS inclure les paramètres spécifiques :
 - Vélo : cadence_rpm si mentionné, power_percent_low/high ou watts_low/high si mentionné
 - Course : cap_percent_low/high si mentionné, pace_min_km_low/high ou speed_kmh_low/high si mentionné
 - Natation : swim_stroke, swim_equipment, swim_intensity si mentionnés
+CRITIQUE : Les steps dans un pattern de répétition doivent avoir TOUS les mêmes champs qu'un step normal !
 
 NE JAMAIS dérouler les répétitions manuellement - TOUJOURS utiliser le format "repeat" avec count et pattern.
 
