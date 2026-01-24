@@ -3,7 +3,6 @@
  */
 
 import { WorkoutStep, StepType, SwimStrokeType, SwimEquipmentType, SwimDrillType, SwimIntensityLevel, generateId } from './types';
-import { getAthleteProfile } from './athleteProfileStore';
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
@@ -504,24 +503,6 @@ export async function parseWithGroq(description: string, apiKeys: string | strin
         low: step.cap_percent_low,
         high: step.cap_percent_high || step.cap_percent_low,
       };
-
-      // Calculer l'allure à partir du % CAP et de la VMA de l'athlète
-      const profile = getAthleteProfile();
-      if (profile.running.vma && !step.pace_min_km_low && !step.speed_kmh_low) {
-        const vmaKmh = profile.running.vma;
-        // Vitesse = VMA * (% CAP / 100)
-        const speedLow = vmaKmh * (step.cap_percent_low / 100);
-        const speedHigh = vmaKmh * ((step.cap_percent_high || step.cap_percent_low) / 100);
-        workoutStep.details.speedKmh = {
-          low: Math.round(speedLow * 100) / 100,
-          high: Math.round(speedHigh * 100) / 100,
-        };
-        // Allure = 60 / vitesse
-        workoutStep.details.paceMinKm = {
-          low: 60 / speedHigh,  // Vitesse haute = allure basse (rapide)
-          high: 60 / speedLow,  // Vitesse basse = allure haute (lente)
-        };
-      }
     }
 
     // Allures explicites (course à pied) - priorité sur les vitesses

@@ -52,7 +52,7 @@ const DEFAULT_PACE_MIN_KM = 5.0; // 5:00/km
 // Le % correspond à la vitesse : 100% = vitesse de référence, 95% = plus lent (allure plus haute)
 // Priorité : allure explicite > % avec référence > % avec défaut
 function enrichStepsWithPace(steps: WorkoutStep[], referencePaceMinKm: number | null): WorkoutStep[] {
-  return steps.map(step => {
+  const enrichSingleStep = (step: WorkoutStep): WorkoutStep => {
     // Si paceMinKm déjà présent (allure explicite), ne pas écraser
     if (step.details?.paceMinKm) {
       return step;
@@ -86,6 +86,17 @@ function enrichStepsWithPace(steps: WorkoutStep[], referencePaceMinKm: number | 
       };
     }
     return step;
+  };
+
+  return steps.map(step => {
+    // Gérer les répétitions imbriquées
+    if (step.repetitions && step.steps && step.steps.length > 0) {
+      return {
+        ...step,
+        steps: step.steps.map(enrichSingleStep),
+      };
+    }
+    return enrichSingleStep(step);
   });
 }
 
@@ -95,7 +106,7 @@ const DEFAULT_POWER_WATTS = 200;
 // Enrichir les steps avec les watts calculés (vélo)
 // Le % correspond à la puissance : 100% = puissance de référence, 95% = moins de watts
 function enrichStepsWithWatts(steps: WorkoutStep[], referenceWatts: number): WorkoutStep[] {
-  return steps.map(step => {
+  const enrichSingleStep = (step: WorkoutStep): WorkoutStep => {
     // Si watts déjà présents, ne pas écraser
     if (step.details?.watts) {
       return step;
@@ -132,6 +143,17 @@ function enrichStepsWithWatts(steps: WorkoutStep[], referenceWatts: number): Wor
     }
 
     return step;
+  };
+
+  return steps.map(step => {
+    // Gérer les répétitions imbriquées
+    if (step.repetitions && step.steps && step.steps.length > 0) {
+      return {
+        ...step,
+        steps: step.steps.map(enrichSingleStep),
+      };
+    }
+    return enrichSingleStep(step);
   });
 }
 
@@ -140,7 +162,7 @@ function enrichStepsWithWatts(steps: WorkoutStep[], referenceWatts: number): Wor
 function enrichStepsWithSwimPace(steps: WorkoutStep[], referencePaceMin100m: number): WorkoutStep[] {
   const referenceSpeed = 100 / referencePaceMin100m; // m/min
 
-  return steps.map(step => {
+  const enrichSingleStep = (step: WorkoutStep): WorkoutStep => {
     if (step.details?.capPercent && !step.details?.swimPaceMin100m) {
       const { low, high } = step.details.capPercent;
       const speedAtLowPercent = referenceSpeed * (low / 100);
@@ -160,6 +182,17 @@ function enrichStepsWithSwimPace(steps: WorkoutStep[], referencePaceMin100m: num
       };
     }
     return step;
+  };
+
+  return steps.map(step => {
+    // Gérer les répétitions imbriquées
+    if (step.repetitions && step.steps && step.steps.length > 0) {
+      return {
+        ...step,
+        steps: step.steps.map(enrichSingleStep),
+      };
+    }
+    return enrichSingleStep(step);
   });
 }
 
