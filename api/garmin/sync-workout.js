@@ -135,13 +135,13 @@ function buildGarminStep(step, stepOrder, sport, workout) {
   const intensity = intensityMap[step.type] || 'ACTIVE';
 
   // Handle repeat steps
-  if (step.type === 'repeat' && step.steps) {
+  if (step.steps && step.steps.length > 0) {
     const nestedSteps = step.steps.map((s, i) => buildGarminStep(s, i + 1, sport, workout));
     return {
       type: 'WorkoutRepeatStep',
       stepOrder: stepOrder,
       repeatType: 'REPEAT_UNTIL_STEPS_CMPLT',
-      repeatValue: step.iterations || 1,
+      repeatValue: step.repetitions || 1,
       steps: nestedSteps.filter(Boolean)
     };
   }

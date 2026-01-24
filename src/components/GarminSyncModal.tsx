@@ -38,14 +38,13 @@ async function syncWorkoutToGarmin(workout: Workout, scheduleDate?: string) {
         name: workout.name,
         description: workout.description,
         sport: workout.sport,
-        poolLength: workout.poolLength,
         steps: workout.steps.map(step => ({
           type: step.type,
           name: step.name,
           notes: step.notes,
           duration: step.duration,
           details: step.details,
-          iterations: step.iterations,
+          repetitions: step.repetitions,
           steps: step.steps?.map(s => ({
             type: s.type,
             name: s.name,
