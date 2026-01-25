@@ -338,7 +338,7 @@ function buildGarminStep(step, stepOrder, sport, workout) {
       const instructionTypeId = intensityMap[details.swimIntensity];
       if (instructionTypeId) {
         garminStep.secondaryTargetType = 'SWIM_INSTRUCTION';
-        garminStep.secondaryTargetValue = instructionTypeId;
+        garminStep.secondaryTargetValueLow = instructionTypeId;
       }
     }
 
