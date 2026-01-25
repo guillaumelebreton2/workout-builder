@@ -241,7 +241,7 @@ function buildGarminStep(step, stepOrder, sport, workout) {
     type: 'WorkoutStep',
     stepOrder: stepOrder,
     intensity: intensity,
-    description: step.notes || step.name || null,
+    description: step.notes || null,
     durationType: durationType,
     durationValue: durationValue,
     durationValueType: durationValueType,
@@ -325,18 +325,7 @@ function buildGarminStep(step, stepOrder, sport, workout) {
       }
     }
 
-    // Allure natation (target primaire)
-    if (details.swimPaceMin100m) {
-      garminStep.targetType = 'PACE';
-      if (details.swimPaceMin100m.low) {
-        garminStep.targetValueHigh = 100 / (details.swimPaceMin100m.low * 60);
-      }
-      if (details.swimPaceMin100m.high) {
-        garminStep.targetValueLow = 100 / (details.swimPaceMin100m.high * 60);
-      }
-    }
-
-    // Intensité natation - SWIM_INSTRUCTION en secondaryTarget (compatible avec allure)
+    // Intensité natation - SWIM_INSTRUCTION en secondaryTarget
     if (details.swimIntensity) {
       const intensityMap = {
         'recovery': 1,
@@ -350,6 +339,17 @@ function buildGarminStep(step, stepOrder, sport, workout) {
       if (instructionTypeId) {
         garminStep.secondaryTargetType = 'SWIM_INSTRUCTION';
         garminStep.secondaryTargetValueLow = instructionTypeId;
+      }
+    }
+
+    // Allure natation - PACE_ZONE en secondaryTarget (écrase SWIM_INSTRUCTION si les deux sont présents)
+    if (details.swimPaceMin100m) {
+      garminStep.secondaryTargetType = 'PACE_ZONE';
+      if (details.swimPaceMin100m.low) {
+        garminStep.secondaryTargetValueHigh = 100 / (details.swimPaceMin100m.low * 60);
+      }
+      if (details.swimPaceMin100m.high) {
+        garminStep.secondaryTargetValueLow = 100 / (details.swimPaceMin100m.high * 60);
       }
     }
 
