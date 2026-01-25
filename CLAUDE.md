@@ -2,6 +2,41 @@
 
 ## Contexte
 Application web pour créer des séances d'entraînement (course, vélo, natation) avec parsing IA et synchronisation Garmin.
+Déployé sur **enduzo.com** (Vercel).
+
+---
+
+## Workflow Git
+
+- **`main`** = production (enduzo.com) - NE JAMAIS COMMITTER DIRECTEMENT
+- **`dev`** = développement - déployé automatiquement en preview sur Vercel
+
+Processus:
+1. Travailler uniquement sur `dev`
+2. Push sur `dev` → déploiement preview automatique
+3. Merger `dev` → `main` quand validé pour la prod
+
+---
+
+## Travail récent (janvier 2025)
+
+### Terminé
+- [x] **Détection automatique des intervalles** dans l'analyse de séance
+  - Fichier principal : `src/lib/activityAnalysisService.ts` → fonction `detectWorkoutStructure()`
+  - Algorithme : lissage vitesse → détection points de changement → fusion segments → classification bimodale
+  - Support des intervalles basés sur le temps (ex: 1'/2')
+- [x] **Serverless functions Vercel** pour toutes les routes API :
+  - `api/strava/auth.js`, `callback.js`, `refresh.js`
+  - `api/strava/activities/index.js`, `[id]/index.js`, `[id]/streams.js`, `[id]/laps.js`
+  - `api/strava/athlete/index.js`, `zones.js`
+  - `api/ai/chat.js`
+  - `api/sync-garmin.js`
+- [x] **Fix OAuth Strava** : Redirection correcte vers enduzo.com en prod
+- [x] **Optimisation serverless** : Limite de 12 fonctions sur Hobby plan respectée
+
+### En cours / À améliorer
+- [ ] La détection d'intervalles peut encore être améliorée pour des séances complexes (blocs mixtes)
+- [ ] Afficher la structure détectée dans l'UI (actuellement juste dans le summary texte)
 
 ---
 
