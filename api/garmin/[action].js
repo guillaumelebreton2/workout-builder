@@ -309,15 +309,15 @@ function buildGarminStep(step, stepOrder, sport, workout) {
       garminStep.drillType = drillMap[details.swimDrill] || null;
     }
 
-    // Équipement - API V2 utilise des strings simples
+    // Équipement - valeurs acceptées: SWIM_FINS, SWIM_KICKBOARD, SWIM_PADDLES, SWIM_PULL_BUOY, SWIM_SNORKEL, NONE
     if (details.swimEquipment && details.swimEquipment.length > 0) {
       const equipMap = {
-        'fins': 'FINS',
-        'kickboard': 'KICKBOARD',
-        'paddles': 'PADDLES',
-        'pull_buoy': 'PULL_BUOY',
-        'pullBuoy': 'PULL_BUOY',
-        'snorkel': 'SNORKEL'
+        'fins': 'SWIM_FINS',
+        'kickboard': 'SWIM_KICKBOARD',
+        'paddles': 'SWIM_PADDLES',
+        'pull_buoy': 'SWIM_PULL_BUOY',
+        'pullBuoy': 'SWIM_PULL_BUOY',
+        'snorkel': 'SWIM_SNORKEL'
       };
       const equipment = equipMap[details.swimEquipment[0]];
       if (equipment) {
