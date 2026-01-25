@@ -325,7 +325,7 @@ function buildGarminStep(step, stepOrder, sport, workout) {
       }
     }
 
-    // Intensité natation - API V2 utilise SWIM_INSTRUCTION target type
+    // Intensité natation - SWIM_INSTRUCTION doit être en secondaryTarget
     if (details.swimIntensity) {
       const intensityMap = {
         'recovery': 1,
@@ -337,8 +337,8 @@ function buildGarminStep(step, stepOrder, sport, workout) {
       };
       const instructionTypeId = intensityMap[details.swimIntensity];
       if (instructionTypeId) {
-        garminStep.targetType = 'SWIM_INSTRUCTION';
-        garminStep.targetValue = instructionTypeId;
+        garminStep.secondaryTargetType = 'SWIM_INSTRUCTION';
+        garminStep.secondaryTargetValue = instructionTypeId;
       }
     }
 
