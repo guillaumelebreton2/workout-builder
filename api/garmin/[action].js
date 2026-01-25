@@ -234,6 +234,8 @@ function buildGarminStep(step, stepOrder, sport, workout) {
     secondaryTargetValueLow: null,
     secondaryTargetValueHigh: null,
     secondaryTargetValueType: null,
+    secondaryTargetValueOne: null,
+    secondaryTargetValueTwo: null,
     strokeType: null,
     drillType: null,
     equipmentType: null,
@@ -246,53 +248,85 @@ function buildGarminStep(step, stepOrder, sport, workout) {
   if (sport === 'LAP_SWIMMING') {
     garminStep.targetType = null;
 
+    // Stroke type avec format structuré
     if (details.swimStroke) {
       const strokeMap = {
-        'freestyle': 'FREESTYLE',
-        'backstroke': 'BACKSTROKE',
-        'breaststroke': 'BREASTSTROKE',
-        'butterfly': 'BUTTERFLY',
-        'im': 'IM',
-        'choice': 'CHOICE',
-        'mixed': 'MIXED'
+        'freestyle': { swimStrokeTypeId: 1, swimStrokeTypeKey: 'free' },
+        'free': { swimStrokeTypeId: 1, swimStrokeTypeKey: 'free' },
+        'backstroke': { swimStrokeTypeId: 2, swimStrokeTypeKey: 'backstroke' },
+        'breaststroke': { swimStrokeTypeId: 3, swimStrokeTypeKey: 'breaststroke' },
+        'butterfly': { swimStrokeTypeId: 4, swimStrokeTypeKey: 'fly' },
+        'fly': { swimStrokeTypeId: 4, swimStrokeTypeKey: 'fly' },
+        'im': { swimStrokeTypeId: 5, swimStrokeTypeKey: 'im' },
+        'choice': { swimStrokeTypeId: 6, swimStrokeTypeKey: 'any' },
+        'mixed': { swimStrokeTypeId: 7, swimStrokeTypeKey: 'mixed' }
       };
-      garminStep.strokeType = strokeMap[details.swimStroke] || 'FREESTYLE';
+      garminStep.strokeType = strokeMap[details.swimStroke] || strokeMap['freestyle'];
+
+      // Ajouter exerciseName pour les nages non-crawl (brasse, dos, papillon, etc.)
+      const exerciseNameMap = {
+        'freestyle': 'SWIMMING_FREESTYLE',
+        'free': 'SWIMMING_FREESTYLE',
+        'backstroke': 'SWIMMING_BACKSTROKE',
+        'breaststroke': 'SWIMMING_BREASTSTROKE',
+        'butterfly': 'SWIMMING_BUTTERFLY',
+        'fly': 'SWIMMING_BUTTERFLY',
+        'im': 'SWIMMING_IM',
+        'mixed': 'SWIMMING_MIXED'
+      };
+      const exerciseName = exerciseNameMap[details.swimStroke];
+      if (exerciseName && details.swimStroke !== 'freestyle' && details.swimStroke !== 'free') {
+        garminStep.exerciseName = exerciseName;
+      }
     }
 
+    // Drill type avec format structuré
     if (details.swimDrill) {
       const drillMap = {
-        'kick': 'KICK',
-        'pull': 'PULL',
-        'drill': 'BUTTERFLY'
+        'kick': { drillTypeId: 1, drillTypeKey: 'kick', displayOrder: 1 },
+        'pull': { drillTypeId: 2, drillTypeKey: 'pull', displayOrder: 2 },
+        'drill': { drillTypeId: 3, drillTypeKey: 'drill', displayOrder: 3 }
       };
       garminStep.drillType = drillMap[details.swimDrill] || null;
     }
 
-    if (details.swimEquipment) {
+    // Équipement avec format structuré
+    if (details.swimEquipment && details.swimEquipment.length > 0) {
       const equipMap = {
-        'fins': 'SWIM_FINS',
-        'paddles': 'SWIM_PADDLES',
-        'pullBuoy': 'SWIM_PULL_BUOY',
-        'kickboard': 'SWIM_KICKBOARD',
-        'snorkel': 'SWIM_SNORKEL'
+        'fins': { equipmentTypeId: 1, equipmentTypeKey: 'fins' },
+        'kickboard': { equipmentTypeId: 2, equipmentTypeKey: 'kickboard' },
+        'paddles': { equipmentTypeId: 3, equipmentTypeKey: 'paddles' },
+        'pull_buoy': { equipmentTypeId: 4, equipmentTypeKey: 'pull_buoy' },
+        'pullBuoy': { equipmentTypeId: 4, equipmentTypeKey: 'pull_buoy' },
+        'snorkel': { equipmentTypeId: 5, equipmentTypeKey: 'snorkel' }
       };
-      garminStep.equipmentType = equipMap[details.swimEquipment[0]] || 'NONE';
+      const equipment = equipMap[details.swimEquipment[0]];
+      if (equipment) {
+        garminStep.equipmentType = equipment;
+      }
     }
 
+    // Intensité natation avec format swim.instruction
     if (details.swimIntensity) {
-      const intensityValueMap = {
+      const intensityMap = {
         'recovery': 1,
         'easy': 3,
         'moderate': 4,
         'hard': 5,
-        'veryHard': 6,
-        'allOut': 7
+        'very_hard': 6,
+        'maximum': 7
       };
-      garminStep.secondaryTargetType = 'SWIM_INSTRUCTION';
-      garminStep.secondaryTargetValueLow = intensityValueMap[details.swimIntensity] || 4;
+      const instructionTypeId = intensityMap[details.swimIntensity];
+      if (instructionTypeId) {
+        garminStep.targetType = { workoutTargetTypeId: 18, workoutTargetTypeKey: 'swim.instruction' };
+        garminStep.secondaryTargetType = { workoutTargetTypeId: 18, workoutTargetTypeKey: 'swim.instruction' };
+        garminStep.secondaryTargetValueOne = instructionTypeId;
+        garminStep.secondaryTargetValueTwo = 0;
+      }
     }
 
-    if (details.swimPaceMin100m) {
+    // Allure natation (si pas d'intensité définie)
+    if (details.swimPaceMin100m && !details.swimIntensity) {
       garminStep.secondaryTargetType = 'PACE_ZONE';
       if (details.swimPaceMin100m.low) {
         garminStep.secondaryTargetValueHigh = 100 / (details.swimPaceMin100m.low * 60);
