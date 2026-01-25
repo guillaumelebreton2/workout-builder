@@ -267,20 +267,20 @@ function buildGarminStep(step, stepOrder, sport, workout) {
   if (sport === 'LAP_SWIMMING') {
     garminStep.targetType = null;
 
-    // Stroke type - API V2 utilise des strings simples
+    // Stroke type - valeurs acceptées: FREESTYLE, BACKSTROKE, BREASTSTROKE, BUTTERFLY, IM, MIXED, CHOICE, DRILL
     if (details.swimStroke) {
       const strokeMap = {
-        'freestyle': 'FREE',
-        'free': 'FREE',
-        'backstroke': 'BACK',
-        'breaststroke': 'BREAST',
-        'butterfly': 'FLY',
-        'fly': 'FLY',
+        'freestyle': 'FREESTYLE',
+        'free': 'FREESTYLE',
+        'backstroke': 'BACKSTROKE',
+        'breaststroke': 'BREASTSTROKE',
+        'butterfly': 'BUTTERFLY',
+        'fly': 'BUTTERFLY',
         'im': 'IM',
-        'choice': 'ANY',
+        'choice': 'CHOICE',
         'mixed': 'MIXED'
       };
-      garminStep.strokeType = strokeMap[details.swimStroke] || 'FREE';
+      garminStep.strokeType = strokeMap[details.swimStroke] || 'FREESTYLE';
 
       // Ajouter exerciseName pour les nages non-crawl (brasse, dos, papillon, etc.)
       const exerciseNameMap = {
