@@ -353,7 +353,19 @@ function buildGarminStep(step, stepOrder, sport, workout) {
       }
     }
 
-    if (intensity === 'REST' && durationType === 'TIME') {
+    // Notes additionnelles natation (swimNotes)
+    if (details.swimNotes) {
+      garminStep.description = garminStep.description
+        ? `${garminStep.description} | ${details.swimNotes}`
+        : details.swimNotes;
+    }
+
+    // Pour natation, RECOVERY n'existe pas - utiliser REST à la place
+    if (garminStep.intensity === 'RECOVERY') {
+      garminStep.intensity = 'REST';
+    }
+
+    if (garminStep.intensity === 'REST' && durationType === 'TIME') {
       garminStep.durationType = 'FIXED_REST';
     }
   }
