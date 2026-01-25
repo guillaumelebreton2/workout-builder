@@ -325,7 +325,18 @@ function buildGarminStep(step, stepOrder, sport, workout) {
       }
     }
 
-    // Intensité natation - SWIM_INSTRUCTION doit être en secondaryTarget
+    // Allure natation (target primaire)
+    if (details.swimPaceMin100m) {
+      garminStep.targetType = 'PACE';
+      if (details.swimPaceMin100m.low) {
+        garminStep.targetValueHigh = 100 / (details.swimPaceMin100m.low * 60);
+      }
+      if (details.swimPaceMin100m.high) {
+        garminStep.targetValueLow = 100 / (details.swimPaceMin100m.high * 60);
+      }
+    }
+
+    // Intensité natation - SWIM_INSTRUCTION en secondaryTarget (compatible avec allure)
     if (details.swimIntensity) {
       const intensityMap = {
         'recovery': 1,
@@ -339,17 +350,6 @@ function buildGarminStep(step, stepOrder, sport, workout) {
       if (instructionTypeId) {
         garminStep.secondaryTargetType = 'SWIM_INSTRUCTION';
         garminStep.secondaryTargetValueLow = instructionTypeId;
-      }
-    }
-
-    // Allure natation (si pas d'intensité définie)
-    if (details.swimPaceMin100m && !details.swimIntensity) {
-      garminStep.targetType = 'PACE';
-      if (details.swimPaceMin100m.low) {
-        garminStep.targetValueHigh = 100 / (details.swimPaceMin100m.low * 60);
-      }
-      if (details.swimPaceMin100m.high) {
-        garminStep.targetValueLow = 100 / (details.swimPaceMin100m.high * 60);
       }
     }
 
