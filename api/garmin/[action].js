@@ -360,6 +360,11 @@ function buildGarminStep(step, stepOrder, sport, workout) {
         : details.swimNotes;
     }
 
+    // Pour natation, RECOVERY → COOLDOWN (récupération active)
+    if (garminStep.intensity === 'RECOVERY') {
+      garminStep.intensity = 'COOLDOWN';
+    }
+
     if (garminStep.intensity === 'REST' && durationType === 'TIME') {
       garminStep.durationType = 'FIXED_REST';
     }
