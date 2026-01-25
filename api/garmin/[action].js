@@ -360,11 +360,6 @@ function buildGarminStep(step, stepOrder, sport, workout) {
         : details.swimNotes;
     }
 
-    // Pour natation, RECOVERY n'existe pas - utiliser REST à la place
-    if (garminStep.intensity === 'RECOVERY') {
-      garminStep.intensity = 'REST';
-    }
-
     if (garminStep.intensity === 'REST' && durationType === 'TIME') {
       garminStep.durationType = 'FIXED_REST';
     }
