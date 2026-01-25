@@ -7,6 +7,27 @@ import { kv } from '@vercel/kv';
 const GARMIN_WORKOUT_API = 'https://apis.garmin.com/workoutportal/workout/v2';
 const GARMIN_SCHEDULE_API = 'https://apis.garmin.com/training-api/schedule/';
 
+// URLs pour les différents environnements
+const DEV_PREVIEW_URL = 'https://workout-builder-garmin-git-dev-workout-builders-projects.vercel.app';
+
+function getBaseUrl() {
+  // Production (main branch on Vercel)
+  if (process.env.VERCEL_ENV === 'production') {
+    return 'https://enduzo.com';
+  }
+  // Preview (dev branch on Vercel)
+  if (process.env.VERCEL_ENV === 'preview') {
+    return DEV_PREVIEW_URL;
+  }
+  // Local development
+  return 'http://localhost:3001';
+}
+
+function isSecureEnvironment() {
+  // Secure cookies for any Vercel deployment (production or preview)
+  return process.env.VERCEL_ENV === 'production' || process.env.VERCEL_ENV === 'preview';
+}
+
 // ============= HELPERS =============
 
 function parseCookies(cookieHeader) {
@@ -356,8 +377,7 @@ async function handleAuth(req, res) {
     return res.status(500).json({ error: 'GARMIN_CLIENT_ID not configured' });
   }
 
-  const isProduction = process.env.VERCEL_ENV === 'production' || process.env.NODE_ENV === 'production';
-  const baseUrl = isProduction ? 'https://enduzo.com' : 'http://localhost:3001';
+  const baseUrl = getBaseUrl();
   const redirectUri = `${baseUrl}/api/garmin/callback`;
 
   const codeVerifier = generateCodeVerifier();
@@ -370,7 +390,7 @@ async function handleAuth(req, res) {
     'SameSite=Lax',
     'Path=/',
     'Max-Age=600',
-    isProduction ? 'Secure' : ''
+    isSecureEnvironment() ? 'Secure' : ''
   ].filter(Boolean).join('; ');
 
   const stateCookieOptions = [
@@ -379,7 +399,7 @@ async function handleAuth(req, res) {
     'SameSite=Lax',
     'Path=/',
     'Max-Age=600',
-    isProduction ? 'Secure' : ''
+    isSecureEnvironment() ? 'Secure' : ''
   ].filter(Boolean).join('; ');
 
   res.setHeader('Set-Cookie', [cookieOptions, stateCookieOptions]);
@@ -432,8 +452,7 @@ async function handleCallback(req, res) {
     return res.redirect('/?garmin_error=' + encodeURIComponent('Server configuration error'));
   }
 
-  const isProduction = process.env.VERCEL_ENV === 'production' || process.env.NODE_ENV === 'production';
-  const baseUrl = isProduction ? 'https://enduzo.com' : 'http://localhost:3001';
+  const baseUrl = getBaseUrl();
   const redirectUri = `${baseUrl}/api/garmin/callback`;
 
   try {
@@ -505,7 +524,7 @@ async function handleCallback(req, res) {
       'SameSite=Lax',
       'Path=/',
       `Max-Age=${tokens.refresh_token_expires_in}`,
-      isProduction ? 'Secure' : ''
+      isSecureEnvironment() ? 'Secure' : ''
     ].filter(Boolean).join('; ');
 
     res.setHeader('Set-Cookie', [
@@ -741,14 +760,13 @@ async function handleDisconnect(req, res) {
       }
     }
 
-    const isProduction = process.env.VERCEL_ENV === 'production' || process.env.NODE_ENV === 'production';
     const clearCookieOptions = [
       'garmin_session=',
       'HttpOnly',
       'SameSite=Lax',
       'Path=/',
       'Max-Age=0',
-      isProduction ? 'Secure' : ''
+      isSecureEnvironment() ? 'Secure' : ''
     ].filter(Boolean).join('; ');
 
     res.setHeader('Set-Cookie', clearCookieOptions);
