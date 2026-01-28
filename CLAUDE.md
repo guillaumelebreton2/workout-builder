@@ -80,12 +80,36 @@ Processus:
   - `syncWorkoutsFromServer()` : merge intelligent local/serveur
 - [x] Trigger sync dans `authContext.tsx` après login (parallel avec profile)
 
+### Phase 4 : UX Compte & Connectivité (en cours)
+**Concept** : Séparer compte Enduzo (identité) des connexions externes (sources de données)
+- Compte Enduzo = cookie `enduzo_session`, créé via Garmin OU Strava
+- Connexions Garmin/Strava = indépendantes, peuvent rester actives après logout
+
+**Tâches** :
+- [ ] Modifier Header : dropdown menu utilisateur au lieu de nav linéaire
+  - Profil athlète
+  - Compte & Connectivité
+  - Déconnexion
+- [ ] Créer `src/components/AccountPage.tsx` :
+  - Infos compte (nom, provider d'origine, date création)
+  - Section Connectivité : état Garmin + Strava avec boutons connect/disconnect
+  - Bouton déconnexion compte
+- [ ] Ajouter route `/account` dans App.tsx
+- [ ] Profil accessible via dropdown (plus besoin de passer par Stats)
+
+**Navigation cible** :
+```
+Header: [Accueil] [Workouts] [Coach] [Stats]     [👤 Jean ▼]
+                                                     ├─ Profil athlète
+                                                     ├─ Compte & Connectivité
+                                                     └─ Déconnexion
+```
+
 ### Hors scope immédiat
 - [ ] Migrer conversations coach IA côté serveur
 - [ ] Migrer config dashboard côté serveur
 - [ ] Admin : voir liste des utilisateurs
 - [ ] RGPD : suppression de compte + export données
-- [ ] Lier un 2ème provider à un compte existant (structure prête mais UI non faite)
 
 ### Décisions techniques
 - **Pas Auth0** : Garmin/Strava OAuth suffisent et sont déjà en place
