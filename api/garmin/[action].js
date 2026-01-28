@@ -3,6 +3,12 @@
 
 import crypto from 'crypto';
 import { kv } from '@vercel/kv';
+import {
+  createSessionCookie,
+  createOrUpdateUser,
+  createProviderLookup,
+  findUserByProviderId
+} from '../lib/auth.js';
 
 const GARMIN_WORKOUT_API = 'https://apis.garmin.com/workoutportal/workout/v2';
 const GARMIN_SCHEDULE_API = 'https://apis.garmin.com/training-api/schedule/';
@@ -519,15 +525,56 @@ async function handleCallback(req, res) {
       }
     }
 
+    // Create or update user in KV
+    const userId = `garmin_${garminUserId}`;
+    let user;
+
+    try {
+      // Check if this Garmin account is already linked to a user
+      const existingUser = await findUserByProviderId('garmin', garminUserId);
+
+      if (existingUser) {
+        // Update existing user
+        user = await createOrUpdateUser({
+          ...existingUser
+        });
+        console.log('Updated existing user:', user.id);
+      } else {
+        // Create new user
+        user = await createOrUpdateUser({
+          id: userId,
+          authProvider: 'garmin',
+          linkedProviders: ['garmin'],
+          garminUserId: garminUserId,
+          stravaAthleteId: null,
+          name: 'Athlete', // Garmin doesn't provide name in basic API
+          email: null
+        });
+        console.log('Created new user:', user.id);
+
+        // Create lookup for future logins
+        await createProviderLookup('garmin', garminUserId, userId);
+      }
+    } catch (userError) {
+      console.error('Failed to create/update user:', userError);
+      // Create minimal user object for session
+      user = {
+        id: userId,
+        name: 'Athlete',
+        authProvider: 'garmin'
+      };
+    }
+
     const clearCookieOptions = 'HttpOnly; SameSite=Lax; Path=/; Max-Age=0';
 
-    const sessionData = {
+    // Legacy garmin_session cookie (for backward compatibility)
+    const garminSessionData = {
       garminUserId: garminUserId,
       connectedAt: Date.now()
     };
 
-    const sessionCookie = [
-      `garmin_session=${Buffer.from(JSON.stringify(sessionData)).toString('base64')}`,
+    const garminSessionCookie = [
+      `garmin_session=${Buffer.from(JSON.stringify(garminSessionData)).toString('base64')}`,
       'HttpOnly',
       'SameSite=Lax',
       'Path=/',
@@ -535,10 +582,22 @@ async function handleCallback(req, res) {
       isSecureEnvironment() ? 'Secure' : ''
     ].filter(Boolean).join('; ');
 
+    // New unified enduzo_session cookie
+    const unifiedSessionData = {
+      userId: user.id,
+      authProvider: 'garmin',
+      name: user.name,
+      garminUserId: garminUserId,
+      createdAt: Date.now()
+    };
+
+    const unifiedSessionCookie = createSessionCookie(unifiedSessionData);
+
     res.setHeader('Set-Cookie', [
       `garmin_code_verifier=; ${clearCookieOptions}`,
       `garmin_oauth_state=; ${clearCookieOptions}`,
-      sessionCookie
+      garminSessionCookie,
+      unifiedSessionCookie
     ]);
 
     res.redirect('/?garmin_connected=true');

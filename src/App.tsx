@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { AuthProvider, useAuth } from './lib/authContext';
+import { LoginPage } from './components/LoginPage';
 import { WorkoutForm } from './components/WorkoutForm';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { Header } from './components/Header';
@@ -8,13 +10,17 @@ import { LandingPage } from './components/LandingPage';
 import { AthleteProfilePage } from './components/AthleteProfilePage';
 import './index.css';
 
-type Page = 'home' | 'workouts' | 'coach' | 'stats' | 'profile';
+type Page = 'home' | 'workouts' | 'coach' | 'stats' | 'profile' | 'login';
+
+// Pages that require authentication
+const PROTECTED_PAGES: Page[] = ['workouts', 'coach', 'stats', 'profile'];
 
 function getPageFromPath(path: string): Page {
   if (path === '/workouts') return 'workouts';
   if (path === '/coach') return 'coach';
   if (path === '/stats') return 'stats';
   if (path === '/profile') return 'profile';
+  if (path === '/login') return 'login';
   return 'home';
 }
 
@@ -23,18 +29,27 @@ function getPathFromPage(page: Page): string {
   if (page === 'coach') return '/coach';
   if (page === 'stats') return '/stats';
   if (page === 'profile') return '/profile';
+  if (page === 'login') return '/login';
   return '/';
 }
 
-function App() {
-  // Simple routing based on pathname
+function AppContent() {
+  const { isLoading, isAuthenticated } = useAuth();
   const path = window.location.pathname;
 
+  // Handle privacy page separately (always accessible)
   if (path === '/privacy') {
     return <PrivacyPolicy />;
   }
 
   const [currentPage, setCurrentPage] = useState<Page>(() => getPageFromPath(path));
+
+  // Redirect to login if trying to access protected page while not authenticated
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated && PROTECTED_PAGES.includes(currentPage)) {
+      setCurrentPage('login');
+    }
+  }, [isLoading, isAuthenticated, currentPage]);
 
   // Update URL when page changes
   useEffect(() => {
@@ -53,6 +68,20 @@ function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
+  // Show loading spinner while checking auth
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="animate-spin h-12 w-12 border-4 border-orange-500 border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  // Show login page if not authenticated and trying to access protected content
+  if (currentPage === 'login' || (!isAuthenticated && PROTECTED_PAGES.includes(currentPage))) {
+    return <LoginPage />;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <Header currentPage={currentPage} onNavigate={setCurrentPage} />
@@ -66,10 +95,10 @@ function App() {
           {/* Header */}
           <header className="text-center mb-8">
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-              Créer une séance
+              Creer une seance
             </h1>
             <p className="text-gray-600">
-              Décris ta séance, l'IA la structure pour toi
+              Decris ta seance, l'IA la structure pour toi
             </p>
           </header>
 
@@ -92,6 +121,14 @@ function App() {
         <AthleteProfilePage onNavigate={setCurrentPage} />
       )}
     </div>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 
