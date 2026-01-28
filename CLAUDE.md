@@ -33,7 +33,7 @@ Processus:
 ### En cours / À améliorer
 - [ ] La détection d'intervalles peut encore être améliorée pour des séances complexes (blocs mixtes)
 - [ ] Afficher la structure détectée dans l'UI (actuellement juste dans le summary texte)
-- [ ] **Tester Phases 1-3 en preview avant merge sur main** (auth + sync profil + sync workouts)
+- [ ] **Tester Phases 1-4 en preview avant merge sur main** (auth + sync + compte)
 
 ---
 
@@ -80,30 +80,22 @@ Processus:
   - `syncWorkoutsFromServer()` : merge intelligent local/serveur
 - [x] Trigger sync dans `authContext.tsx` après login (parallel avec profile)
 
-### Phase 4 : UX Compte & Connectivité (en cours)
+### Phase 4 : UX Compte & Connectivité - TERMINÉE
 **Concept** : Séparer compte Enduzo (identité) des connexions externes (sources de données)
 - Compte Enduzo = cookie `enduzo_session`, créé via Garmin OU Strava
 - Connexions Garmin/Strava = indépendantes, peuvent rester actives après logout
 
-**Tâches** :
-- [ ] Modifier Header : dropdown menu utilisateur au lieu de nav linéaire
-  - Profil athlète
-  - Compte & Connectivité
+**Implémenté** :
+- [x] Header avec dropdown menu utilisateur (avatar + nom + chevron)
+  - Profil athlète → `/profile`
+  - Compte & Connectivité → `/account`
   - Déconnexion
-- [ ] Créer `src/components/AccountPage.tsx` :
+- [x] `src/components/AccountPage.tsx` :
   - Infos compte (nom, provider d'origine, date création)
   - Section Connectivité : état Garmin + Strava avec boutons connect/disconnect
-  - Bouton déconnexion compte
-- [ ] Ajouter route `/account` dans App.tsx
-- [ ] Profil accessible via dropdown (plus besoin de passer par Stats)
-
-**Navigation cible** :
-```
-Header: [Accueil] [Workouts] [Coach] [Stats]     [👤 Jean ▼]
-                                                     ├─ Profil athlète
-                                                     ├─ Compte & Connectivité
-                                                     └─ Déconnexion
-```
+  - Zone de danger avec bouton déconnexion
+- [x] Route `/account` ajoutée dans App.tsx (page protégée)
+- [x] Profil accessible via dropdown (indépendant de Stats/Strava)
 
 ### Hors scope immédiat
 - [ ] Migrer conversations coach IA côté serveur
