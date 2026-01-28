@@ -8,7 +8,7 @@ import {
   createOrUpdateUser,
   createProviderLookup,
   findUserByProviderId
-} from '../lib/auth.js';
+} from '../_lib/auth.js';
 
 const GARMIN_WORKOUT_API = 'https://apis.garmin.com/workoutportal/workout/v2';
 const GARMIN_SCHEDULE_API = 'https://apis.garmin.com/training-api/schedule/';

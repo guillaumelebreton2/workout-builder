@@ -2,7 +2,7 @@
  * Auth API - Consolidated handler for all auth endpoints
  * Uses dynamic routing: /api/auth/[action]
  */
-import { getSessionFromRequest, getUserById, clearSessionCookie } from '../lib/auth.js';
+import { getSessionFromRequest, getUserById, clearSessionCookie } from '../_lib/auth.js';
 
 // ============= ACTION HANDLERS =============
 
