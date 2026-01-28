@@ -33,7 +33,7 @@ Processus:
 ### En cours / À améliorer
 - [ ] La détection d'intervalles peut encore être améliorée pour des séances complexes (blocs mixtes)
 - [ ] Afficher la structure détectée dans l'UI (actuellement juste dans le summary texte)
-- [ ] **Tester Phase 1+2 en preview avant merge sur main** (auth + sync profil)
+- [ ] **Tester Phases 1-3 en preview avant merge sur main** (auth + sync profil + sync workouts)
 
 ---
 
@@ -72,10 +72,13 @@ Processus:
   - `fetchProfileFromServer()` / `saveProfileToServer()` : API calls
 - [x] Trigger sync dans `authContext.tsx` après login réussi
 
-### Phase 3 : Séances côté serveur (priorité moyenne)
-- [ ] Créer `api/workouts/[action].js` : CRUD séances (consolidé)
-- [ ] Modèle KV : `workouts_{userId}` avec array de SavedWorkout
-- [ ] Modifier `src/lib/workoutStore.ts` : appeler API au lieu de localStorage
+### Phase 3 : Séances côté serveur - TERMINÉE
+- [x] Créer `api/workouts/[action].js` : actions `list`, `create`, `update`, `delete`, `sync`
+- [x] Modèle KV : `workouts_{userId}` avec array de SavedWorkout
+- [x] Modifier `src/lib/workoutStore.ts` :
+  - Toutes les opérations sync localStorage + fire-and-forget serveur
+  - `syncWorkoutsFromServer()` : merge intelligent local/serveur
+- [x] Trigger sync dans `authContext.tsx` après login (parallel avec profile)
 
 ### Hors scope immédiat
 - [ ] Migrer conversations coach IA côté serveur
@@ -89,7 +92,7 @@ Processus:
 - **Vercel KV** : suffisant pour le moment (clé-valeur). Migration Postgres possible plus tard
 - **Session** : Cookie HttpOnly `enduzo_session` avec userId
 - **Limite 12 fonctions** : utiliser `api/_lib/` pour code partagé (ignoré par Vercel), consolider endpoints avec `[action].js`
-- **Fonctions actuelles** : 11/12 (1 slot libre pour Phase 3)
+- **Fonctions actuelles** : 12/12 (limite atteinte)
 
 ---
 
