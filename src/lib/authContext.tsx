@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { syncProfileFromServer } from './athleteProfileStore';
 
 interface User {
   id: string;
@@ -36,6 +37,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const data = await response.json();
         if (data.authenticated) {
           setUser(data.user);
+          // Sync profile from server in background
+          syncProfileFromServer().catch(err => {
+            console.warn('Profile sync failed:', err);
+          });
         } else {
           setUser(null);
         }

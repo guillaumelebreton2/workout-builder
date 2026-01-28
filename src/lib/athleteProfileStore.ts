@@ -267,6 +267,9 @@ function getDefaultProfile(): AthleteProfile {
 
 // ============== PERSISTENCE ==============
 
+const API_URL = import.meta.env.PROD ? '' : 'http://localhost:3001';
+
+// Get profile from localStorage (sync, for immediate UI)
 export function getAthleteProfile(): AthleteProfile {
   try {
     const data = localStorage.getItem(STORAGE_KEY);
@@ -279,9 +282,83 @@ export function getAthleteProfile(): AthleteProfile {
   }
 }
 
+// Save profile to localStorage (sync) and server (async)
 function saveProfile(profile: AthleteProfile): void {
   profile.lastUpdated = new Date().toISOString();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+  // Fire-and-forget server sync
+  saveProfileToServer(profile).catch(err => {
+    console.warn('Failed to sync profile to server:', err);
+  });
+}
+
+// ============== SERVER SYNC ==============
+
+// Fetch profile from server
+export async function fetchProfileFromServer(): Promise<AthleteProfile | null> {
+  try {
+    const response = await fetch(`${API_URL}/api/profile/get`, {
+      credentials: 'include'
+    });
+    if (!response.ok) {
+      if (response.status === 401) return null; // Not authenticated
+      throw new Error(`HTTP ${response.status}`);
+    }
+    const data = await response.json();
+    return data.profile;
+  } catch (error) {
+    console.error('Failed to fetch profile from server:', error);
+    return null;
+  }
+}
+
+// Save profile to server
+export async function saveProfileToServer(profile: AthleteProfile): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_URL}/api/profile/save`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ profile })
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    return true;
+  } catch (error) {
+    console.error('Failed to save profile to server:', error);
+    return false;
+  }
+}
+
+// Sync: load from server and merge with local
+export async function syncProfileFromServer(): Promise<AthleteProfile> {
+  const serverProfile = await fetchProfileFromServer();
+  const localProfile = getAthleteProfile();
+
+  if (!serverProfile) {
+    // No server profile, upload local if it exists and is configured
+    if (localProfile.lastUpdated !== getDefaultProfile().lastUpdated) {
+      await saveProfileToServer(localProfile);
+    }
+    return localProfile;
+  }
+
+  // Compare timestamps - use most recent
+  const serverTime = new Date(serverProfile.lastUpdated || 0).getTime();
+  const localTime = new Date(localProfile.lastUpdated || 0).getTime();
+
+  if (serverTime > localTime) {
+    // Server is newer, update local
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(serverProfile));
+    return serverProfile;
+  } else if (localTime > serverTime) {
+    // Local is newer, update server
+    await saveProfileToServer(localProfile);
+    return localProfile;
+  }
+
+  return localProfile;
 }
 
 // ============== ACTIONS COURSE ==============

@@ -25,61 +25,71 @@ Processus:
   - Fichier principal : `src/lib/activityAnalysisService.ts` → fonction `detectWorkoutStructure()`
   - Algorithme : lissage vitesse → détection points de changement → fusion segments → classification bimodale
   - Support des intervalles basés sur le temps (ex: 1'/2')
-- [x] **Serverless functions Vercel** pour toutes les routes API :
-  - `api/strava/auth.js`, `callback.js`, `refresh.js`
-  - `api/strava/activities/index.js`, `[id]/index.js`, `[id]/streams.js`, `[id]/laps.js`
-  - `api/strava/athlete/index.js`, `zones.js`
-  - `api/ai/chat.js`
-  - `api/sync-garmin.js`
+- [x] **Serverless functions Vercel** pour toutes les routes API
 - [x] **Fix OAuth Strava** : Redirection correcte vers enduzo.com en prod
 - [x] **Optimisation serverless** : Limite de 12 fonctions sur Hobby plan respectée
+- [x] **Phase 1 : Auth obligatoire** (voir section dédiée ci-dessous)
 
 ### En cours / À améliorer
 - [ ] La détection d'intervalles peut encore être améliorée pour des séances complexes (blocs mixtes)
 - [ ] Afficher la structure détectée dans l'UI (actuellement juste dans le summary texte)
+- [ ] **Tester Phase 1+2 en preview avant merge sur main** (auth + sync profil)
 
 ---
 
-## Gestion de compte utilisateur (à implémenter)
+## Gestion de compte utilisateur
 
 ### Objectifs
 1. L'utilisateur doit se connecter (Garmin ou Strava) pour utiliser l'app
 2. Stocker le profil et les séances côté serveur (plus localStorage)
 3. Savoir qui utilise l'application
 
-### Phase 1 : Auth obligatoire (priorité haute)
-- [ ] Créer modèle User dans Vercel KV : `user_{id}` avec authProvider, name, email, createdAt
-- [ ] Modifier `api/garmin/[action].js` (callback) : créer User + cookie session
-- [ ] Modifier `api/strava/callback.js` : créer User + cookie session
-- [ ] Créer `api/auth/me.js` : retourne l'utilisateur connecté ou 401
-- [ ] Créer `src/components/LoginPage.tsx` : page de connexion
-- [ ] Modifier `src/App.tsx` : vérifier auth au chargement, rediriger vers login si non connecté
+### Phase 1 : Auth obligatoire - TERMINÉE
+- [x] Créer modèle User dans Vercel KV : `user_{provider}_{id}`
+- [x] Créer `api/_lib/auth.js` : utilitaires partagés (session, user CRUD, provider lookup)
+- [x] Modifier `api/garmin/[action].js` (callback) : créer User + cookie `enduzo_session`
+- [x] Modifier `api/strava/callback.js` : créer User + cookie session + **fix sécurité** (tokens en KV, plus dans URL)
+- [x] Créer `api/auth/[action].js` : endpoints `me` et `logout` consolidés
+- [x] Créer `src/lib/authContext.tsx` : AuthProvider + hook useAuth()
+- [x] Créer `src/components/LoginPage.tsx` : page de connexion Garmin/Strava
+- [x] Modifier `src/App.tsx` : auth guard, loading spinner, redirection login
+- [x] Modifier `src/components/Header.tsx` : nom utilisateur + bouton déconnexion
 
-### Phase 2 : Profil côté serveur (priorité haute)
-- [ ] Créer `api/profile.js` : GET/PUT profil athlète
-- [ ] Modèle KV : `profile_{userId}` avec running/cycling/swimming settings
-- [ ] Modifier `src/lib/athleteProfileStore.ts` : appeler API au lieu de localStorage
+**Architecture implémentée :**
+- Cookie session : `enduzo_session` (HttpOnly, 90 jours)
+- User ID : `{provider}_{providerId}` (ex: `garmin_12345`, `strava_67890`)
+- Stockage KV : `user_{userId}` + `provider_lookup_{provider}_{id}`
+- Pages protégées : workouts, coach, stats, profile
+- Pages publiques : home, privacy, login
+
+### Phase 2 : Profil côté serveur - TERMINÉE
+- [x] Consolider Strava OAuth (auth+callback+refresh) en `api/strava/[action].js` (-2 fonctions)
+- [x] Créer `api/profile/[action].js` : actions `get` et `save`
+- [x] Modèle KV : `profile_{userId}` avec running/cycling/swimming settings
+- [x] Modifier `src/lib/athleteProfileStore.ts` :
+  - `saveProfile()` : sync localStorage + fire-and-forget vers serveur
+  - `syncProfileFromServer()` : merge intelligent (plus récent gagne)
+  - `fetchProfileFromServer()` / `saveProfileToServer()` : API calls
+- [x] Trigger sync dans `authContext.tsx` après login réussi
 
 ### Phase 3 : Séances côté serveur (priorité moyenne)
-- [ ] Créer `api/workouts/index.js` : GET (liste) / POST (créer)
-- [ ] Créer `api/workouts/[id].js` : PUT / DELETE
+- [ ] Créer `api/workouts/[action].js` : CRUD séances (consolidé)
 - [ ] Modèle KV : `workouts_{userId}` avec array de SavedWorkout
 - [ ] Modifier `src/lib/workoutStore.ts` : appeler API au lieu de localStorage
-
-### Phase 4 : UX connexion Garmin (priorité moyenne)
-- [ ] Modifier WorkoutForm : message si pas connecté Garmin avant création
-- [ ] Modifier Header : afficher nom utilisateur + bouton déconnexion
 
 ### Hors scope immédiat
 - [ ] Migrer conversations coach IA côté serveur
 - [ ] Migrer config dashboard côté serveur
 - [ ] Admin : voir liste des utilisateurs
 - [ ] RGPD : suppression de compte + export données
+- [ ] Lier un 2ème provider à un compte existant (structure prête mais UI non faite)
 
 ### Décisions techniques
 - **Pas Auth0** : Garmin/Strava OAuth suffisent et sont déjà en place
 - **Vercel KV** : suffisant pour le moment (clé-valeur). Migration Postgres possible plus tard
 - **Session** : Cookie HttpOnly `enduzo_session` avec userId
+- **Limite 12 fonctions** : utiliser `api/_lib/` pour code partagé (ignoré par Vercel), consolider endpoints avec `[action].js`
+- **Fonctions actuelles** : 11/12 (1 slot libre pour Phase 3)
 
 ---
 

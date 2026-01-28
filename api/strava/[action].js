@@ -1,10 +1,7 @@
 /**
- * Vercel Serverless Function - Strava OAuth callback
- *
- * Security improvements:
- * - Tokens stored server-side in Vercel KV (not passed via URL)
- * - Creates user record in KV
- * - Sets HttpOnly session cookie
+ * Strava OAuth API - Consolidated handler
+ * Uses dynamic routing: /api/strava/[action]
+ * Actions: auth, callback, refresh
  */
 import { kv } from '@vercel/kv';
 import {
@@ -16,6 +13,7 @@ import {
 
 const STRAVA_CLIENT_ID = process.env.STRAVA_CLIENT_ID;
 const STRAVA_CLIENT_SECRET = process.env.STRAVA_CLIENT_SECRET;
+const STRAVA_AUTH_URL = 'https://www.strava.com/oauth/authorize';
 const STRAVA_TOKEN_URL = 'https://www.strava.com/oauth/token';
 
 function getBaseUrl() {
@@ -28,7 +26,38 @@ function getBaseUrl() {
   return 'http://localhost:5173';
 }
 
-export default async function handler(req, res) {
+// ============= AUTH =============
+
+async function handleAuth(req, res) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  if (!STRAVA_CLIENT_ID) {
+    return res.status(500).json({ error: 'STRAVA_CLIENT_ID not configured' });
+  }
+
+  const protocol = req.headers['x-forwarded-proto'] || 'https';
+  const host = req.headers['x-forwarded-host'] || req.headers.host;
+  const redirectUri = `${protocol}://${host}/api/strava/callback`;
+
+  const scope = 'activity:read_all,profile:read_all';
+
+  const authUrl = `${STRAVA_AUTH_URL}?` + new URLSearchParams({
+    client_id: STRAVA_CLIENT_ID,
+    redirect_uri: redirectUri,
+    response_type: 'code',
+    scope: scope,
+    approval_prompt: 'auto',
+  });
+
+  console.log('Strava OAuth redirect:', authUrl);
+  res.redirect(authUrl);
+}
+
+// ============= CALLBACK =============
+
+async function handleCallback(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -79,19 +108,18 @@ export default async function handler(req, res) {
     const stravaTokenData = {
       access_token: tokenData.access_token,
       refresh_token: tokenData.refresh_token,
-      expires_at: tokenData.expires_at * 1000, // Convert to milliseconds
+      expires_at: tokenData.expires_at * 1000,
       athlete_id: stravaAthleteId,
       athlete_name: athleteName
     };
 
     try {
       await kv.set(`strava_tokens_${stravaAthleteId}`, JSON.stringify(stravaTokenData), {
-        ex: 180 * 24 * 60 * 60 // 180 days TTL
+        ex: 180 * 24 * 60 * 60
       });
       console.log('Strava tokens stored in KV for athlete:', stravaAthleteId);
     } catch (kvError) {
       console.error('Failed to store Strava tokens in KV:', kvError);
-      // Continue anyway - tokens in session is fallback
     }
 
     // Check if this Strava account is already linked to a user
@@ -107,14 +135,12 @@ export default async function handler(req, res) {
     let user;
     try {
       if (existingUser) {
-        // Update existing user
         user = await createOrUpdateUser({
           ...existingUser,
           name: athleteName || existingUser.name
         });
         console.log('Updated existing user:', user.id);
       } else {
-        // Create new user
         user = await createOrUpdateUser({
           id: userId,
           authProvider: 'strava',
@@ -125,18 +151,11 @@ export default async function handler(req, res) {
           email: null
         });
         console.log('Created new user:', user.id);
-
-        // Create lookup for future logins
         await createProviderLookup('strava', stravaAthleteId, userId);
       }
     } catch (userError) {
       console.error('Failed to create/update user:', userError);
-      // Create minimal user object for session
-      user = {
-        id: userId,
-        name: athleteName,
-        authProvider: 'strava'
-      };
+      user = { id: userId, name: athleteName, authProvider: 'strava' };
     }
 
     // Create session cookie
@@ -151,11 +170,79 @@ export default async function handler(req, res) {
     const sessionCookie = createSessionCookie(sessionData);
     res.setHeader('Set-Cookie', sessionCookie);
 
-    // Redirect WITHOUT sensitive tokens in URL
     res.redirect(`${baseUrl}/?strava_connected=true`);
 
   } catch (err) {
     console.error('Strava callback error:', err);
     res.redirect(`${baseUrl}/?strava_error=server_error`);
+  }
+}
+
+// ============= REFRESH =============
+
+async function handleRefresh(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const { refresh_token } = req.body;
+
+  if (!refresh_token) {
+    return res.status(400).json({ error: 'refresh_token required' });
+  }
+
+  try {
+    const response = await fetch(STRAVA_TOKEN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client_id: STRAVA_CLIENT_ID,
+        client_secret: STRAVA_CLIENT_SECRET,
+        refresh_token: refresh_token,
+        grant_type: 'refresh_token',
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Strava refresh error:', errorText);
+      return res.status(response.status).json({ error: 'Token refresh failed' });
+    }
+
+    const data = await response.json();
+    res.json({
+      access_token: data.access_token,
+      refresh_token: data.refresh_token,
+      expires_at: data.expires_at,
+    });
+  } catch (err) {
+    console.error('Strava refresh error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+}
+
+// ============= MAIN HANDLER =============
+
+export default async function handler(req, res) {
+  // CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  const { action } = req.query;
+
+  switch (action) {
+    case 'auth':
+      return handleAuth(req, res);
+    case 'callback':
+      return handleCallback(req, res);
+    case 'refresh':
+      return handleRefresh(req, res);
+    default:
+      return res.status(404).json({ error: `Unknown action: ${action}` });
   }
 }
