@@ -283,6 +283,7 @@ function convertToGarminFormat(workout) {
           stepOrder: stepOrder,
           repeatType: 'REPEAT_UNTIL_STEPS_CMPLT',
           repeatValue: block.repetitions,
+          skipLastRestStep: false,  // Keep all recovery steps
           steps: repeatSteps
         });
       } else {
@@ -339,7 +340,6 @@ function buildGarminStep(step, stepOrder, sport, workout) {
     'active': 'ACTIVE',
     'recovery': 'RECOVERY',
     'rest': 'REST',
-    'interval': 'INTERVAL',
     'other': 'INTERVAL'  // Maps to "Other" in Garmin Connect UI
   };
 
@@ -352,6 +352,7 @@ function buildGarminStep(step, stepOrder, sport, workout) {
       stepOrder: stepOrder,
       repeatType: 'REPEAT_UNTIL_STEPS_CMPLT',
       repeatValue: step.repetitions || 1,
+      skipLastRestStep: false,  // Keep all recovery steps
       steps: nestedSteps.filter(Boolean)
     };
   }
