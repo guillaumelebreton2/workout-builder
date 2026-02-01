@@ -413,7 +413,7 @@ function buildGarminStep(step, stepOrder, sport, workout) {
     type: 'WorkoutStep',
     stepOrder: stepOrder,
     intensity: intensity,
-    description: step.notes || step.name || null,
+    description: step.notes || (step.type === 'other' ? step.name : null),
     durationType: durationType,
     durationValue: durationValue,
     durationValueType: durationValueType,
