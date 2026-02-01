@@ -116,6 +116,114 @@ async function getValidAccessToken(garminUserId) {
 
 // ============= WORKOUT CONVERSION =============
 
+// Compare deux steps pour voir s'ils sont similaires (pour détection répétitions)
+function stepsAreSimilar(a, b) {
+  if (a.type !== b.type) return false;
+  if (a.duration?.type !== b.duration?.type) return false;
+  if (a.duration?.value !== b.duration?.value) return false;
+
+  // Vérifications vélo
+  if (a.details?.cadence !== b.details?.cadence) return false;
+  if (a.details?.powerPercent?.low !== b.details?.powerPercent?.low) return false;
+  if (a.details?.powerPercent?.high !== b.details?.powerPercent?.high) return false;
+  if (a.details?.watts?.low !== b.details?.watts?.low) return false;
+  if (a.details?.watts?.high !== b.details?.watts?.high) return false;
+
+  // Vérifications natation
+  if (a.details?.swimStroke !== b.details?.swimStroke) return false;
+  if (a.details?.swimDrill !== b.details?.swimDrill) return false;
+  if (a.details?.swimIntensity !== b.details?.swimIntensity) return false;
+
+  const aEquip = (a.details?.swimEquipment || []).sort().join(',');
+  const bEquip = (b.details?.swimEquipment || []).sort().join(',');
+  if (aEquip !== bEquip) return false;
+
+  return true;
+}
+
+// Trouve UN bloc de répétition dans les steps à partir d'une position
+function findRepeatBlock(steps, fromPos = 0) {
+  if (steps.length - fromPos < 2) return null;
+
+  let bestResult = null;
+
+  for (let startPos = fromPos; startPos < steps.length - 1; startPos++) {
+    for (let patternLen = 1; patternLen <= 3; patternLen++) {
+      if (startPos + patternLen * 2 > steps.length) continue;
+
+      const pattern = steps.slice(startPos, startPos + patternLen);
+      let repetitions = 1;
+      let endPos = startPos + patternLen;
+
+      while (endPos + patternLen <= steps.length) {
+        const nextBlock = steps.slice(endPos, endPos + patternLen);
+        const isMatch = pattern.every((step, idx) => stepsAreSimilar(step, nextBlock[idx]));
+
+        if (isMatch) {
+          repetitions++;
+          endPos += patternLen;
+        } else {
+          break;
+        }
+      }
+
+      if (repetitions >= 2) {
+        if (!bestResult || startPos < bestResult.startPos ||
+            (startPos === bestResult.startPos && repetitions * patternLen > bestResult.score)) {
+          bestResult = {
+            startPos,
+            pattern,
+            repetitions,
+            endPos,
+            score: repetitions * patternLen
+          };
+        }
+      }
+    }
+  }
+
+  return bestResult;
+}
+
+// Détecte TOUS les blocs de répétition dans les steps
+function detectAllRepeatBlocks(steps) {
+  console.log('detectAllRepeatBlocks - nombre de steps:', steps.length);
+  if (steps.length < 2) {
+    return null;
+  }
+
+  const result = [];
+  let currentPos = 0;
+
+  while (currentPos < steps.length) {
+    const block = findRepeatBlock(steps, currentPos);
+
+    if (block && block.startPos === currentPos) {
+      console.log(`Pattern trouvé à position ${block.startPos}: ${block.repetitions}x${block.pattern.length} steps`);
+      result.push({
+        type: 'repeat',
+        pattern: block.pattern,
+        repetitions: block.repetitions
+      });
+      currentPos = block.endPos;
+    } else if (block) {
+      const simpleSteps = steps.slice(currentPos, block.startPos);
+      for (const step of simpleSteps) {
+        result.push({ type: 'single', step });
+      }
+      currentPos = block.startPos;
+    } else {
+      for (let i = currentPos; i < steps.length; i++) {
+        result.push({ type: 'single', step: steps[i] });
+      }
+      break;
+    }
+  }
+
+  console.log('Résultat détection:', result.map(r => r.type === 'repeat' ? `${r.repetitions}x` : 'single').join(', '));
+  return result.length > 0 ? result : null;
+}
+
 function convertToGarminFormat(workout) {
   const sportMap = {
     'running': 'RUNNING',
@@ -125,22 +233,79 @@ function convertToGarminFormat(workout) {
 
   const sport = sportMap[workout.sport] || 'RUNNING';
 
+  // Séparer warmup / main / cooldown
+  const warmupSteps = [];
+  const mainSteps = [];
+  const cooldownSteps = [];
+
+  let phase = 'warmup';
+  for (const step of workout.steps) {
+    if (step.type === 'warmup') {
+      warmupSteps.push(step);
+      phase = 'warmup';
+    } else if (step.type === 'cooldown') {
+      cooldownSteps.push(step);
+      phase = 'cooldown';
+    } else {
+      if (phase === 'cooldown') {
+        cooldownSteps.push(step);
+      } else {
+        mainSteps.push(step);
+        phase = 'main';
+      }
+    }
+  }
+
   let stepOrder = 0;
   const steps = [];
 
-  for (const step of workout.steps) {
+  // Ajouter les warmup steps
+  for (const step of warmupSteps) {
     stepOrder++;
     const garminStep = buildGarminStep(step, stepOrder, sport, workout);
+    if (garminStep) steps.push(garminStep);
+  }
 
-    if (garminStep) {
-      if (garminStep.type === 'WorkoutRepeatStep') {
-        garminStep.steps.forEach((s, i) => {
-          s.stepOrder = stepOrder + i + 1;
+  // Détecter les répétitions dans le corps de séance
+  const blocks = detectAllRepeatBlocks(mainSteps);
+
+  if (blocks) {
+    for (const block of blocks) {
+      if (block.type === 'repeat') {
+        // Créer un bloc de répétition Garmin (API v2)
+        const repeatSteps = block.pattern.map((patternStep, idx) =>
+          buildGarminStep(patternStep, idx + 1, sport, workout)
+        ).filter(Boolean);
+
+        stepOrder++;
+        steps.push({
+          type: 'WorkoutRepeatStep',
+          stepOrder: stepOrder,
+          repeatType: 'REPEAT_UNTIL_STEPS_CMPLT',
+          repeatValue: block.repetitions,
+          steps: repeatSteps
         });
-        stepOrder += garminStep.steps.length;
+      } else {
+        // Step simple
+        stepOrder++;
+        const garminStep = buildGarminStep(block.step, stepOrder, sport, workout);
+        if (garminStep) steps.push(garminStep);
       }
-      steps.push(garminStep);
     }
+  } else {
+    // Pas de répétition détectée, ajouter tous les steps
+    for (const step of mainSteps) {
+      stepOrder++;
+      const garminStep = buildGarminStep(step, stepOrder, sport, workout);
+      if (garminStep) steps.push(garminStep);
+    }
+  }
+
+  // Ajouter les cooldown steps
+  for (const step of cooldownSteps) {
+    stepOrder++;
+    const garminStep = buildGarminStep(step, stepOrder, sport, workout);
+    if (garminStep) steps.push(garminStep);
   }
 
   const garminWorkout = {
