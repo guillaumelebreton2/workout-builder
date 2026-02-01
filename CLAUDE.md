@@ -18,7 +18,7 @@ Processus:
 
 ---
 
-## Travail récent (janvier 2025)
+## Travail récent (février 2025)
 
 ### Terminé
 - [x] **Détection automatique des intervalles** dans l'analyse de séance
@@ -28,12 +28,24 @@ Processus:
 - [x] **Serverless functions Vercel** pour toutes les routes API
 - [x] **Fix OAuth Strava** : Redirection correcte vers enduzo.com en prod
 - [x] **Optimisation serverless** : Limite de 12 fonctions sur Hobby plan respectée
-- [x] **Phase 1 : Auth obligatoire** (voir section dédiée ci-dessous)
+- [x] **Phases 1-4 : Gestion de compte** (voir section dédiée ci-dessous)
+- [x] **Migration API Garmin v2** dans `api/garmin/[action].js`
+  - Détection automatique des blocs de répétitions (`detectAllRepeatBlocks`)
+  - Mapping des types : warmup→WARMUP, active→ACTIVE, recovery→RECOVERY, cooldown→COOLDOWN, rest→REST, other→INTERVAL
+  - `skipLastRestStep: false` pour garder toutes les récups
+  - Description = `step.notes` ou `step.name` pour type "other"
+- [x] **Page "Mes séances"** (`/saved-workouts`)
+  - Nouveau composant `SavedWorkoutsPage.tsx`
+  - Liste des séances avec expand/collapse, sync Garmin, suppression
+  - Navigation : "Créer" + "Séances" dans le Header
+- [x] **Bouton Sauvegarder** dans `WorkoutForm.tsx`
+  - Sauvegarde manuelle avant sync
+  - Sauvegarde automatique quand on clique "Sync Garmin"
 
 ### En cours / À améliorer
 - [ ] La détection d'intervalles peut encore être améliorée pour des séances complexes (blocs mixtes)
 - [ ] Afficher la structure détectée dans l'UI (actuellement juste dans le summary texte)
-- [ ] **Tester Phases 1-4 en preview avant merge sur main** (auth + sync + compte)
+- [ ] Merger `dev` → `main` quand validé pour la prod
 
 ---
 
