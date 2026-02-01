@@ -9,15 +9,17 @@ import { StatsPage } from './components/StatsPage';
 import { LandingPage } from './components/LandingPage';
 import { AthleteProfilePage } from './components/AthleteProfilePage';
 import { AccountPage } from './components/AccountPage';
+import { SavedWorkoutsPage } from './components/SavedWorkoutsPage';
 import './index.css';
 
-type Page = 'home' | 'workouts' | 'coach' | 'stats' | 'profile' | 'account' | 'login';
+type Page = 'home' | 'workouts' | 'saved-workouts' | 'coach' | 'stats' | 'profile' | 'account' | 'login';
 
 // Pages that require authentication
-const PROTECTED_PAGES: Page[] = ['workouts', 'coach', 'stats', 'profile', 'account'];
+const PROTECTED_PAGES: Page[] = ['workouts', 'saved-workouts', 'coach', 'stats', 'profile', 'account'];
 
 function getPageFromPath(path: string): Page {
   if (path === '/workouts') return 'workouts';
+  if (path === '/saved-workouts') return 'saved-workouts';
   if (path === '/coach') return 'coach';
   if (path === '/stats') return 'stats';
   if (path === '/profile') return 'profile';
@@ -28,6 +30,7 @@ function getPageFromPath(path: string): Page {
 
 function getPathFromPage(page: Page): string {
   if (page === 'workouts') return '/workouts';
+  if (page === 'saved-workouts') return '/saved-workouts';
   if (page === 'coach') return '/coach';
   if (page === 'stats') return '/stats';
   if (page === 'profile') return '/profile';
@@ -110,6 +113,10 @@ function AppContent() {
             <WorkoutForm />
           </main>
         </div>
+      )}
+
+      {currentPage === 'saved-workouts' && (
+        <SavedWorkoutsPage onNavigate={setCurrentPage} />
       )}
 
       {currentPage === 'coach' && (

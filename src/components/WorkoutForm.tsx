@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Workout, WorkoutStep, Sport, generateId } from '../lib/types';
 import { downloadFitFile } from '../lib/fit-encoder';
 import { parseWithGroq } from '../lib/groq-parser';
+import { workoutStore } from '../lib/workoutStore';
 import { SportSelector } from './SportSelector';
 import { WorkoutPreview } from './WorkoutPreview';
 import { GarminSyncModal } from './GarminSyncModal';
@@ -348,6 +349,8 @@ export function WorkoutForm() {
   const [syncSuccess, setSyncSuccess] = useState(false);
   const [fallbackWarning, setFallbackWarning] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [savedWorkoutId, setSavedWorkoutId] = useState<string | null>(null);
 
   // Sauvegarder les références dans localStorage avec formatage automatique
   const handleRunningPaceChange = (value: string) => {
@@ -486,7 +489,29 @@ export function WorkoutForm() {
     steps,
   });
 
+  // Sauvegarder la séance
+  const handleSave = () => {
+    const workout = getCurrentWorkout();
+    const saved = workoutStore.save(workout, 'manual');
+    setIsSaved(true);
+    setSavedWorkoutId(saved.id);
+    return saved.id;
+  };
+
+  // Ouvrir le modal de sync (sauvegarde auto si pas encore fait)
+  const handleSyncClick = () => {
+    // Sauvegarder automatiquement avant de sync
+    if (!isSaved) {
+      handleSave();
+    }
+    setShowSyncModal(true);
+  };
+
   const handleSyncSuccess = () => {
+    // Marquer comme synchronisé
+    if (savedWorkoutId) {
+      workoutStore.markAsSynced(savedWorkoutId);
+    }
     setShowSyncModal(false);
     setSyncSuccess(true);
   };
@@ -731,9 +756,30 @@ export function WorkoutForm() {
           {isGenerating ? 'Génération...' : 'Télécharger FIT'}
         </button>
 
+        {!isSaved ? (
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={!showPreview || steps.length === 0 || !name.trim()}
+            className="flex-1 bg-gray-100 text-gray-700 py-3 px-6 rounded-lg font-medium hover:bg-gray-200 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+            </svg>
+            Sauvegarder
+          </button>
+        ) : (
+          <span className="flex-1 bg-green-100 text-green-700 py-3 px-6 rounded-lg font-medium flex items-center justify-center gap-2">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            Sauvegardé
+          </span>
+        )}
+
         <button
           type="button"
-          onClick={() => setShowSyncModal(true)}
+          onClick={handleSyncClick}
           disabled={!showPreview || steps.length === 0 || !name.trim()}
           className="flex-1 bg-orange-500 text-white py-3 px-6 rounded-lg font-medium hover:bg-orange-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
         >

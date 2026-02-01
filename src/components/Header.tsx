@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../lib/authContext';
 
-type Page = 'home' | 'workouts' | 'coach' | 'stats' | 'profile' | 'account' | 'login';
+type Page = 'home' | 'workouts' | 'saved-workouts' | 'coach' | 'stats' | 'profile' | 'account' | 'login';
 
 interface HeaderProps {
   currentPage: Page;
@@ -82,7 +82,17 @@ export function Header({ currentPage, onNavigate }: HeaderProps) {
                   : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
-              Workouts
+              Créer
+            </button>
+            <button
+              onClick={() => onNavigate('saved-workouts')}
+              className={`px-2 py-2 rounded-lg font-medium transition-colors text-xs sm:text-sm md:text-base md:px-4 ${
+                currentPage === 'saved-workouts'
+                  ? 'bg-orange-100 text-orange-700'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              Séances
             </button>
             <button
               onClick={() => onNavigate('coach')}

@@ -179,7 +179,7 @@ export function generateId(): string {
 }
 
 // Séance sauvegardée (pour l'historique)
-export type WorkoutSource = 'workouts' | 'coach';
+export type WorkoutSource = 'workouts' | 'coach' | 'manual';
 
 export interface SavedWorkout {
   id: string;
