@@ -340,7 +340,7 @@ function buildGarminStep(step, stepOrder, sport, workout) {
     'recovery': 'RECOVERY',
     'rest': 'REST',
     'interval': 'INTERVAL',
-    'other': 'REST'  // Garmin API v2 doesn't support OTHER, use REST for exercises
+    'other': 'INTERVAL'  // Maps to "Other" in Garmin Connect UI
   };
 
   const intensity = intensityMap[step.type] || 'ACTIVE';
