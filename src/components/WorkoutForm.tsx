@@ -748,10 +748,11 @@ export function WorkoutForm() {
 
       {/* Action buttons */}
       <div className="flex gap-3">
+        {/* Télécharger FIT - caché sur mobile */}
         <button
           type="submit"
           disabled={isGenerating || !showPreview || steps.length === 0}
-          className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+          className="hidden md:flex flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors items-center justify-center"
         >
           {isGenerating ? 'Génération...' : 'Télécharger FIT'}
         </button>
