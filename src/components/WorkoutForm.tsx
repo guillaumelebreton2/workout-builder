@@ -746,15 +746,19 @@ export function WorkoutForm() {
         </div>
       )}
 
-      {/* Action buttons */}
-      <div className="flex gap-3">
-        {/* Télécharger FIT - caché sur mobile */}
+      {/* Action buttons - vertical sur mobile, horizontal sur desktop */}
+      <div className="flex flex-col md:flex-row gap-3">
+        {/* Synchroniser sur Garmin - en premier sur mobile */}
         <button
-          type="submit"
-          disabled={isGenerating || !showPreview || steps.length === 0}
-          className="hidden md:flex flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors items-center justify-center"
+          type="button"
+          onClick={handleSyncClick}
+          disabled={!showPreview || steps.length === 0 || !name.trim()}
+          className="flex-1 bg-orange-500 text-white py-3 px-6 rounded-lg font-medium hover:bg-orange-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 order-first md:order-last"
         >
-          {isGenerating ? 'Génération...' : 'Télécharger FIT'}
+          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>
+          </svg>
+          Synchroniser sur Garmin
         </button>
 
         {!isSaved ? (
@@ -778,16 +782,13 @@ export function WorkoutForm() {
           </span>
         )}
 
+        {/* Télécharger FIT - caché sur mobile */}
         <button
-          type="button"
-          onClick={handleSyncClick}
-          disabled={!showPreview || steps.length === 0 || !name.trim()}
-          className="flex-1 bg-orange-500 text-white py-3 px-6 rounded-lg font-medium hover:bg-orange-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+          type="submit"
+          disabled={isGenerating || !showPreview || steps.length === 0}
+          className="hidden md:flex flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors items-center justify-center"
         >
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>
-          </svg>
-          Sync Garmin
+          {isGenerating ? 'Génération...' : 'Télécharger FIT'}
         </button>
       </div>
 
