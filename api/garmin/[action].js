@@ -313,8 +313,6 @@ function convertToGarminFormat(workout) {
     workoutName: workout.name || 'Enduzo Workout',
     description: workout.description || 'Created with Enduzo',
     sport: sport,
-    workoutProvider: 'Enduzo',
-    workoutSourceId: 'Enduzo',
     isSessionTransitionEnabled: false,
     segments: [{
       segmentOrder: 1,
