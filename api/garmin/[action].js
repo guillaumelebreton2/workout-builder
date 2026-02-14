@@ -407,6 +407,11 @@ function buildGarminStep(step, stepOrder, sport, workout) {
       targetValueType = 'PERCENT';
       targetValueLow = details.powerPercent.low;
       targetValueHigh = details.powerPercent.high;
+    } else if (details.cadence) {
+      // Cadence comme cible principale si pas de puissance
+      targetType = 'CADENCE';
+      targetValueLow = details.cadence - 5;
+      targetValueHigh = details.cadence + 5;
     }
   }
 
@@ -436,6 +441,13 @@ function buildGarminStep(step, stepOrder, sport, workout) {
     weightValue: null,
     weightDisplayUnit: null
   };
+
+  // Cadence vélo en secondaryTarget quand la puissance est déjà en target principal
+  if (sport === 'CYCLING' && details.cadence && (details.watts || details.powerPercent)) {
+    garminStep.secondaryTargetType = 'CADENCE';
+    garminStep.secondaryTargetValueLow = details.cadence - 5;
+    garminStep.secondaryTargetValueHigh = details.cadence + 5;
+  }
 
   if (sport === 'LAP_SWIMMING') {
     garminStep.targetType = null;
