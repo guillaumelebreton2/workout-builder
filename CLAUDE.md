@@ -42,10 +42,44 @@ Processus:
   - Sauvegarde manuelle avant sync
   - Sauvegarde automatique quand on clique "Sync Garmin"
 
-### En cours / À améliorer
+### En cours / À faire
+- [ ] **Unifier la détection des répétitions** (preview = Garmin) — voir détail ci-dessous
 - [ ] La détection d'intervalles peut encore être améliorée pour des séances complexes (blocs mixtes)
 - [ ] Afficher la structure détectée dans l'UI (actuellement juste dans le summary texte)
 - [ ] Merger `dev` → `main` quand validé pour la prod
+
+#### Détail : Unification détection des répétitions
+
+**Problème** : Les répétitions sont détectées 2x indépendamment avec des algos différents :
+- Client (`WorkoutPreview.tsx` L68-189) : pattern sizes 1-4, gère patterns partiels
+- Serveur (`api/garmin/[action].js` L120-225) : pattern sizes 1-3, pas de patterns partiels
+→ Risque de divergence entre preview et Garmin
+
+**Solution** : Détecter 1 seule fois côté client, envoyer steps structurés à l'API.
+
+**Étapes** :
+1. **Créer `src/lib/repeatDetection.ts`**
+   - Extraire `stepsAreSimilar()` et `detectRepeatBlocks()` depuis `WorkoutPreview.tsx`
+   - Exporter aussi le type `DisplayBlock`
+   - Utiliser la version client (la plus complète : sizes 1-4, patterns partiels)
+
+2. **Modifier `src/components/WorkoutPreview.tsx`**
+   - Supprimer `stepsAreSimilar` (L68-94), `detectRepeatBlocks` (L97-189), type `DisplayBlock` (L9-13)
+   - Importer depuis `../lib/repeatDetection`
+   - Le reste du composant ne change pas
+
+3. **Modifier `src/components/GarminSyncModal.tsx`**
+   - Importer `detectRepeatBlocks` depuis `../lib/repeatDetection`
+   - Dans `syncWorkoutToGarmin()`, structurer les steps avant envoi :
+     - `detectRepeatBlocks(workout.steps)` → pour chaque bloc repeat, créer un step avec `repetitions` + `steps`
+     - Envoyer les steps structurés au lieu des steps plats
+
+4. **Simplifier `api/garmin/[action].js`**
+   - Supprimer `stepsAreSimilar`, `findRepeatBlock`, `detectAllRepeatBlocks` (~106 lignes)
+   - Simplifier `convertToGarminFormat` : supprimer logique warmup/main/cooldown + détection
+   - Simple boucle sur steps : `buildGarminStep` gère déjà les steps imbriqués (L348-358)
+
+**Note** : `buildGarminStep` dans `api/garmin/[action].js` gère déjà `step.steps && step.steps.length > 0` → `WorkoutRepeatStep`, donc la conversion serveur fonctionnera directement avec les steps structurés.
 
 ---
 
@@ -108,6 +142,13 @@ Processus:
   - Zone de danger avec bouton déconnexion
 - [x] Route `/account` ajoutée dans App.tsx (page protégée)
 - [x] Profil accessible via dropdown (indépendant de Stats/Strava)
+
+### À faire : Récupérer le nom des utilisateurs Garmin
+- Actuellement les comptes Garmin ont tous `name: "Athlete"` car on ne fetch pas le profil
+- L'API Garmin expose `GET https://apis.garmin.com/wellness-api/rest/user/profile` (scope `CONNECT_READ`, déjà accordé)
+- Renvoie `displayName`, `userName`, etc.
+- **Implémentation** : dans `handleCallback` de `api/garmin/[action].js`, après l'échange de tokens, appeler cette API et stocker le `displayName` dans le user au lieu du "Athlete" en dur
+- Un seul fetch supplémentaire au moment de la connexion, pas d'impact UI
 
 ### Hors scope immédiat
 - [ ] Migrer conversations coach IA côté serveur
