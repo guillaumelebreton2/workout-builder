@@ -3,7 +3,7 @@
  * Uses dynamic routing: /api/auth/[action]
  */
 import { getSessionFromRequest, getUserById, clearSessionCookie } from '../_lib/auth.js';
-import { kv } from '../_lib/kv.js';
+import { kv, kvConfig } from '../_lib/kv.js';
 
 // ============= ACTION HANDLERS =============
 
@@ -73,7 +73,7 @@ async function handleDebug(req, res) {
     vercelEnv: process.env.VERCEL_ENV || 'unknown'
   };
 
-  let kvTest = { ok: false, error: null };
+  let kvTest = { ok: false, error: null, cause: null };
   try {
     const testKey = `_auth_debug_${Date.now()}`;
     await kv.set(testKey, 'ok', { ex: 60 });
@@ -81,11 +81,17 @@ async function handleDebug(req, res) {
     await kv.del(testKey);
     kvTest = { ok: value === 'ok', value };
   } catch (error) {
-    kvTest = { ok: false, error: error.message };
+    kvTest = {
+      ok: false,
+      error: error.message,
+      cause: error.cause?.message || error.cause?.code || null,
+      code: error.cause?.code || null
+    };
   }
 
   return res.json({
     env: envStatus,
+    selected: kvConfig,
     kv: kvTest,
     timestamp: new Date().toISOString()
   });

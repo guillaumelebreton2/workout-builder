@@ -28,13 +28,19 @@ const tokenEntry =
 const url = urlEntry?.value;
 const token = tokenEntry?.value;
 
+export const kvConfig = {
+  urlKey: urlEntry?.key || null,
+  tokenKey: tokenEntry?.key || null,
+  urlHost: url ? new URL(url).host : null
+};
+
 if (!url || !token) {
   console.error(
     'KV: Missing environment variables. Expected KV_REST_API_URL + KV_REST_API_TOKEN ' +
     '(or UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN, or project-prefixed variants).'
   );
 } else {
-  console.log('KV: Client configured using', urlEntry.key, 'and', tokenEntry.key);
+  console.log('KV: Client configured using', urlEntry.key, 'and', tokenEntry.key, '→', kvConfig.urlHost);
 }
 
 export const kv = createClient({ url, token });
