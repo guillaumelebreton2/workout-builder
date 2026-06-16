@@ -3,6 +3,7 @@
  * Uses dynamic routing: /api/auth/[action]
  */
 import { getSessionFromRequest, getUserById, clearSessionCookie } from '../_lib/auth.js';
+import { kv } from '../_lib/kv.js';
 
 // ============= ACTION HANDLERS =============
 
@@ -59,6 +60,37 @@ async function handleLogout(req, res) {
   return res.json({ success: true, message: 'Logged out' });
 }
 
+async function handleDebug(req, res) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const envStatus = {
+    kvRestApiUrlKey: Object.keys(process.env).find(k => k.endsWith('KV_REST_API_URL') && process.env[k]) || null,
+    kvRestApiTokenKey: Object.keys(process.env).find(k => k.endsWith('KV_REST_API_TOKEN') && process.env[k]) || null,
+    upstashRedisRestUrlKey: Object.keys(process.env).find(k => k.endsWith('UPSTASH_REDIS_REST_URL') && process.env[k]) || null,
+    upstashRedisRestTokenKey: Object.keys(process.env).find(k => k.endsWith('UPSTASH_REDIS_REST_TOKEN') && process.env[k]) || null,
+    vercelEnv: process.env.VERCEL_ENV || 'unknown'
+  };
+
+  let kvTest = { ok: false, error: null };
+  try {
+    const testKey = `_auth_debug_${Date.now()}`;
+    await kv.set(testKey, 'ok', { ex: 60 });
+    const value = await kv.get(testKey);
+    await kv.del(testKey);
+    kvTest = { ok: value === 'ok', value };
+  } catch (error) {
+    kvTest = { ok: false, error: error.message };
+  }
+
+  return res.json({
+    env: envStatus,
+    kv: kvTest,
+    timestamp: new Date().toISOString()
+  });
+}
+
 // ============= MAIN HANDLER =============
 
 export default async function handler(req, res) {
@@ -79,6 +111,8 @@ export default async function handler(req, res) {
       return handleMe(req, res);
     case 'logout':
       return handleLogout(req, res);
+    case 'debug':
+      return handleDebug(req, res);
     default:
       return res.status(404).json({ error: `Unknown action: ${action}` });
   }
