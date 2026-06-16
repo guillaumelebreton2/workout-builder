@@ -168,8 +168,34 @@ Processus:
 ## Autres tâches techniques
 
 ### Priorité haute
+- [ ] **OAuth multi-environnement** (callback proxy via production) — voir détail ci-dessous
 - [ ] Utiliser le FTP réel de l'athlète au lieu du hardcodé 200W (`server/index.js:207`)
 - [ ] Tester les rate limits Groq sous charge
+
+#### Détail : OAuth multi-environnement
+
+**Problème** : Garmin (et Strava) n'acceptent qu'une seule redirect URI par app. Impossible de tester OAuth en local ou sur la preview dev sans changer l'URL dans la console développeur à chaque fois.
+
+**Solution** : Proxy via production. Le callback est toujours `https://enduzo.com`, puis redirection vers l'environnement d'origine.
+
+**Fonctionnement** :
+1. Le frontend passe l'URL d'origine : `/api/garmin/auth?returnUrl=http://localhost:3001`
+2. `handleAuth` stocke le `returnUrl` en KV (clé = le `state` OAuth, TTL 5min)
+3. `handleCallback` sur prod fait tout comme d'habitude (échange token, création user, stockage KV)
+4. Si `returnUrl` ≠ domaine actuel :
+   - Génère un code one-time, stocke les données de session en KV (clé = `auth_code_{code}`, TTL 60s)
+   - Redirige vers `{returnUrl}/?auth_code=xxx`
+5. Le frontend détecte `auth_code` dans l'URL, appelle `/api/auth/exchange?code=xxx`
+6. Nouvel action `exchange` dans `api/auth/[action].js` : lit la session depuis KV, pose le cookie `enduzo_session`, supprime le code
+
+**Fichiers à modifier** :
+- `api/garmin/[action].js` : `handleAuth` (stocker returnUrl), `handleCallback` (redirection conditionnelle + code one-time)
+- `api/strava/[action].js` : idem
+- `api/auth/[action].js` : ajouter action `exchange`
+- `src/components/GarminSyncModal.tsx` : passer `returnUrl` dans le lien OAuth
+- `src/lib/authContext.tsx` ou `src/App.tsx` : détecter `auth_code` et appeler `/api/auth/exchange`
+
+**Note** : Le KV est partagé entre tous les environnements (prod/dev/local) donc tokens et users sont déjà accessibles partout. Seul le cookie de session est lié au domaine.
 
 ### Priorité moyenne
 - [ ] Générateur de plans d'entraînement multi-semaines (périodisation)

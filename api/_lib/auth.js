@@ -1,7 +1,7 @@
 /**
  * Shared authentication utilities for API endpoints
  */
-import { kv } from '@vercel/kv';
+import { kv } from './kv.js';
 
 const SESSION_COOKIE_NAME = 'enduzo_session';
 const SESSION_MAX_AGE = 90 * 24 * 60 * 60; // 90 days in seconds

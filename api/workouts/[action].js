@@ -3,7 +3,7 @@
  * Uses dynamic routing: /api/workouts/[action]
  * Actions: list, create, update, delete
  */
-import { kv } from '@vercel/kv';
+import { kv } from '../_lib/kv.js';
 import { getSessionFromRequest } from '../_lib/auth.js';
 
 // ============= LIST WORKOUTS =============

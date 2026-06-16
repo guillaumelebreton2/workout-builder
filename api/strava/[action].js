@@ -3,7 +3,7 @@
  * Uses dynamic routing: /api/strava/[action]
  * Actions: auth, callback, refresh
  */
-import { kv } from '@vercel/kv';
+import { kv } from '../_lib/kv.js';
 import {
   createSessionCookie,
   createOrUpdateUser,
@@ -155,7 +155,7 @@ async function handleCallback(req, res) {
       }
     } catch (userError) {
       console.error('Failed to create/update user:', userError);
-      user = { id: userId, name: athleteName, authProvider: 'strava' };
+      return res.redirect(`${baseUrl}/?strava_error=account_creation_failed`);
     }
 
     // Create session cookie

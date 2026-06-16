@@ -2,7 +2,7 @@
 // Uses dynamic routing: /api/garmin/[action]
 
 import crypto from 'crypto';
-import { kv } from '@vercel/kv';
+import { kv } from '../_lib/kv.js';
 import {
   createSessionCookie,
   createOrUpdateUser,
@@ -686,7 +686,12 @@ async function handleCallback(req, res) {
       console.log('Garmin user ID:', garminUserId);
     }
 
-    if (garminUserId && kv) {
+    if (!garminUserId) {
+      console.error('Garmin user ID not available; wellness API user lookup failed.');
+      return res.redirect('/?garmin_error=' + encodeURIComponent('Unable to retrieve Garmin user profile. Please check API permissions.'));
+    }
+
+    if (kv) {
       const tokenData = {
         access_token: tokens.access_token,
         refresh_token: tokens.refresh_token,
@@ -736,12 +741,7 @@ async function handleCallback(req, res) {
       }
     } catch (userError) {
       console.error('Failed to create/update user:', userError);
-      // Create minimal user object for session
-      user = {
-        id: userId,
-        name: 'Athlete',
-        authProvider: 'garmin'
-      };
+      return res.redirect('/?garmin_error=' + encodeURIComponent('Account creation failed. Please try again.'));
     }
 
     const clearCookieOptions = 'HttpOnly; SameSite=Lax; Path=/; Max-Age=0';

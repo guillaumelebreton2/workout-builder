@@ -3,7 +3,7 @@
  * Uses dynamic routing: /api/profile/[action]
  * Actions: get, save
  */
-import { kv } from '@vercel/kv';
+import { kv } from '../_lib/kv.js';
 import { getSessionFromRequest } from '../_lib/auth.js';
 
 // ============= GET PROFILE =============
