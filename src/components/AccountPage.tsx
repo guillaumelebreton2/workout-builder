@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../lib/authContext';
+import { stravaApi } from '../lib/stravaApi';
 
 const API_URL = import.meta.env.PROD ? '' : 'http://localhost:3001';
 
@@ -64,6 +65,29 @@ export function AccountPage() {
 
   const handleStravaConnect = () => {
     window.location.href = `${API_URL}/api/strava/auth`;
+  };
+
+  const handleStravaDisconnect = async () => {
+    // Clear local tokens immediately for UI feedback
+    stravaApi.clearTokens();
+    try {
+      const response = await fetch(`${API_URL}/api/strava/disconnect`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.loggedOut) {
+          window.location.href = '/';
+        } else {
+          window.location.reload();
+        }
+      } else {
+        console.error('Failed to disconnect Strava');
+      }
+    } catch (e) {
+      console.error('Failed to disconnect Strava:', e);
+    }
   };
 
   const handleLogout = async () => {
@@ -183,9 +207,12 @@ export function AccountPage() {
                 </div>
               </div>
               {stravaStatus.connected || user.stravaConnected ? (
-                <span className="px-4 py-2 text-sm font-medium text-green-600 bg-green-50 rounded-lg">
-                  Actif
-                </span>
+                <button
+                  onClick={handleStravaDisconnect}
+                  className="px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                >
+                  Deconnecter
+                </button>
               ) : (
                 <button
                   onClick={handleStravaConnect}

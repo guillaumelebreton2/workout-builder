@@ -18,7 +18,10 @@ import {
   createSessionCookie,
   createOrUpdateUser,
   createProviderLookup,
-  findUserByProviderId
+  findUserByProviderId,
+  getSessionFromRequest,
+  getUserById,
+  clearSessionCookie
 } from '../_lib/auth.js';
 
 const STRAVA_CLIENT_ID = process.env.STRAVA_CLIENT_ID;
@@ -167,6 +170,56 @@ async function handleCallback(req, res) {
     console.error('Strava callback error:', err);
     res.redirect(`${baseUrl}/?strava_error=server_error`);
   }
+}
+
+async function handleDisconnect(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  const session = getSessionFromRequest(req);
+  if (!session?.userId) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+
+  const user = await getUserById(session.userId);
+  if (!user) {
+    return res.status(401).json({ error: 'User not found' });
+  }
+
+  const stravaAthleteId = user.stravaAthleteId;
+
+  // Delete stored Strava tokens
+  if (stravaAthleteId) {
+    try {
+      await kv.del(`strava_tokens_${stravaAthleteId}`);
+    } catch (err) {
+      console.error('Failed to delete Strava tokens:', err);
+    }
+  }
+
+  // Update user: remove strava from linkedProviders and clear stravaAthleteId
+  const linkedProviders = (user.linkedProviders || [user.authProvider]).filter(p => p !== 'strava');
+  const updatedUser = await createOrUpdateUser({
+    ...user,
+    linkedProviders,
+    stravaAthleteId: null,
+    authProvider: linkedProviders.length > 0 ? linkedProviders[0] : user.authProvider
+  });
+
+  // If no providers left, clear session. Otherwise update session.
+  if (linkedProviders.length === 0) {
+    res.setHeader('Set-Cookie', clearSessionCookie());
+    return res.json({ success: true, message: 'Disconnected from Strava and logged out', loggedOut: true });
+  }
+
+  res.setHeader('Set-Cookie', createSessionCookie({
+    userId: updatedUser.id,
+    authProvider: updatedUser.authProvider,
+    name: updatedUser.name,
+    garminUserId: updatedUser.garminUserId || undefined,
+    createdAt: Date.now()
+  }));
+
+  return res.json({ success: true, message: 'Disconnected from Strava' });
 }
 
 async function handleRefresh(req, res) {
@@ -333,6 +386,7 @@ export default async function handler(req, res) {
     if (first === 'auth') return handleAuth(req, res);
     if (first === 'callback') return handleCallback(req, res);
     if (first === 'refresh') return handleRefresh(req, res);
+    if (first === 'disconnect') return handleDisconnect(req, res);
     if (first === 'activities') return handleActivities(req, res);
     if (first === 'athlete') return handleAthlete(req, res);
   }
