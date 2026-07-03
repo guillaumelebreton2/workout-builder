@@ -1064,7 +1064,10 @@ async function handleActivities(req, res) {
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
     const url = new URL(GARMIN_ACTIVITIES_API);
-    url.searchParams.append('startTime', Math.floor(sixMonthsAgo.getTime() / 1000).toString());
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    const startSeconds = Math.floor(sixMonthsAgo.getTime() / 1000);
+    url.searchParams.append('uploadStartTimeInSeconds', startSeconds.toString());
+    url.searchParams.append('uploadEndTimeInSeconds', nowSeconds.toString());
 
     const response = await fetch(url.toString(), {
       headers: { Authorization: `Bearer ${accessToken}` },

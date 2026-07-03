@@ -372,7 +372,9 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  const path = req.query.path || [];
+  // Vercel passes `path` as a string when there is one segment, and as an array for multiple.
+  const rawPath = req.query.path || [];
+  const path = Array.isArray(rawPath) ? rawPath : [rawPath];
 
   // Root /api/strava - not valid
   if (path.length === 0) {

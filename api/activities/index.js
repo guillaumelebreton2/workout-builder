@@ -133,12 +133,16 @@ async function fetchStravaActivities(accessToken, options = {}) {
 async function fetchGarminActivities(accessToken, options = {}) {
   if (!accessToken) return { activities: [], error: 'No Garmin token' };
 
-  // L'endpoint exact dépend des scopes approuvés. On tente le endpoint summary
-  // et on loggue le format reçu pour itérer si nécessaire.
+  // Garmin Health API attend uploadStartTimeInSeconds / uploadEndTimeInSeconds
   const url = new URL(`${GARMIN_ACTIVITIES_API}`);
-  if (options.after) {
-    url.searchParams.append('startTime', Math.floor(new Date(options.after).getTime() / 1000).toString());
-  }
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  const startSeconds = options.after
+    ? Math.floor(new Date(options.after).getTime() / 1000)
+    : nowSeconds - 180 * 24 * 60 * 60; // 6 mois par défaut
+  url.searchParams.append('uploadStartTimeInSeconds', startSeconds.toString());
+  url.searchParams.append('uploadEndTimeInSeconds', nowSeconds.toString());
+
+  console.log('fetchGarminActivities: calling', url.toString());
 
   try {
     const response = await fetch(url.toString(), {
