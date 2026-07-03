@@ -326,26 +326,26 @@ export function CoachPage() {
                   <h3 className="text-sm font-medium text-gray-700 mb-3 text-left">Analyser une séance</h3>
                   <div className="space-y-2">
                     {metrics.recentActivities
-                      .filter(a => [
+                      .filter(a => a.source === 'strava' && [
                         // Running
                         'Run', 'TrailRun', 'VirtualRun', 'Treadmill',
                         // Cycling
                         'Ride', 'VirtualRide', 'GravelRide', 'MountainBikeRide', 'EBikeRide',
                         // Swimming
                         'Swim',
-                      ].includes(a.type))
+                      ].includes(a.rawType))
                       .slice(0, 3)
                       .map((activity) => {
-                        const sportConfig = getSportConfig(activity.type);
-                        const date = new Date(activity.start_date_local);
+                        const sportConfig = getSportConfig(activity.rawType);
+                        const date = new Date(activity.startDateLocal);
                         const dateStr = date.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
                         const dist = (activity.distance / 1000).toFixed(1);
-                        const dur = Math.round(activity.moving_time / 60);
+                        const dur = Math.round(activity.movingTime / 60);
 
                         return (
                           <button
                             key={activity.id}
-                            onClick={() => handleAskQuestion(`Analyse ma séance "${activity.name}" (activité #${activity.id})`)}
+                            onClick={() => handleAskQuestion(`Analyse ma séance "${activity.name}" (activité #${activity.providerActivityId})`)}
                             disabled={isLoading}
                             className="w-full flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-xl hover:bg-orange-50 hover:border-orange-300 transition-colors text-left disabled:opacity-50"
                           >

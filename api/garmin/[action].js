@@ -7,11 +7,14 @@ import {
   createSessionCookie,
   createOrUpdateUser,
   createProviderLookup,
-  findUserByProviderId
+  findUserByProviderId,
+  getSessionFromRequest
 } from '../_lib/auth.js';
+import { normalizeActivities } from '../_lib/activities.js';
 
 const GARMIN_WORKOUT_API = 'https://apis.garmin.com/workoutportal/workout/v2';
 const GARMIN_SCHEDULE_API = 'https://apis.garmin.com/training-api/schedule/';
+const GARMIN_ACTIVITIES_API = 'https://apis.garmin.com/wellness-api/rest/activities';
 
 // URLs pour les différents environnements
 const DEV_PREVIEW_URL = 'https://workout-builder-garmin-git-dev-workout-builders-projects.vercel.app';
@@ -1025,6 +1028,77 @@ async function handleDisconnect(req, res) {
   }
 }
 
+async function handleActivities(req, res) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const session = getSessionFromRequest(req);
+  if (!session?.userId) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+
+  const cookies = parseCookies(req.headers.cookie);
+  const sessionCookie = cookies.garmin_session;
+
+  if (!sessionCookie) {
+    return res.status(401).json({ error: 'Not connected to Garmin' });
+  }
+
+  let garminSession;
+  try {
+    garminSession = JSON.parse(Buffer.from(sessionCookie, 'base64').toString());
+  } catch (e) {
+    return res.status(401).json({ error: 'Invalid Garmin session' });
+  }
+
+  const { garminUserId } = garminSession;
+  if (!garminUserId) {
+    return res.status(401).json({ error: 'No Garmin user ID' });
+  }
+
+  try {
+    const accessToken = await getValidAccessToken(garminUserId);
+
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+    const url = new URL(GARMIN_ACTIVITIES_API);
+    url.searchParams.append('startTime', Math.floor(sixMonthsAgo.getTime() / 1000).toString());
+
+    const response = await fetch(url.toString(), {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        return res.status(401).json({ error: 'Garmin token expired' });
+      }
+      if (response.status === 403) {
+        return res.status(403).json({ error: 'Garmin Health API not authorized' });
+      }
+      const text = await response.text();
+      console.warn('Garmin activities API error:', response.status, text);
+      throw new Error(`Garmin API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const rawActivities = Array.isArray(data) ? data : data.activities || data.activityList || [];
+    const activities = normalizeActivities(rawActivities, 'garmin');
+
+    res.json({
+      activities,
+      meta: {
+        total: activities.length,
+        source: 'garmin',
+      },
+    });
+  } catch (error) {
+    console.error('Garmin activities error:', error);
+    res.status(500).json({ error: error.message || 'Failed to fetch Garmin activities' });
+  }
+}
+
 async function handleRefresh(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -1132,6 +1206,8 @@ export default async function handler(req, res) {
       return handleDisconnect(req, res);
     case 'refresh':
       return handleRefresh(req, res);
+    case 'activities':
+      return handleActivities(req, res);
     default:
       return res.status(404).json({ error: `Unknown action: ${action}` });
   }

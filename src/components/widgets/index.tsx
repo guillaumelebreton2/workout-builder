@@ -3,6 +3,7 @@
  */
 
 import { useState } from 'react';
+import { UnifiedActivity } from '../../types/activity';
 import { TrainingMetrics, STRAVA_SPORTS, getSportConfig } from '../../lib/metricsService';
 import { DashboardWidget } from '../../lib/dashboardStore';
 import { AllActivitiesModal } from '../AllActivitiesModal';
@@ -215,6 +216,12 @@ export function SportBreakdownWidget({ widget, metrics, onRemove }: WidgetProps)
 export function RecentActivitiesWidget({ widget, metrics, onRemove, onAnalyze }: WidgetProps) {
   const [showAllActivities, setShowAllActivities] = useState(false);
 
+  const getActivityConfig = (activity: UnifiedActivity) => {
+    return activity.source === 'strava'
+      ? getSportConfig(activity.rawType)
+      : Object.values(STRAVA_SPORTS).find(s => s.key === activity.type) || getSportConfig(activity.type);
+  };
+
   if (!metrics || metrics.recentActivities.length === 0) {
     return (
       <WidgetContainer widget={widget} onRemove={onRemove}>
@@ -244,12 +251,12 @@ export function RecentActivitiesWidget({ widget, metrics, onRemove, onAnalyze }:
       <WidgetContainer widget={widget} onRemove={onRemove}>
         <div className="space-y-2">
           {metrics.recentActivities.slice(0, 5).map((activity) => {
-            const sportConfig = getSportConfig(activity.type);
-            const date = new Date(activity.start_date_local);
+            const sportConfig = getActivityConfig(activity);
+            const date = new Date(activity.startDateLocal);
             const dateStr = date.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
             const dist = (activity.distance / 1000).toFixed(1);
-            const dur = Math.round(activity.moving_time / 60);
-            const canAnalyze = analyzableTypes.includes(activity.type) && onAnalyze;
+            const dur = Math.round(activity.movingTime / 60);
+            const canAnalyze = activity.source === 'strava' && analyzableTypes.includes(activity.rawType) && onAnalyze;
 
             return (
               <div key={activity.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg group">
@@ -269,9 +276,15 @@ export function RecentActivitiesWidget({ widget, metrics, onRemove, onAnalyze }:
                       <p className="text-xs text-gray-500">{dur} min</p>
                     )}
                   </div>
+                  <span
+                    className={`text-xs px-1.5 py-0.5 rounded ${activity.source === 'strava' ? 'bg-[#FC4C02]/10 text-[#FC4C02]' : 'bg-[#007CC3]/10 text-[#007CC3]'}`}
+                    title={activity.source === 'strava' ? 'Strava' : 'Garmin'}
+                  >
+                    {activity.source === 'strava' ? 'S' : 'G'}
+                  </span>
                   {canAnalyze && (
                     <button
-                      onClick={() => onAnalyze(activity.id, activity.name)}
+                      onClick={() => onAnalyze(activity.providerActivityId as number, activity.name)}
                       className="px-2 py-1 text-xs bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors"
                       title="Analyser cette séance"
                     >

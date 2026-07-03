@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { StravaActivity, stravaApi } from '../lib/stravaApi';
+import { UnifiedActivity } from '../types/activity';
+import { unifiedActivityApi } from '../lib/unifiedActivityApi';
 import { getSportConfig } from '../lib/metricsService';
 
 interface AllActivitiesModalProps {
@@ -9,12 +10,11 @@ interface AllActivitiesModalProps {
 }
 
 export function AllActivitiesModal({ isOpen, onClose, onAnalyze }: AllActivitiesModalProps) {
-  const [activities, setActivities] = useState<StravaActivity[]>([]);
+  const [activities, setActivities] = useState<UnifiedActivity[]>([]);
   const [loading, setLoading] = useState(false);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Types d'activités analysables
+  // Types d'activités analysables (uniquement Strava pour l'instant)
   const analyzableTypes = [
     // Running
     'Run', 'TrailRun', 'VirtualRun', 'Treadmill',
@@ -24,48 +24,34 @@ export function AllActivitiesModal({ isOpen, onClose, onAnalyze }: AllActivities
     'Swim',
   ];
 
-  // Charger les activités
-  const loadActivities = async (pageNum: number, reset: boolean = false) => {
+  // Charger les activités unifiées
+  const loadActivities = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const newActivities = await stravaApi.getActivities({
-        page: pageNum,
-        perPage: 20,
-      });
-
-      if (reset) {
-        setActivities(newActivities);
-      } else {
-        setActivities(prev => [...prev, ...newActivities]);
-      }
-
-      setHasMore(newActivities.length === 20);
+      const response = await unifiedActivityApi.getUnifiedActivities();
+      setActivities(response.activities);
     } catch (err) {
       console.error('Erreur chargement activités:', err);
+      setError(err instanceof Error ? err.message : 'Erreur de chargement');
     } finally {
       setLoading(false);
     }
   };
 
-  // Charger la première page à l'ouverture
+  // Charger à l'ouverture
   useEffect(() => {
     if (isOpen) {
-      setPage(1);
-      loadActivities(1, true);
+      loadActivities();
     }
   }, [isOpen]);
 
-  // Charger plus d'activités
-  const loadMore = () => {
-    const nextPage = page + 1;
-    setPage(nextPage);
-    loadActivities(nextPage);
-  };
-
-  // Gérer l'analyse
-  const handleAnalyze = (activity: StravaActivity) => {
-    onAnalyze(activity.id, activity.name);
-    onClose();
+  // Gérer l'analyse (uniquement Strava)
+  const handleAnalyze = (activity: UnifiedActivity) => {
+    if (typeof activity.providerActivityId === 'number') {
+      onAnalyze(activity.providerActivityId, activity.name);
+      onClose();
+    }
   };
 
   if (!isOpen) return null;
@@ -99,8 +85,8 @@ export function AllActivitiesModal({ isOpen, onClose, onAnalyze }: AllActivities
           ) : (
             <div className="space-y-2">
               {activities.map((activity) => {
-                const sportConfig = getSportConfig(activity.type);
-                const date = new Date(activity.start_date_local);
+                const sportConfig = getSportConfig(activity.source === 'strava' ? activity.rawType : activity.type);
+                const date = new Date(activity.startDateLocal);
                 const dateStr = date.toLocaleDateString('fr-FR', {
                   weekday: 'short',
                   day: 'numeric',
@@ -108,8 +94,8 @@ export function AllActivitiesModal({ isOpen, onClose, onAnalyze }: AllActivities
                   year: date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined,
                 });
                 const dist = (activity.distance / 1000).toFixed(1);
-                const dur = Math.round(activity.moving_time / 60);
-                const canAnalyze = analyzableTypes.includes(activity.type);
+                const dur = Math.round(activity.movingTime / 60);
+                const canAnalyze = activity.source === 'strava' && analyzableTypes.includes(activity.rawType);
 
                 return (
                   <div
@@ -131,6 +117,9 @@ export function AllActivitiesModal({ isOpen, onClose, onAnalyze }: AllActivities
                         <p className="font-medium">{dur} min</p>
                       )}
                     </div>
+                    <span className={`text-xs px-2 py-1 rounded ${activity.source === 'strava' ? 'bg-[#FC4C02]/10 text-[#FC4C02]' : 'bg-[#007CC3]/10 text-[#007CC3]'}`}>
+                      {activity.source === 'strava' ? 'Strava' : 'Garmin'}
+                    </span>
                     {canAnalyze ? (
                       <button
                         onClick={() => handleAnalyze(activity)}
@@ -149,23 +138,10 @@ export function AllActivitiesModal({ isOpen, onClose, onAnalyze }: AllActivities
             </div>
           )}
 
-          {/* Bouton charger plus */}
-          {hasMore && activities.length > 0 && (
-            <div className="mt-4 text-center">
-              <button
-                onClick={loadMore}
-                disabled={loading}
-                className="px-4 py-2 text-sm text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded-lg transition-colors disabled:opacity-50"
-              >
-                {loading ? (
-                  <span className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
-                    Chargement...
-                  </span>
-                ) : (
-                  'Charger plus d\'activités'
-                )}
-              </button>
+          {/* Erreur */}
+          {error && (
+            <div className="mt-4 p-3 bg-red-50 text-red-700 text-sm rounded-lg">
+              {error}
             </div>
           )}
         </div>
@@ -175,7 +151,7 @@ export function AllActivitiesModal({ isOpen, onClose, onAnalyze }: AllActivities
           <p className="text-xs text-gray-500 text-center">
             {activities.length} activité{activities.length > 1 ? 's' : ''} affichée{activities.length > 1 ? 's' : ''}
             {' • '}
-            Seules les activités de course à pied sont analysables pour l'instant
+            L'analyse détaillée n'est disponible que pour les activités Strava
           </p>
         </div>
       </div>

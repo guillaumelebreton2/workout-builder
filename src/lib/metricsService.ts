@@ -1,9 +1,10 @@
 /**
  * Service de calcul des métriques d'entraînement
- * Analyse les activités Strava pour générer des stats utiles
+ * Analyse les activités unifiées (Strava + Garmin) pour générer des stats utiles
  */
 
-import { StravaActivity, stravaApi } from './stravaApi';
+import { UnifiedActivity } from '../types/activity';
+import { unifiedActivityApi } from './unifiedActivityApi';
 
 // Types pour les métriques
 export interface WeeklyMetrics {
@@ -40,7 +41,7 @@ export interface TrainingMetrics {
     durationChange: number;
     trend: 'up' | 'down' | 'stable';
   };
-  recentActivities: StravaActivity[];
+  recentActivities: UnifiedActivity[];
   summary: string; // Résumé texte pour l'IA
 }
 
@@ -156,15 +157,25 @@ export function getSportConfig(type: string): SportConfig {
   return STRAVA_SPORTS[type] || DEFAULT_SPORT;
 }
 
-// Mapper les types Strava vers nos catégories (pour compatibilité)
-function mapSportType(type: string): string {
-  return getSportConfig(type).key;
+// Obtenir la config d'un sport pour une activité unifiée
+function getSportConfigForActivity(activity: UnifiedActivity): SportConfig {
+  // Pour Strava, le rawType correspond aux clés de STRAVA_SPORTS
+  if (activity.source === 'strava') {
+    return STRAVA_SPORTS[activity.rawType] || DEFAULT_SPORT;
+  }
+  // Pour Garmin (ou autre), chercher par clé interne
+  return Object.values(STRAVA_SPORTS).find(s => s.key === activity.type) || DEFAULT_SPORT;
+}
+
+// Mapper le type d'une activité unifiée vers notre clé interne
+function mapSportType(activity: UnifiedActivity): string {
+  return getSportConfigForActivity(activity).key;
 }
 
 // Calculer les métriques pour une semaine
-function calculateWeekMetrics(activities: StravaActivity[], weekStart: Date, weekEnd: Date): WeeklyMetrics {
+function calculateWeekMetrics(activities: UnifiedActivity[], weekStart: Date, weekEnd: Date): WeeklyMetrics {
   const weekActivities = activities.filter(a => {
-    const actDate = new Date(a.start_date);
+    const actDate = new Date(a.startDate);
     return actDate >= weekStart && actDate <= weekEnd;
   });
 
@@ -176,16 +187,16 @@ function calculateWeekMetrics(activities: StravaActivity[], weekStart: Date, wee
   let hrCount = 0;
 
   for (const activity of weekActivities) {
-    const sport = mapSportType(activity.type);
+    const sport = mapSportType(activity);
     const distanceKm = activity.distance / 1000;
-    const durationMin = activity.moving_time / 60;
+    const durationMin = activity.movingTime / 60;
 
     totalDistance += distanceKm;
     totalDuration += durationMin;
-    totalElevation += activity.total_elevation_gain || 0;
+    totalElevation += activity.totalElevationGain || 0;
 
-    if (activity.average_heartrate) {
-      totalHeartRate += activity.average_heartrate;
+    if (activity.averageHeartrate) {
+      totalHeartRate += activity.averageHeartrate;
       hrCount++;
     }
 
@@ -201,17 +212,17 @@ function calculateWeekMetrics(activities: StravaActivity[], weekStart: Date, wee
 
     bySport[sport].distance += distanceKm;
     bySport[sport].duration += durationMin;
-    bySport[sport].elevation += activity.total_elevation_gain || 0;
+    bySport[sport].elevation += activity.totalElevationGain || 0;
     bySport[sport].count++;
 
-    if (activity.average_heartrate) {
-      bySport[sport].avgHeartRate = (bySport[sport].avgHeartRate || 0) + activity.average_heartrate;
+    if (activity.averageHeartrate) {
+      bySport[sport].avgHeartRate = (bySport[sport].avgHeartRate || 0) + activity.averageHeartrate;
     }
-    if (activity.average_cadence) {
-      bySport[sport].avgCadence = (bySport[sport].avgCadence || 0) + activity.average_cadence;
+    if (activity.averageCadence) {
+      bySport[sport].avgCadence = (bySport[sport].avgCadence || 0) + activity.averageCadence;
     }
-    if (activity.average_watts) {
-      bySport[sport].avgPower = (bySport[sport].avgPower || 0) + activity.average_watts;
+    if (activity.averageWatts) {
+      bySport[sport].avgPower = (bySport[sport].avgPower || 0) + activity.averageWatts;
     }
   }
 
@@ -310,9 +321,9 @@ function generateSummary(metrics: TrainingMetrics): string {
   if (metrics.recentActivities.length > 0) {
     summary += `\n## Dernières activités\n`;
     for (const activity of metrics.recentActivities.slice(0, 5)) {
-      const date = new Date(activity.start_date_local).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
+      const date = new Date(activity.startDateLocal).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
       const dist = (activity.distance / 1000).toFixed(1);
-      const dur = Math.round(activity.moving_time / 60);
+      const dur = Math.round(activity.movingTime / 60);
       summary += `- ${date}: ${activity.name} (${dist} km, ${dur} min)\n`;
     }
   }
@@ -321,32 +332,24 @@ function generateSummary(metrics: TrainingMetrics): string {
 }
 
 // Fonction principale : calculer toutes les métriques
-export async function calculateTrainingMetrics(): Promise<TrainingMetrics> {
-  // Récupérer les activités des 5 dernières semaines pour les stats
+export async function calculateTrainingMetrics(forceSync = false): Promise<TrainingMetrics> {
+  // Récupérer les activités unifiées depuis le backend
+  const response = await unifiedActivityApi.getUnifiedActivities({ forceSync });
+  const allActivities = response.activities;
+
+  // Séparer les activités pour les stats (5 dernières semaines) et les récentes
   const fiveWeeksAgo = new Date();
   fiveWeeksAgo.setDate(fiveWeeksAgo.getDate() - 35);
 
-  // Deux appels en parallèle :
-  // 1. Activités filtrées pour les stats hebdo
-  // 2. Activités récentes sans filtre pour l'affichage
-  const [statsActivities, recentActivities] = await Promise.all([
-    stravaApi.getActivities({
-      after: fiveWeeksAgo,
-      perPage: 100,
-    }),
-    stravaApi.getActivities({
-      perPage: 15, // Les 15 plus récentes, sans filtre de date
-    }),
-  ]);
-
-  const activities = statsActivities;
+  const statsActivities = allActivities.filter(a => new Date(a.startDate) >= fiveWeeksAgo);
+  const recentActivities = allActivities.slice(0, 15); // Les 15 plus récentes
 
   const now = new Date();
 
   // Semaine courante
   const currentWeekStart = getWeekStart(now);
   const currentWeekEnd = getWeekEnd(now);
-  const currentWeek = calculateWeekMetrics(activities, currentWeekStart, currentWeekEnd);
+  const currentWeek = calculateWeekMetrics(statsActivities, currentWeekStart, currentWeekEnd);
 
   // Semaine précédente
   const prevWeekStart = new Date(currentWeekStart);
@@ -354,7 +357,7 @@ export async function calculateTrainingMetrics(): Promise<TrainingMetrics> {
   const prevWeekEnd = new Date(currentWeekStart);
   prevWeekEnd.setDate(prevWeekEnd.getDate() - 1);
   prevWeekEnd.setHours(23, 59, 59, 999);
-  const previousWeek = calculateWeekMetrics(activities, prevWeekStart, prevWeekEnd);
+  const previousWeek = calculateWeekMetrics(statsActivities, prevWeekStart, prevWeekEnd);
 
   // 4 dernières semaines
   const last4Weeks: WeeklyMetrics[] = [];
@@ -362,7 +365,7 @@ export async function calculateTrainingMetrics(): Promise<TrainingMetrics> {
     const weekStart = new Date(currentWeekStart);
     weekStart.setDate(weekStart.getDate() - (i * 7));
     const weekEnd = getWeekEnd(weekStart);
-    last4Weeks.push(calculateWeekMetrics(activities, weekStart, weekEnd));
+    last4Weeks.push(calculateWeekMetrics(statsActivities, weekStart, weekEnd));
   }
 
   // Calculer la tendance
