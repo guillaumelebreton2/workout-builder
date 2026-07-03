@@ -150,40 +150,59 @@ async function fetchStravaActivities(accessToken, options = {}) {
   }
 }
 
+async function fetchGarminDay(accessToken, dayStartSeconds) {
+  const dayEndSeconds = dayStartSeconds + 24 * 60 * 60;
+  const url = new URL(GARMIN_ACTIVITIES_API);
+  url.searchParams.append('uploadStartTimeInSeconds', dayStartSeconds.toString());
+  url.searchParams.append('uploadEndTimeInSeconds', dayEndSeconds.toString());
+
+  const response = await fetch(url.toString(), {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Accept: 'application/json'
+    },
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    console.warn('Garmin day fetch error:', dayStartSeconds, response.status, text);
+    throw new Error(`Garmin API error: ${response.status} - ${text.substring(0, 200)}`);
+  }
+
+  const data = await response.json();
+  return Array.isArray(data) ? data : data.activities || data.activityList || [];
+}
+
 async function fetchGarminActivities(accessToken, options = {}) {
   if (!accessToken) return { activities: [], error: 'No Garmin token' };
 
-  // Garmin Health API attend uploadStartTimeInSeconds / uploadEndTimeInSeconds
-  const url = new URL(`${GARMIN_ACTIVITIES_API}`);
+  // Garmin Health API limite la plage à 86400 secondes (1 jour)
+  // On fait donc un appel par jour sur les 30 derniers jours
+  const daysBack = 30;
   const nowSeconds = Math.floor(Date.now() / 1000);
   const startSeconds = options.after
     ? Math.floor(new Date(options.after).getTime() / 1000)
-    : nowSeconds - 180 * 24 * 60 * 60; // 6 mois par défaut
-  url.searchParams.append('uploadStartTimeInSeconds', startSeconds.toString());
-  url.searchParams.append('uploadEndTimeInSeconds', nowSeconds.toString());
+    : nowSeconds - daysBack * 24 * 60 * 60;
 
-  console.log('fetchGarminActivities: calling', url.toString());
+  const dayStarts = [];
+  let current = startSeconds;
+  while (current < nowSeconds) {
+    dayStarts.push(current);
+    current += 24 * 60 * 60;
+  }
+
+  console.log('fetchGarminActivities: fetching', dayStarts.length, 'days');
 
   try {
-    const response = await fetch(url.toString(), {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        Accept: 'application/json'
-      },
-    });
+    const results = await Promise.all(
+      dayStarts.map(day => fetchGarminDay(accessToken, day).catch(err => {
+        console.warn('fetchGarminDay failed for day', day, err.message);
+        return [];
+      }))
+    );
 
-    if (!response.ok) {
-      if (response.status === 401) return { activities: [], error: 'Garmin token expired' };
-      if (response.status === 403) return { activities: [], error: 'Garmin Health API not authorized' };
-      const text = await response.text();
-      console.warn('Garmin activities API response:', response.status, text);
-      throw new Error(`Garmin API error: ${response.status} - ${text.substring(0, 200)}`);
-    }
-
-    const data = await response.json();
-    // Garmin peut retourner un objet ou un tableau selon l'endpoint
-    const rawActivities = Array.isArray(data) ? data : data.activities || data.activityList || [];
-    return { activities: normalizeActivities(rawActivities, 'garmin'), error: null };
+    const allRaw = results.flat();
+    return { activities: normalizeActivities(allRaw, 'garmin'), error: null };
   } catch (err) {
     console.error('Error fetching Garmin activities:', err);
     return { activities: [], error: err.message || 'Garmin fetch failed' };

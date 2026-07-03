@@ -1060,33 +1060,46 @@ async function handleActivities(req, res) {
   try {
     const accessToken = await getValidAccessToken(garminUserId);
 
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-
-    const url = new URL(GARMIN_ACTIVITIES_API);
+    // Garmin Health API limite la plage à 86400 secondes (1 jour)
+    const daysBack = 30;
     const nowSeconds = Math.floor(Date.now() / 1000);
-    const startSeconds = Math.floor(sixMonthsAgo.getTime() / 1000);
-    url.searchParams.append('uploadStartTimeInSeconds', startSeconds.toString());
-    url.searchParams.append('uploadEndTimeInSeconds', nowSeconds.toString());
+    const startSeconds = nowSeconds - daysBack * 24 * 60 * 60;
 
-    const response = await fetch(url.toString(), {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        return res.status(401).json({ error: 'Garmin token expired' });
-      }
-      if (response.status === 403) {
-        return res.status(403).json({ error: 'Garmin Health API not authorized' });
-      }
-      const text = await response.text();
-      console.warn('Garmin activities API error:', response.status, text);
-      throw new Error(`Garmin API error: ${response.status}`);
+    const dayStarts = [];
+    let current = startSeconds;
+    while (current < nowSeconds) {
+      dayStarts.push(current);
+      current += 24 * 60 * 60;
     }
 
-    const data = await response.json();
-    const rawActivities = Array.isArray(data) ? data : data.activities || data.activityList || [];
+    const results = await Promise.all(
+      dayStarts.map(async (dayStart) => {
+        const dayEnd = dayStart + 24 * 60 * 60;
+        const url = new URL(GARMIN_ACTIVITIES_API);
+        url.searchParams.append('uploadStartTimeInSeconds', dayStart.toString());
+        url.searchParams.append('uploadEndTimeInSeconds', dayEnd.toString());
+
+        try {
+          const response = await fetch(url.toString(), {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          });
+
+          if (!response.ok) {
+            const text = await response.text();
+            console.warn('Garmin day fetch error:', dayStart, response.status, text);
+            return [];
+          }
+
+          const data = await response.json();
+          return Array.isArray(data) ? data : data.activities || data.activityList || [];
+        } catch (err) {
+          console.warn('Garmin day fetch exception:', dayStart, err.message);
+          return [];
+        }
+      })
+    );
+
+    const rawActivities = results.flat();
     const activities = normalizeActivities(rawActivities, 'garmin');
 
     res.json({

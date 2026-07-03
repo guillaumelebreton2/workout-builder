@@ -50,8 +50,8 @@ export function StatsPage({ onNavigate }: StatsPageProps) {
   const [widgets, setWidgets] = useState<DashboardWidget[]>([]);
   const [showAddWidget, setShowAddWidget] = useState(false);
 
-  const stravaConnected = user?.stravaConnected || !!stravaApi.getStoredTokens();
-  const garminConnected = user?.garminConnected || false;
+  const stravaConnected = user?.stravaConnected ?? false;
+  const garminConnected = user?.garminConnected ?? false;
   const hasActivitySource = stravaConnected || garminConnected;
 
   const loadMetrics = useCallback(async (forceSync = false) => {
@@ -303,6 +303,17 @@ export function StatsPage({ onNavigate }: StatsPageProps) {
             {metrics.meta.errors?.map((err, i) => (
               <p key={i} className="font-medium">{err}</p>
             ))}
+            {metrics.meta.errors?.some(err => err.toLowerCase().includes('strava not connected')) && (
+              <button
+                onClick={handleConnectStrava}
+                className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-[#FC4C02] text-white rounded-lg font-medium hover:bg-[#e34402] transition-colors"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169" />
+                </svg>
+                Reconnecter Strava
+              </button>
+            )}
           </div>
         )}
 
