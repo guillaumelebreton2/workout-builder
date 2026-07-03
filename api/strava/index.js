@@ -372,19 +372,21 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  // Vercel passes `path` as a string when there is one segment, and as an array for multiple.
-  const rawPath = req.query.path || [];
-  const path = Array.isArray(rawPath) ? rawPath : [rawPath];
+  // Parse the URL path manually. Vercel routes /api/strava/* to this index.js file.
+  const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+  const pathSegments = url.pathname.replace(/^\/api\/strava\/?/, '').split('/').filter(Boolean);
+
+  console.log('/api/strava request:', url.pathname, 'segments:', pathSegments);
 
   // Root /api/strava - not valid
-  if (path.length === 0) {
+  if (pathSegments.length === 0) {
     return res.status(404).json({ error: 'Not found' });
   }
 
-  const [first, second, third] = path;
+  const [first, second, third] = pathSegments;
 
   // Auth routes
-  if (path.length === 1) {
+  if (pathSegments.length === 1) {
     if (first === 'auth') return handleAuth(req, res);
     if (first === 'callback') return handleCallback(req, res);
     if (first === 'refresh') return handleRefresh(req, res);
@@ -394,10 +396,10 @@ export default async function handler(req, res) {
   }
 
   // Activity details / streams / laps
-  if (path.length === 2 && first === 'activities') {
+  if (pathSegments.length === 2 && first === 'activities') {
     return handleActivityDetails(req, res, second);
   }
-  if (path.length === 3 && first === 'activities') {
+  if (pathSegments.length === 3 && first === 'activities') {
     if (third === 'streams') return handleActivityStreams(req, res, second);
     if (third === 'laps') return handleActivityLaps(req, res, second);
   }
@@ -407,5 +409,5 @@ export default async function handler(req, res) {
     return handleAthleteZones(req, res);
   }
 
-  return res.status(404).json({ error: `Unknown Strava endpoint: /${path.join('/')}` });
+  return res.status(404).json({ error: `Unknown Strava endpoint: /${pathSegments.join('/')}` });
 }

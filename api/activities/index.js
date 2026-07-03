@@ -146,7 +146,10 @@ async function fetchGarminActivities(accessToken, options = {}) {
 
   try {
     const response = await fetch(url.toString(), {
-      headers: { Authorization: `Bearer ${accessToken}` },
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Accept: 'application/json'
+      },
     });
 
     if (!response.ok) {
@@ -154,7 +157,7 @@ async function fetchGarminActivities(accessToken, options = {}) {
       if (response.status === 403) return { activities: [], error: 'Garmin Health API not authorized' };
       const text = await response.text();
       console.warn('Garmin activities API response:', response.status, text);
-      throw new Error(`Garmin API error: ${response.status}`);
+      throw new Error(`Garmin API error: ${response.status} - ${text.substring(0, 200)}`);
     }
 
     const data = await response.json();
