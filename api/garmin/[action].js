@@ -1204,6 +1204,98 @@ async function handleRefresh(req, res) {
   }
 }
 
+async function handleDiagnostics(req, res) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const session = getSessionFromRequest(req);
+  if (!session?.userId) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+
+  const cookies = parseCookies(req.headers.cookie);
+  const sessionCookie = cookies.garmin_session;
+  if (!sessionCookie) {
+    return res.status(401).json({ error: 'No Garmin session cookie' });
+  }
+
+  let garminSession;
+  try {
+    garminSession = JSON.parse(Buffer.from(sessionCookie, 'base64').toString());
+  } catch (e) {
+    return res.status(401).json({ error: 'Invalid Garmin session' });
+  }
+
+  const { garminUserId } = garminSession;
+  if (!garminUserId) {
+    return res.status(401).json({ error: 'No Garmin user ID' });
+  }
+
+  const diagnostics = {
+    garminUserId,
+    tokenFound: false,
+    tokenInfo: null,
+    apiTest: null,
+  };
+
+  try {
+    const stored = await kv.get(`garmin_tokens_${garminUserId}`);
+    const tokenData = typeof stored === 'string' ? JSON.parse(stored) : stored;
+
+    if (!tokenData) {
+      return res.json(diagnostics);
+    }
+
+    diagnostics.tokenFound = true;
+    diagnostics.tokenInfo = {
+      hasAccessToken: !!tokenData.access_token,
+      hasRefreshToken: !!tokenData.refresh_token,
+      accessTokenPrefix: tokenData.access_token ? tokenData.access_token.substring(0, 8) + '...' : null,
+      expiresAt: tokenData.expires_at ? new Date(tokenData.expires_at).toISOString() : null,
+      refreshTokenExpiresAt: tokenData.refresh_token_expires_at ? new Date(tokenData.refresh_token_expires_at).toISOString() : null,
+      scope: tokenData.scope || null,
+      isExpired: tokenData.expires_at ? Date.now() > tokenData.expires_at : null,
+    };
+
+    // Test API sur les dernières 24h
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    const startSeconds = nowSeconds - 24 * 60 * 60;
+    const url = new URL(GARMIN_ACTIVITIES_API);
+    url.searchParams.append('uploadStartTimeInSeconds', startSeconds.toString());
+    url.searchParams.append('uploadEndTimeInSeconds', nowSeconds.toString());
+
+    const response = await fetch(url.toString(), {
+      headers: {
+        Authorization: `Bearer ${tokenData.access_token}`,
+        Accept: 'application/json',
+      },
+    });
+
+    const responseText = await response.text();
+    let responseBody;
+    try {
+      responseBody = JSON.parse(responseText);
+    } catch {
+      responseBody = responseText;
+    }
+
+    diagnostics.apiTest = {
+      url: url.toString(),
+      status: response.status,
+      statusText: response.statusText,
+      headers: Object.fromEntries(response.headers.entries()),
+      body: responseBody,
+    };
+
+    return res.json(diagnostics);
+  } catch (error) {
+    console.error('Garmin diagnostics error:', error);
+    diagnostics.error = error.message;
+    return res.status(500).json(diagnostics);
+  }
+}
+
 // ============= MAIN HANDLER =============
 
 export default async function handler(req, res) {
@@ -1224,6 +1316,8 @@ export default async function handler(req, res) {
       return handleRefresh(req, res);
     case 'activities':
       return handleActivities(req, res);
+    case 'diagnostics':
+      return handleDiagnostics(req, res);
     default:
       return res.status(404).json({ error: `Unknown action: ${action}` });
   }
