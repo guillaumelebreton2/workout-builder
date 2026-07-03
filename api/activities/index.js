@@ -16,14 +16,23 @@ const GARMIN_ACTIVITIES_API = 'https://apis.garmin.com/wellness-api/rest/activit
 const SYNC_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes minimum entre deux syncs forcées
 
 async function getValidStravaToken(user) {
-  if (!user?.stravaAthleteId) return null;
+  if (!user?.stravaAthleteId) {
+    console.log('getValidStravaToken: no stravaAthleteId for user', user?.id);
+    return null;
+  }
 
+  console.log('getValidStravaToken: looking up token for athlete', user.stravaAthleteId);
   const stored = await kv.get(`strava_tokens_${user.stravaAthleteId}`);
   const tokenData = typeof stored === 'string' ? JSON.parse(stored) : stored;
-  if (!tokenData?.access_token) return null;
+  if (!tokenData?.access_token) {
+    console.log('getValidStravaToken: no access token found in KV');
+    return null;
+  }
 
   // Vérifier expiration (expires_at est stocké en millisecondes)
-  if (tokenData.expires_at && Date.now() > tokenData.expires_at - 300 * 1000) {
+  const isExpired = tokenData.expires_at && Date.now() > tokenData.expires_at - 300 * 1000;
+  console.log('getValidStravaToken: expires_at', tokenData.expires_at, 'isExpired', isExpired);
+  if (isExpired) {
     // Rafraîchir via l'API Strava
     try {
       const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3001';
@@ -175,6 +184,7 @@ async function storeActivities(userId, data) {
 }
 
 async function syncActivities(user) {
+  console.log('syncActivities: starting sync for user', user.id, 'stravaAthleteId', user.stravaAthleteId, 'garminUserId', user.garminUserId);
   const errors = [];
   const sources = [];
 
@@ -193,6 +203,9 @@ async function syncActivities(user) {
     stravaToken ? fetchStravaActivities(stravaToken, { after: sixMonthsAgo }) : { activities: [], error: 'Strava not connected' },
     garminToken ? fetchGarminActivities(garminToken, { after: sixMonthsAgo }) : { activities: [], error: 'Garmin not connected' },
   ]);
+
+  console.log('syncActivities: stravaResult', stravaResult.activities.length, 'activities, error', stravaResult.error);
+  console.log('syncActivities: garminResult', garminResult.activities.length, 'activities, error', garminResult.error);
 
   if (stravaResult.error) errors.push(stravaResult.error);
   else if (stravaResult.activities.length > 0) sources.push('strava');
@@ -213,6 +226,8 @@ async function syncActivities(user) {
       errors: errors.length > 0 ? errors : undefined,
     },
   };
+
+  console.log('syncActivities: final result', result.meta);
 
   // Persister
   await storeActivities(user.id, result);
@@ -277,6 +292,8 @@ async function handleSync(req, res, user) {
 }
 
 export default async function handler(req, res) {
+  console.log('/api/activities', req.method, 'forceSync', req.query.sync);
+
   // CORS
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
@@ -292,11 +309,13 @@ export default async function handler(req, res) {
   }
 
   const session = getSessionFromRequest(req);
+  console.log('/api/activities: session', session ? { userId: session.userId, authProvider: session.authProvider } : null);
   if (!session?.userId) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
 
   const user = await getUserById(session.userId);
+  console.log('/api/activities: user', user ? { id: user.id, stravaAthleteId: user.stravaAthleteId, garminUserId: user.garminUserId, linkedProviders: user.linkedProviders } : null);
   if (!user) {
     return res.status(401).json({ error: 'User not found' });
   }

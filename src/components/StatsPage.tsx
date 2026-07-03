@@ -296,6 +296,16 @@ export function StatsPage({ onNavigate }: StatsPageProps) {
           </div>
         )}
 
+        {/* Messages du backend (erreurs de sync, info) */}
+        {metrics?.meta && (metrics.meta.errors?.length || metrics.meta.message) && (
+          <div className={`mb-6 p-4 rounded-xl text-sm ${metrics.meta.errors?.length ? 'bg-red-50 border border-red-200 text-red-700' : 'bg-blue-50 border border-blue-200 text-blue-700'}`}>
+            {metrics.meta.message && <p className="mb-1">{metrics.meta.message}</p>}
+            {metrics.meta.errors?.map((err, i) => (
+              <p key={i} className="font-medium">{err}</p>
+            ))}
+          </div>
+        )}
+
         {/* Chargement */}
         {hasActivitySource && metricsLoading && (
           <div className="text-center py-16">

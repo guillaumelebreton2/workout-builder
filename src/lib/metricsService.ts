@@ -43,6 +43,12 @@ export interface TrainingMetrics {
   };
   recentActivities: UnifiedActivity[];
   summary: string; // Résumé texte pour l'IA
+  meta?: {
+    sources?: string[];
+    lastSyncedAt?: string;
+    errors?: string[];
+    message?: string;
+  };
 }
 
 // Helpers pour les dates
@@ -397,6 +403,7 @@ export async function calculateTrainingMetrics(forceSync = false): Promise<Train
     },
     recentActivities, // Activités les plus récentes (sans filtre de date)
     summary: '',
+    meta: response.meta,
   };
 
   // Générer le résumé
