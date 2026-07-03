@@ -166,6 +166,10 @@ async function fetchGarminDay(accessToken, dayStartSeconds) {
   if (!response.ok) {
     const text = await response.text();
     console.warn('Garmin day fetch error:', dayStartSeconds, response.status, text);
+    // Propager les erreurs de rate limit pour arrêter la boucle
+    if (response.status === 429) {
+      throw new Error(`Garmin API rate limit exceeded. Please try again later.`);
+    }
     throw new Error(`Garmin API error: ${response.status} - ${text.substring(0, 200)}`);
   }
 
@@ -173,12 +177,17 @@ async function fetchGarminDay(accessToken, dayStartSeconds) {
   return Array.isArray(data) ? data : data.activities || data.activityList || [];
 }
 
+async function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 async function fetchGarminActivities(accessToken, options = {}) {
   if (!accessToken) return { activities: [], error: 'No Garmin token' };
 
   // Garmin Health API limite la plage à 86400 secondes (1 jour)
-  // On fait donc un appel par jour sur les 30 derniers jours
-  const daysBack = 30;
+  // Le rate limit est strict : on fait les appels en série avec un délai
+  // et on limite à 7 jours par défaut pour éviter de dépasser le quota.
+  const daysBack = options.daysBack || 7;
   const nowSeconds = Math.floor(Date.now() / 1000);
   const startSeconds = options.after
     ? Math.floor(new Date(options.after).getTime() / 1000)
@@ -191,17 +200,21 @@ async function fetchGarminActivities(accessToken, options = {}) {
     current += 24 * 60 * 60;
   }
 
-  console.log('fetchGarminActivities: fetching', dayStarts.length, 'days');
+  console.log('fetchGarminActivities: fetching', dayStarts.length, 'days (serial with delay)');
 
   try {
-    const results = await Promise.all(
-      dayStarts.map(day => fetchGarminDay(accessToken, day).catch(err => {
-        console.warn('fetchGarminDay failed for day', day, err.message);
-        return [];
-      }))
-    );
+    const results = [];
+    for (const day of dayStarts) {
+      const dayActivities = await fetchGarminDay(accessToken, day);
+      results.push(dayActivities);
+      // Petit délai pour respecter le rate limit Garmin
+      if (day !== dayStarts[dayStarts.length - 1]) {
+        await sleep(150);
+      }
+    }
 
     const allRaw = results.flat();
+    console.log('fetchGarminActivities: total raw activities', allRaw.length);
     return { activities: normalizeActivities(allRaw, 'garmin'), error: null };
   } catch (err) {
     console.error('Error fetching Garmin activities:', err);
