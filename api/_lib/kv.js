@@ -34,13 +34,37 @@ export const kvConfig = {
   urlHost: url ? new URL(url).host : null
 };
 
+function createKvStub() {
+  const err = new Error('KV is not configured. Set KV_REST_API_URL and KV_REST_API_TOKEN environment variables.');
+  const reject = () => Promise.reject(err);
+  return {
+    get: reject,
+    set: reject,
+    del: reject,
+    hget: reject,
+    hset: reject,
+    hdel: reject,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    multi: () => ({ exec: reject }),
+  };
+}
+
+let kv;
+
 if (!url || !token) {
   console.error(
     'KV: Missing environment variables. Expected KV_REST_API_URL + KV_REST_API_TOKEN ' +
     '(or UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN, or project-prefixed variants).'
   );
+  kv = createKvStub();
 } else {
-  console.log('KV: Client configured using', urlEntry.key, 'and', tokenEntry.key, '→', kvConfig.urlHost);
+  try {
+    kv = createClient({ url, token });
+    console.log('KV: Client configured using', urlEntry.key, 'and', tokenEntry.key, '→', kvConfig.urlHost);
+  } catch (clientError) {
+    console.error('KV: Failed to create KV client:', clientError.message);
+    kv = createKvStub();
+  }
 }
 
-export const kv = createClient({ url, token });
+export { kv };
