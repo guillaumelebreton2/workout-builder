@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../lib/authContext';
-import { stravaApi } from '../lib/stravaApi';
 import { metricsService, TrainingMetrics } from '../lib/metricsService';
 import { dashboardStore, DashboardWidget, WIDGET_LABELS, WidgetType } from '../lib/dashboardStore';
 import { renderWidget } from './widgets';
@@ -80,10 +79,6 @@ export function StatsPage({ onNavigate }: StatsPageProps) {
       loadMetrics();
     }
   }, [hasActivitySource, metrics, metricsLoading, loadMetrics]);
-
-  const handleConnectStrava = () => {
-    stravaApi.startOAuthFlow();
-  };
 
   const handleConnectGarmin = () => {
     window.location.href = `${import.meta.env.PROD ? '' : 'http://localhost:3001'}/api/garmin/auth`;
@@ -245,15 +240,6 @@ export function StatsPage({ onNavigate }: StatsPageProps) {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <button
-                onClick={handleConnectStrava}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-[#FC4C02] text-white rounded-lg font-medium hover:bg-[#e34402] transition-colors"
-              >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169" />
-                </svg>
-                Connecter Strava
-              </button>
-              <button
                 onClick={handleConnectGarmin}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-[#007CC3] text-white rounded-lg font-medium hover:bg-[#006AAD] transition-colors"
               >
@@ -270,14 +256,6 @@ export function StatsPage({ onNavigate }: StatsPageProps) {
         {hasActivitySource && (
           <div className="mb-6 flex flex-wrap items-center gap-2">
             <span className="text-sm text-gray-600">Sources :</span>
-            {stravaConnected && (
-              <span className="inline-flex items-center gap-1 px-2 py-1 bg-[#FC4C02]/10 text-[#FC4C02] text-xs font-medium rounded">
-                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169" />
-                </svg>
-                Strava
-              </span>
-            )}
             {garminConnected && (
               <span className="inline-flex items-center gap-1 px-2 py-1 bg-[#007CC3]/10 text-[#007CC3] text-xs font-medium rounded">
                 <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
@@ -303,17 +281,7 @@ export function StatsPage({ onNavigate }: StatsPageProps) {
             {metrics.meta.errors?.map((err, i) => (
               <p key={i} className="font-medium">{err}</p>
             ))}
-            {metrics.meta.errors?.some(err => err.toLowerCase().includes('strava not connected')) && (
-              <button
-                onClick={handleConnectStrava}
-                className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-[#FC4C02] text-white rounded-lg font-medium hover:bg-[#e34402] transition-colors"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169" />
-                </svg>
-                Reconnecter Strava
-              </button>
-            )}
+
           </div>
         )}
 

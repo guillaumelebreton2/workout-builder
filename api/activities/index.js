@@ -245,8 +245,9 @@ async function syncActivities(user) {
   ]);
 
   // Récupérer les activités en parallèle
+  // NOTE: Strava est temporairement désactivé pour se concentrer sur Garmin
   const [stravaResult, garminResult] = await Promise.all([
-    stravaToken ? fetchStravaActivities(stravaToken, { after: sixMonthsAgo }) : { activities: [], error: 'Strava not connected' },
+    { activities: [], error: null },
     garminToken ? fetchGarminActivities(garminToken, { after: sixMonthsAgo }) : { activities: [], error: 'Garmin not connected' },
   ]);
 
