@@ -11,7 +11,9 @@ import {
 } from '../_lib/activities.js';
 
 const STRAVA_API_URL = 'https://www.strava.com/api/v3';
-const GARMIN_ACTIVITIES_API = 'https://apis.garmin.com/wellness-api/rest/activities'; // ou activitySummary selon scopes
+const STRAVA_TOKEN_URL = 'https://www.strava.com/oauth/token';
+const GARMIN_TOKEN_URL = 'https://diauth.garmin.com/di-oauth2-service/oauth/token';
+const GARMIN_ACTIVITIES_API = 'https://apis.garmin.com/wellness-api/rest/activities';
 
 const SYNC_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes minimum entre deux syncs forcées
 
@@ -33,17 +35,22 @@ async function getValidStravaToken(user) {
   const isExpired = tokenData.expires_at && Date.now() > tokenData.expires_at - 300 * 1000;
   console.log('getValidStravaToken: expires_at', tokenData.expires_at, 'isExpired', isExpired);
   if (isExpired) {
-    // Rafraîchir via l'API Strava
+    // Rafraîchir directement via l'API Strava
     try {
-      const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3001';
-      const response = await fetch(`${baseUrl}/api/strava/refresh`, {
+      const response = await fetch(STRAVA_TOKEN_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refresh_token: tokenData.refresh_token }),
+        body: JSON.stringify({
+          client_id: process.env.STRAVA_CLIENT_ID,
+          client_secret: process.env.STRAVA_CLIENT_SECRET,
+          grant_type: 'refresh_token',
+          refresh_token: tokenData.refresh_token,
+        }),
       });
 
       if (!response.ok) {
-        console.warn('Strava token refresh failed');
+        const errorText = await response.text();
+        console.warn('Strava token refresh failed:', response.status, errorText);
         return null;
       }
 
@@ -73,24 +80,37 @@ async function getValidGarminToken(user) {
   if (!tokenData?.access_token) return null;
 
   if (tokenData.expires_at && Date.now() > tokenData.expires_at) {
-    // Rafraîchir via l'API Garmin
+    // Rafraîchir directement via l'API Garmin
     try {
-      const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3001';
-      const response = await fetch(`${baseUrl}/api/garmin/refresh`, {
+      const response = await fetch(GARMIN_TOKEN_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ garminUserId: user.garminUserId }),
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'refresh_token',
+          client_id: process.env.GARMIN_CLIENT_ID,
+          client_secret: process.env.GARMIN_CLIENT_SECRET,
+          refresh_token: tokenData.refresh_token,
+        }).toString(),
       });
 
       if (!response.ok) {
-        console.warn('Garmin token refresh failed');
+        const errorText = await response.text();
+        console.warn('Garmin token refresh failed:', response.status, errorText);
         return null;
       }
 
-      // Le refresh garmin met à jour KV, on relit
-      const refreshed = await kv.get(`garmin_tokens_${user.garminUserId}`);
-      const refreshedData = typeof refreshed === 'string' ? JSON.parse(refreshed) : refreshed;
-      return refreshedData?.access_token || null;
+      const newTokens = await response.json();
+      const updatedTokenData = {
+        access_token: newTokens.access_token,
+        refresh_token: newTokens.refresh_token,
+        expires_at: Date.now() + (newTokens.expires_in - 600) * 1000,
+        refresh_token_expires_at: Date.now() + (newTokens.refresh_token_expires_in - 600) * 1000,
+        scope: newTokens.scope,
+      };
+      await kv.set(`garmin_tokens_${user.garminUserId}`, JSON.stringify(updatedTokenData), {
+        ex: newTokens.refresh_token_expires_in,
+      });
+      return newTokens.access_token;
     } catch (err) {
       console.error('Error refreshing Garmin token:', err);
       return null;
@@ -299,37 +319,45 @@ async function handleSync(req, res, user) {
 }
 
 export default async function handler(req, res) {
-  console.log('/api/activities', req.method, 'forceSync', req.query.sync);
+  try {
+    console.log('/api/activities', req.method, 'forceSync', req.query.sync);
 
-  // CORS
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    // CORS
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    if (req.method === 'OPTIONS') {
+      return res.status(200).end();
+    }
+
+    if (req.method !== 'GET' && req.method !== 'POST') {
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    const session = getSessionFromRequest(req);
+    console.log('/api/activities: session', session ? { userId: session.userId, authProvider: session.authProvider } : null);
+    if (!session?.userId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    const user = await getUserById(session.userId);
+    console.log('/api/activities: user', user ? { id: user.id, stravaAthleteId: user.stravaAthleteId, garminUserId: user.garminUserId, linkedProviders: user.linkedProviders } : null);
+    if (!user) {
+      return res.status(401).json({ error: 'User not found' });
+    }
+
+    if (req.method === 'GET') {
+      return await handleGetActivities(req, res, user);
+    }
+
+    return await handleSync(req, res, user);
+  } catch (err) {
+    console.error('UNHANDLED ERROR in /api/activities:', err);
+    // Only send response if headers not already sent
+    if (!res.headersSent) {
+      return res.status(500).json({ error: 'Internal server error', message: err.message, stack: err.stack });
+    }
   }
-
-  if (req.method !== 'GET' && req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  const session = getSessionFromRequest(req);
-  console.log('/api/activities: session', session ? { userId: session.userId, authProvider: session.authProvider } : null);
-  if (!session?.userId) {
-    return res.status(401).json({ error: 'Not authenticated' });
-  }
-
-  const user = await getUserById(session.userId);
-  console.log('/api/activities: user', user ? { id: user.id, stravaAthleteId: user.stravaAthleteId, garminUserId: user.garminUserId, linkedProviders: user.linkedProviders } : null);
-  if (!user) {
-    return res.status(401).json({ error: 'User not found' });
-  }
-
-  if (req.method === 'GET') {
-    return handleGetActivities(req, res, user);
-  }
-
-  return handleSync(req, res, user);
 }
