@@ -151,7 +151,7 @@ function findRepeatBlock(steps, fromPos = 0) {
   let bestResult = null;
 
   for (let startPos = fromPos; startPos < steps.length - 1; startPos++) {
-    for (let patternLen = 1; patternLen <= 8; patternLen++) {
+    for (let patternLen = 1; patternLen <= 12; patternLen++) {
       if (startPos + patternLen * 2 > steps.length) continue;
 
       const pattern = steps.slice(startPos, startPos + patternLen);
