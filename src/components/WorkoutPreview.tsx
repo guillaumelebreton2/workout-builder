@@ -118,7 +118,7 @@ function detectRepeatBlocks(steps: WorkoutStep[]): DisplayBlock[] {
     // On essaie différentes tailles de pattern (1-4 steps par répétition)
     let bestPattern: { size: number; count: number; hasPartialEnd: boolean } | null = null;
 
-    for (let patternSize = 1; patternSize <= 12; patternSize++) {
+    for (let patternSize = 1; patternSize <= 15; patternSize++) {
       if (i + patternSize > steps.length) break;
 
       const pattern = steps.slice(i, i + patternSize);

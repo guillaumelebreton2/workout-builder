@@ -51,8 +51,8 @@ Processus:
 #### Détail : Unification détection des répétitions
 
 **Problème** : Les répétitions sont détectées 2x indépendamment avec des algos différents :
-- Client (`WorkoutPreview.tsx` L68-189) : pattern sizes 1-12, gère patterns partiels
-- Serveur (`api/garmin/[action].js` L120-225) : pattern sizes 1-12, pas de patterns partiels
+- Client (`WorkoutPreview.tsx` L68-189) : pattern sizes 1-15, gère patterns partiels
+- Serveur (`api/garmin/[action].js` L120-225) : pattern sizes 1-15, pas de patterns partiels
 → Risque de divergence entre preview et Garmin
 
 **Solution** : Détecter 1 seule fois côté client, envoyer steps structurés à l'API.
@@ -61,7 +61,7 @@ Processus:
 1. **Créer `src/lib/repeatDetection.ts`**
    - Extraire `stepsAreSimilar()` et `detectRepeatBlocks()` depuis `WorkoutPreview.tsx`
    - Exporter aussi le type `DisplayBlock`
-   - Utiliser la version client (la plus complète : sizes 1-12, patterns partiels)
+   - Utiliser la version client (la plus complète : sizes 1-15, patterns partiels)
 
 2. **Modifier `src/components/WorkoutPreview.tsx`**
    - Supprimer `stepsAreSimilar` (L68-94), `detectRepeatBlocks` (L97-189), type `DisplayBlock` (L9-13)
