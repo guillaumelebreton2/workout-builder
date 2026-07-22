@@ -319,7 +319,7 @@ function convertToGarminFormat(workout) {
     workoutProvider: 'Enduzo',
     workoutSourceId: 'Enduzo',
     isSessionTransitionEnabled: false,
-    workoutSegments: [{
+    segments: [{
       segmentOrder: 1,
       sport: sport,
       poolLength: sport === 'LAP_SWIMMING' ? (workout.poolLength || 25) : null,
