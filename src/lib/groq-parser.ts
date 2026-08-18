@@ -8,7 +8,7 @@ const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
 // Modèles Groq par ordre de préférence (chacun a sa propre limite de 100k tokens/jour)
 const GROQ_MODELS = [
-  'llama-3.3-70b-versatile',  // Principal : meilleure qualité
+  'llama-3.1-70b-versatile',  // Principal : meilleure qualité
   'llama-3.1-8b-instant',      // Fallback 1 : rapide
   'gemma2-9b-it',              // Fallback 2 : Google
   'llama-3.2-3b-preview',      // Fallback 3 : très petit mais disponible
