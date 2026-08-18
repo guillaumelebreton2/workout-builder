@@ -1510,7 +1510,7 @@ function getNextGroqApiKey() {
  * Proxy pour l'API Groq (évite les problèmes CORS)
  */
 app.post('/api/ai/chat', async (req, res) => {
-  const { messages, model = 'openai/gpt-oss-120b' } = req.body;
+  const { messages, model = 'groq/compound-mini' } = req.body;
 
   if (!messages || !Array.isArray(messages)) {
     return res.status(400).json({ error: 'Messages requis' });

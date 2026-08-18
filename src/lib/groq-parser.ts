@@ -6,11 +6,13 @@ import { WorkoutStep, StepType, SwimStrokeType, SwimEquipmentType, SwimDrillType
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
-// Modèles Groq par ordre de préférence (chacun a sa propre limite de 100k tokens/jour)
+// Modèles Groq par ordre de préférence.
+// Les modèles OpenAI/Qwen ont des limites basses (8K TPM), d'où compound-mini en fallback (70K TPM).
 const GROQ_MODELS = [
   'openai/gpt-oss-120b',  // Principal : meilleure qualité
   'qwen/qwen3.6-27b',     // Fallback 1 : haute qualité
   'openai/gpt-oss-20b',   // Fallback 2 : rapide
+  'groq/compound-mini',   // Fallback 3 : limite TPM élevée (70K)
 ];
 
 interface ParsedStep {
@@ -351,7 +353,7 @@ async function callGroqAPI(description: string, apiKey: string, model: string): 
         { role: 'user', content: `Analyse cette description de séance et convertis-la en JSON :\n\n${description}` }
       ],
       temperature: 0.1,
-      max_tokens: 4000,
+      max_tokens: 2000,
     }),
   });
 
@@ -362,8 +364,12 @@ async function callGroqAPI(description: string, apiKey: string, model: string): 
     }
     // Vérifier si c'est une erreur de rate limit
     if (response.status === 429 || errorText.includes('rate_limit')) {
+      const retryAfter = response.headers.get('retry-after');
       const error = new Error(`Rate limit atteint pour ${model}`);
-      (error as Error & { isRateLimit: boolean }).isRateLimit = true;
+      (error as Error & { isRateLimit: boolean; retryAfter?: number }).isRateLimit = true;
+      if (retryAfter) {
+        (error as Error & { isRateLimit: boolean; retryAfter?: number }).retryAfter = parseInt(retryAfter, 10);
+      }
       throw error;
     }
     throw new Error(`Erreur Groq: ${errorText}`);
@@ -383,6 +389,10 @@ export interface ParseResult {
   steps: WorkoutStep[];
   model: string;
   isFallback: boolean;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 export async function parseWithGroq(description: string, apiKeys: string | string[]): Promise<ParseResult> {
@@ -416,9 +426,16 @@ export async function parseWithGroq(description: string, apiKeys: string | strin
       } catch (error) {
         lastError = error as Error;
         const isRateLimit = (error as Error & { isRateLimit?: boolean }).isRateLimit;
+        const retryAfter = (error as Error & { retryAfter?: number }).retryAfter;
 
         if (isRateLimit) {
-          console.warn(`  Rate limit atteint, essai clé suivante...`);
+          // Attendre avant de réessayer : respecter le header retry-after, sinon délai exponentiel
+          const attempt = keyIndex + 1;
+          const delayMs = retryAfter
+            ? retryAfter * 1000
+            : Math.min(1000 * Math.pow(2, attempt - 1), 8000);
+          console.warn(`  Rate limit atteint pour ${model}, attente ${delayMs}ms...`);
+          await sleep(delayMs);
           continue;
         }
         // Si ce n'est pas un rate limit, propager l'erreur
@@ -450,7 +467,7 @@ export async function parseWithGroq(description: string, apiKeys: string | strin
     }
     console.log('JSON extrait:', jsonMatch[0]);
     parsed = JSON.parse(jsonMatch[0]);
-  } catch (e) {
+  } catch {
     console.error('Réponse brute:', content);
     throw new Error('Impossible de parser la réponse JSON');
   }
@@ -628,7 +645,7 @@ export async function validateApiKey(apiKey: string): Promise<boolean> {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'openai/gpt-oss-20b',
+        model: 'groq/compound-mini',
         messages: [{ role: 'user', content: 'test' }],
         max_tokens: 1,
       }),

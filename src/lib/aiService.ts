@@ -37,7 +37,7 @@ async function analyzeActivityByType(
 // URL du proxy backend pour l'API Groq
 // En production, l'API est sur le même domaine (URL relative)
 const API_URL = import.meta.env.PROD ? '' : 'http://localhost:3001';
-const MODEL = 'openai/gpt-oss-120b';
+const MODEL = 'groq/compound-mini';
 
 // Types
 interface ChatMessage {
