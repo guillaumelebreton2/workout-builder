@@ -8,10 +8,9 @@ const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
 // Modèles Groq par ordre de préférence (chacun a sa propre limite de 100k tokens/jour)
 const GROQ_MODELS = [
-  'llama-3.1-70b-versatile',  // Principal : meilleure qualité
-  'llama-3.1-8b-instant',      // Fallback 1 : rapide
-  'gemma2-9b-it',              // Fallback 2 : Google
-  'llama-3.2-3b-preview',      // Fallback 3 : très petit mais disponible
+  'openai/gpt-oss-120b',  // Principal : meilleure qualité
+  'qwen/qwen3.6-27b',     // Fallback 1 : haute qualité
+  'openai/gpt-oss-20b',   // Fallback 2 : rapide
 ];
 
 interface ParsedStep {
@@ -629,7 +628,7 @@ export async function validateApiKey(apiKey: string): Promise<boolean> {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',
+        model: 'openai/gpt-oss-20b',
         messages: [{ role: 'user', content: 'test' }],
         max_tokens: 1,
       }),
