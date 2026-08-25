@@ -1,23 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { SavedWorkout } from '../lib/types';
 import { workoutStore } from '../lib/workoutStore';
 import { WorkoutPreview } from './WorkoutPreview';
 import { GarminSyncModal } from './GarminSyncModal';
+import { ShareWorkoutDialog } from './ShareWorkoutDialog';
 
 interface SavedWorkoutsPageProps {
   onNavigate: (page: 'home' | 'workouts' | 'coach' | 'stats' | 'profile' | 'account' | 'saved-workouts') => void;
 }
 
 export function SavedWorkoutsPage({ onNavigate }: SavedWorkoutsPageProps) {
-  const [workouts, setWorkouts] = useState<SavedWorkout[]>([]);
+  const [workouts, setWorkouts] = useState<SavedWorkout[]>(() => workoutStore.getAll());
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [syncWorkout, setSyncWorkout] = useState<SavedWorkout | null>(null);
+  const [shareWorkout, setShareWorkout] = useState<SavedWorkout | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-
-  // Charger les séances au montage
-  useEffect(() => {
-    setWorkouts(workoutStore.getAll());
-  }, []);
 
   const handleDelete = (id: string) => {
     workoutStore.delete(id);
@@ -151,6 +148,16 @@ export function SavedWorkoutsPage({ onNavigate }: SavedWorkoutsPageProps) {
                       </button>
                     )}
 
+                    <button
+                      onClick={() => setShareWorkout(saved)}
+                      className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg font-medium hover:bg-indigo-600 transition-colors"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                      </svg>
+                      Partager
+                    </button>
+
                     {deleteConfirmId === saved.id ? (
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-gray-600">Supprimer ?</span>
@@ -192,6 +199,14 @@ export function SavedWorkoutsPage({ onNavigate }: SavedWorkoutsPageProps) {
           workout={syncWorkout.workout}
           onClose={() => setSyncWorkout(null)}
           onSuccess={() => handleSyncSuccess(syncWorkout.id)}
+        />
+      )}
+
+      {/* Modal Partager */}
+      {shareWorkout && (
+        <ShareWorkoutDialog
+          savedWorkout={shareWorkout}
+          onClose={() => setShareWorkout(null)}
         />
       )}
     </div>

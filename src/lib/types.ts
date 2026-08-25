@@ -190,6 +190,16 @@ export interface SavedWorkout {
   syncedAt?: string; // ISO string
 }
 
+// Séance partagée publiquement (lien de partage)
+export interface SharedWorkout {
+  token: string;
+  ownerId: string;
+  workoutId: string;
+  workout: Workout;
+  createdAt: string; // ISO string
+  expiresAt?: string; // ISO string, optionnel
+}
+
 // Types pour le Coach IA conversationnel
 export type ChatRole = 'user' | 'assistant';
 

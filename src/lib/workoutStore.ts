@@ -3,7 +3,7 @@
  * localStorage (sync) + Vercel KV (async)
  */
 
-import { Workout, SavedWorkout, WorkoutSource, generateId } from './types';
+import { Workout, SavedWorkout, WorkoutSource, Sport, generateId } from './types';
 
 const STORAGE_KEY = 'workout-builder-saved-workouts';
 const API_URL = import.meta.env.PROD ? '' : 'http://localhost:3001';
@@ -264,6 +264,87 @@ export async function syncWorkoutsFromServer(): Promise<SavedWorkout[]> {
   return result;
 }
 
+// ============== SHARE ==============
+
+export interface ShareInfo {
+  token: string;
+  workoutId: string;
+  workoutName: string;
+  sport: Sport;
+  createdAt: string;
+  expiresAt?: string;
+  url: string;
+}
+
+export async function shareWorkoutOnServer(
+  workoutId: string,
+  expiresInDays?: number
+): Promise<{ token: string; url: string; expiresAt?: string } | null> {
+  try {
+    const response = await fetch(`${API_URL}/api/workouts/share`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ workoutId, expiresInDays })
+    });
+    if (!response.ok) {
+      console.warn('Share workout failed:', response.status);
+      return null;
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Failed to share workout:', error);
+    return null;
+  }
+}
+
+export async function unshareWorkoutOnServer(token: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_URL}/api/workouts/unshare`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ token })
+    });
+    return response.ok;
+  } catch (error) {
+    console.error('Failed to unshare workout:', error);
+    return false;
+  }
+}
+
+export async function fetchSharesFromServer(): Promise<ShareInfo[] | null> {
+  try {
+    const response = await fetch(`${API_URL}/api/workouts/list-shares`, {
+      credentials: 'include'
+    });
+    if (!response.ok) {
+      if (response.status === 401) return null;
+      throw new Error(`HTTP ${response.status}`);
+    }
+    const data = await response.json();
+    return data.shares || [];
+  } catch (error) {
+    console.error('Failed to fetch shares:', error);
+    return null;
+  }
+}
+
+export async function fetchSharedWorkout(token: string): Promise<Workout | null> {
+  try {
+    const response = await fetch(`${API_URL}/api/share?token=${encodeURIComponent(token)}`);
+    if (!response.ok) {
+      console.warn('Fetch shared workout failed:', response.status);
+      return null;
+    }
+    const data = await response.json();
+    return data.workout || null;
+  } catch (error) {
+    console.error('Failed to fetch shared workout:', error);
+    return null;
+  }
+}
+
 // ============== EXPORT ==============
 
 export const workoutStore = {
@@ -278,4 +359,9 @@ export const workoutStore = {
   // Server sync
   fetchFromServer: fetchWorkoutsFromServer,
   syncFromServer: syncWorkoutsFromServer,
+  // Share
+  shareOnServer: shareWorkoutOnServer,
+  unshareOnServer: unshareWorkoutOnServer,
+  fetchSharesFromServer,
+  fetchSharedWorkout,
 };

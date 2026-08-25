@@ -3,6 +3,7 @@
  * Uses dynamic routing: /api/workouts/[action]
  * Actions: list, create, update, delete
  */
+import crypto from 'crypto';
 import { kv } from '../_lib/kv.js';
 import { getSessionFromRequest } from '../_lib/auth.js';
 
@@ -179,6 +180,190 @@ async function handleSync(req, res) {
   }
 }
 
+// ============= SHARE WORKOUT =============
+
+function generateShareToken() {
+  return crypto.randomBytes(16).toString('base64url');
+}
+
+function getShareUrl(req, token) {
+  const protocol = req.headers['x-forwarded-proto'] || 'http';
+  const host = req.headers.host || 'localhost';
+  return `${protocol}://${host}/share?token=${token}`;
+}
+
+async function handleShare(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const session = getSessionFromRequest(req);
+  if (!session?.userId) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+
+  const { workoutId, expiresInDays } = req.body;
+  if (!workoutId) {
+    return res.status(400).json({ error: 'Workout id required' });
+  }
+
+  try {
+    const workoutsKey = `workouts_${session.userId}`;
+    const stored = await kv.get(workoutsKey);
+
+    if (!stored) {
+      return res.status(404).json({ error: 'No workouts found' });
+    }
+
+    const workouts = typeof stored === 'string' ? JSON.parse(stored) : stored;
+    const savedWorkout = workouts.find(w => w.id === workoutId);
+
+    if (!savedWorkout) {
+      return res.status(404).json({ error: 'Workout not found' });
+    }
+
+    const token = generateShareToken();
+    const now = new Date();
+    const shareData = {
+      token,
+      ownerId: session.userId,
+      workoutId,
+      workout: savedWorkout.workout,
+      createdAt: now.toISOString(),
+      expiresAt: expiresInDays
+        ? new Date(now.getTime() + expiresInDays * 24 * 60 * 60 * 1000).toISOString()
+        : null
+    };
+
+    // Store share
+    const shareKey = `share_${token}`;
+    const ttl = expiresInDays ? expiresInDays * 24 * 60 * 60 : undefined;
+    if (ttl) {
+      await kv.set(shareKey, JSON.stringify(shareData), { ex: ttl });
+    } else {
+      await kv.set(shareKey, JSON.stringify(shareData));
+    }
+
+    // Track share in owner's index
+    const sharesKey = `shares_${session.userId}`;
+    const sharesStored = await kv.get(sharesKey);
+    const shares = sharesStored
+      ? (typeof sharesStored === 'string' ? JSON.parse(sharesStored) : sharesStored)
+      : [];
+    shares.unshift({ token, workoutId, createdAt: shareData.createdAt, expiresAt: shareData.expiresAt });
+    await kv.set(sharesKey, JSON.stringify(shares));
+
+    return res.json({
+      success: true,
+      token,
+      url: getShareUrl(req, token),
+      expiresAt: shareData.expiresAt
+    });
+  } catch (error) {
+    console.error('Error sharing workout:', error);
+    return res.status(500).json({ error: 'Failed to share workout' });
+  }
+}
+
+// ============= UNSHARE WORKOUT =============
+
+async function handleUnshare(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const session = getSessionFromRequest(req);
+  if (!session?.userId) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+
+  const { token } = req.body;
+  if (!token) {
+    return res.status(400).json({ error: 'Share token required' });
+  }
+
+  try {
+    const shareKey = `share_${token}`;
+    const stored = await kv.get(shareKey);
+
+    if (!stored) {
+      return res.status(404).json({ error: 'Share not found' });
+    }
+
+    const shareData = typeof stored === 'string' ? JSON.parse(stored) : stored;
+
+    if (shareData.ownerId !== session.userId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    await kv.del(shareKey);
+
+    // Remove from owner's index
+    const sharesKey = `shares_${session.userId}`;
+    const sharesStored = await kv.get(sharesKey);
+    if (sharesStored) {
+      const shares = typeof sharesStored === 'string' ? JSON.parse(sharesStored) : sharesStored;
+      const filtered = shares.filter(s => s.token !== token);
+      await kv.set(sharesKey, JSON.stringify(filtered));
+    }
+
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('Error unsharing workout:', error);
+    return res.status(500).json({ error: 'Failed to unshare workout' });
+  }
+}
+
+// ============= LIST SHARES =============
+
+async function handleListShares(req, res) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const session = getSessionFromRequest(req);
+  if (!session?.userId) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+
+  try {
+    const sharesKey = `shares_${session.userId}`;
+    const sharesStored = await kv.get(sharesKey);
+
+    if (!sharesStored) {
+      return res.json({ shares: [] });
+    }
+
+    const shareIndex = typeof sharesStored === 'string' ? JSON.parse(sharesStored) : sharesStored;
+    const now = Date.now();
+
+    const shares = [];
+    for (const entry of shareIndex) {
+      const shareKey = `share_${entry.token}`;
+      const stored = await kv.get(shareKey);
+      if (!stored) continue;
+
+      const shareData = typeof stored === 'string' ? JSON.parse(stored) : stored;
+      if (shareData.expiresAt && new Date(shareData.expiresAt).getTime() < now) continue;
+
+      shares.push({
+        token: shareData.token,
+        workoutId: shareData.workoutId,
+        workoutName: shareData.workout.name,
+        sport: shareData.workout.sport,
+        createdAt: shareData.createdAt,
+        expiresAt: shareData.expiresAt,
+        url: getShareUrl(req, shareData.token)
+      });
+    }
+
+    return res.json({ shares });
+  } catch (error) {
+    console.error('Error listing shares:', error);
+    return res.status(500).json({ error: 'Failed to list shares' });
+  }
+}
+
 // ============= MAIN HANDLER =============
 
 export default async function handler(req, res) {
@@ -205,6 +390,12 @@ export default async function handler(req, res) {
       return handleDelete(req, res);
     case 'sync':
       return handleSync(req, res);
+    case 'share':
+      return handleShare(req, res);
+    case 'unshare':
+      return handleUnshare(req, res);
+    case 'list-shares':
+      return handleListShares(req, res);
     default:
       return res.status(404).json({ error: `Unknown action: ${action}` });
   }

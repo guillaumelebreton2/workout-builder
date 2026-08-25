@@ -10,6 +10,7 @@ import { LandingPage } from './components/LandingPage';
 import { AthleteProfilePage } from './components/AthleteProfilePage';
 import { AccountPage } from './components/AccountPage';
 import { SavedWorkoutsPage } from './components/SavedWorkoutsPage';
+import { SharePage } from './components/SharePage';
 import './index.css';
 
 type Page = 'home' | 'workouts' | 'saved-workouts' | 'coach' | 'stats' | 'profile' | 'account' | 'login';
@@ -43,36 +44,46 @@ function AppContent() {
   const { isLoading, isAuthenticated } = useAuth();
   const path = window.location.pathname;
 
-  // Handle privacy page separately (always accessible)
-  if (path === '/privacy') {
-    return <PrivacyPolicy />;
-  }
-
   const [currentPage, setCurrentPage] = useState<Page>(() => getPageFromPath(path));
 
   // Redirect to login if trying to access protected page while not authenticated
   useEffect(() => {
+    if (path === '/share' || path === '/privacy') return;
     if (!isLoading && !isAuthenticated && PROTECTED_PAGES.includes(currentPage)) {
-      setCurrentPage('login');
+      const timeout = setTimeout(() => setCurrentPage('login'), 0);
+      return () => clearTimeout(timeout);
     }
-  }, [isLoading, isAuthenticated, currentPage]);
+  }, [isLoading, isAuthenticated, currentPage, path]);
 
   // Update URL when page changes
   useEffect(() => {
+    if (path === '/share' || path === '/privacy') return;
     const newPath = getPathFromPage(currentPage);
     if (window.location.pathname !== newPath) {
       window.history.pushState({}, '', newPath);
     }
-  }, [currentPage]);
+  }, [currentPage, path]);
 
   // Handle browser back/forward
   useEffect(() => {
     const handlePopState = () => {
-      setCurrentPage(getPageFromPath(window.location.pathname));
+      const newPath = window.location.pathname;
+      if (newPath === '/share' || newPath === '/privacy') return;
+      setCurrentPage(getPageFromPath(newPath));
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
+
+  // Public share page (always accessible)
+  if (path === '/share') {
+    return <SharePage />;
+  }
+
+  // Handle privacy page separately (always accessible)
+  if (path === '/privacy') {
+    return <PrivacyPolicy />;
+  }
 
   // Show loading spinner while checking auth
   if (isLoading) {
