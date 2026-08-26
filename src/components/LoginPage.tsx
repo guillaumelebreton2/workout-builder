@@ -1,8 +1,10 @@
+import { getGarminAuthUrl } from '../lib/garminAuthUrl';
+
 const API_URL = import.meta.env.PROD ? '' : 'http://localhost:3001';
 
 export function LoginPage() {
   const handleGarminLogin = () => {
-    window.location.href = `${API_URL}/api/garmin/auth`;
+    window.location.href = getGarminAuthUrl();
   };
 
   const handleStravaLogin = () => {

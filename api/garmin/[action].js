@@ -563,6 +563,59 @@ function buildGarminStep(step, stepOrder, sport, workout) {
 
 // ============= ACTION HANDLERS =============
 
+// ============= REDIRECT HELPERS =============
+
+function isAllowedRedirectUrl(url) {
+  try {
+    const parsed = new URL(url);
+    const allowedHosts = [
+      'enduzo.com',
+      'www.enduzo.com',
+    ];
+    const allowedSuffixes = [
+      '.vercel.app',
+    ];
+    const hostname = parsed.hostname;
+    return allowedHosts.includes(hostname) || allowedSuffixes.some(suffix => hostname.endsWith(suffix));
+  } catch {
+    return false;
+  }
+}
+
+async function storeRedirectTarget(redirectTo) {
+  const key = crypto.randomBytes(16).toString('base64url');
+  await kv.set(`garmin_redirect_${key}`, JSON.stringify({ redirectTo }), { ex: 600 });
+  return key;
+}
+
+async function getRedirectTarget(key) {
+  const stored = await kv.get(`garmin_redirect_${key}`);
+  if (!stored) return null;
+  try {
+    const data = typeof stored === 'string' ? JSON.parse(stored) : stored;
+    await kv.del(`garmin_redirect_${key}`);
+    return data.redirectTo;
+  } catch {
+    return null;
+  }
+}
+
+async function storeExchangeToken(tokenData) {
+  const key = crypto.randomBytes(16).toString('base64url');
+  await kv.set(`garmin_exchange_${key}`, JSON.stringify(tokenData), { ex: 600 });
+  return key;
+}
+
+async function getExchangeToken(key) {
+  const stored = await kv.get(`garmin_exchange_${key}`);
+  if (!stored) return null;
+  const data = typeof stored === 'string' ? JSON.parse(stored) : stored;
+  await kv.del(`garmin_exchange_${key}`);
+  return data;
+}
+
+// ============= ACTION HANDLERS =============
+
 async function handleAuth(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -579,6 +632,16 @@ async function handleAuth(req, res) {
   const codeVerifier = generateCodeVerifier();
   const codeChallenge = generateCodeChallenge(codeVerifier);
   const state = generateState();
+
+  // Handle cross-environment redirect (prod callback -> preview/dev)
+  let stateForGarmin = state;
+  let redirectKey = null;
+  const requestedRedirect = req.query.redirect_to;
+
+  if (requestedRedirect && isAllowedRedirectUrl(requestedRedirect)) {
+    redirectKey = await storeRedirectTarget(requestedRedirect);
+    stateForGarmin = `${state}:${redirectKey}`;
+  }
 
   const cookieOptions = [
     `garmin_code_verifier=${codeVerifier}`,
@@ -606,7 +669,7 @@ async function handleAuth(req, res) {
     code_challenge: codeChallenge,
     code_challenge_method: 'S256',
     redirect_uri: redirectUri,
-    state: state
+    state: stateForGarmin
   });
 
   const authUrl = `https://connect.garmin.com/oauth2Confirm?${params.toString()}`;
@@ -637,7 +700,12 @@ async function handleCallback(req, res) {
     return res.redirect('/?garmin_error=' + encodeURIComponent('Session expired. Please try again.'));
   }
 
-  if (state !== storedState) {
+  // Split state into oauth state and redirect key
+  const stateParts = typeof state === 'string' ? state.split(':') : [];
+  const oauthState = stateParts[0] || state;
+  const redirectKey = stateParts[1] || null;
+
+  if (oauthState !== storedState) {
     return res.redirect('/?garmin_error=' + encodeURIComponent('Invalid state. Please try again.'));
   }
 
@@ -694,15 +762,63 @@ async function handleCallback(req, res) {
       return res.redirect('/?garmin_error=' + encodeURIComponent('Unable to retrieve Garmin user profile. Please check API permissions.'));
     }
 
-    if (kv) {
-      const tokenData = {
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token,
-        expires_at: Date.now() + (tokens.expires_in - 600) * 1000,
-        refresh_token_expires_at: Date.now() + (tokens.refresh_token_expires_in - 600) * 1000,
-        scope: tokens.scope
-      };
+    // Create or update user in KV
+    const userId = `garmin_${garminUserId}`;
+    let user;
 
+    try {
+      const existingUser = await findUserByProviderId('garmin', garminUserId);
+
+      if (existingUser) {
+        user = await createOrUpdateUser({
+          ...existingUser
+        });
+        console.log('Updated existing user:', user.id);
+      } else {
+        user = await createOrUpdateUser({
+          id: userId,
+          authProvider: 'garmin',
+          linkedProviders: ['garmin'],
+          garminUserId: garminUserId,
+          stravaAthleteId: null,
+          name: 'Athlete',
+          email: null
+        });
+        console.log('Created new user:', user.id);
+
+        await createProviderLookup('garmin', garminUserId, userId);
+      }
+    } catch (userError) {
+      console.error('Failed to create/update user:', userError);
+      return res.redirect('/?garmin_error=' + encodeURIComponent('Account creation failed. Please try again.'));
+    }
+
+    const tokenData = {
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+      expires_at: Date.now() + (tokens.expires_in - 600) * 1000,
+      refresh_token_expires_at: Date.now() + (tokens.refresh_token_expires_in - 600) * 1000,
+      scope: tokens.scope
+    };
+
+    // Cross-environment redirect: store tokens and redirect to preview/dev
+    if (redirectKey) {
+      const redirectTo = await getRedirectTarget(redirectKey);
+      if (redirectTo) {
+        const exchangeKey = await storeExchangeToken({
+          ...tokenData,
+          garminUserId,
+          userId: user.id,
+        });
+        const redirectUrl = new URL(redirectTo);
+        redirectUrl.searchParams.set('garmin_exchange_key', exchangeKey);
+        redirectUrl.searchParams.set('garmin_connected', 'true');
+        return res.redirect(302, redirectUrl.toString());
+      }
+    }
+
+    // Default behavior: store tokens directly and set cookies
+    if (kv) {
       try {
         await kv.set(`garmin_tokens_${garminUserId}`, JSON.stringify(tokenData), {
           ex: tokens.refresh_token_expires_in
@@ -712,44 +828,8 @@ async function handleCallback(req, res) {
       }
     }
 
-    // Create or update user in KV
-    const userId = `garmin_${garminUserId}`;
-    let user;
-
-    try {
-      // Check if this Garmin account is already linked to a user
-      const existingUser = await findUserByProviderId('garmin', garminUserId);
-
-      if (existingUser) {
-        // Update existing user
-        user = await createOrUpdateUser({
-          ...existingUser
-        });
-        console.log('Updated existing user:', user.id);
-      } else {
-        // Create new user
-        user = await createOrUpdateUser({
-          id: userId,
-          authProvider: 'garmin',
-          linkedProviders: ['garmin'],
-          garminUserId: garminUserId,
-          stravaAthleteId: null,
-          name: 'Athlete', // Garmin doesn't provide name in basic API
-          email: null
-        });
-        console.log('Created new user:', user.id);
-
-        // Create lookup for future logins
-        await createProviderLookup('garmin', garminUserId, userId);
-      }
-    } catch (userError) {
-      console.error('Failed to create/update user:', userError);
-      return res.redirect('/?garmin_error=' + encodeURIComponent('Account creation failed. Please try again.'));
-    }
-
     const clearCookieOptions = 'HttpOnly; SameSite=Lax; Path=/; Max-Age=0';
 
-    // Legacy garmin_session cookie (for backward compatibility)
     const garminSessionData = {
       garminUserId: garminUserId,
       connectedAt: Date.now()
@@ -764,7 +844,6 @@ async function handleCallback(req, res) {
       isSecureEnvironment() ? 'Secure' : ''
     ].filter(Boolean).join('; ');
 
-    // New unified enduzo_session cookie
     const unifiedSessionData = {
       userId: user.id,
       authProvider: 'garmin',
@@ -790,7 +869,7 @@ async function handleCallback(req, res) {
   }
 }
 
-async function handleStatus(req, res) {
+
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -963,6 +1042,160 @@ async function handleSyncWorkout(req, res) {
     console.error('Garmin sync error:', error);
     res.status(500).json({ error: error.message || 'Internal server error' });
   }
+}
+
+// ============= EXCHANGE TOKEN (cross-environment callback) =============
+
+async function handleExchangeToken(req, res) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const { key } = req.query;
+
+  if (!key) {
+    return res.status(400).json({ error: 'Exchange key required' });
+  }
+
+  try {
+    const data = await getExchangeToken(key);
+
+    if (!data) {
+      return res.status(404).json({ error: 'Exchange key not found or expired' });
+    }
+
+    const { access_token, refresh_token, expires_at, refresh_token_expires_at, scope, garminUserId, userId } = data;
+
+    if (!garminUserId || !userId) {
+      return res.status(400).json({ error: 'Invalid exchange data' });
+    }
+
+    // Store tokens for this environment
+    if (kv) {
+      const tokenData = {
+        access_token,
+        refresh_token,
+        expires_at,
+        refresh_token_expires_at,
+        scope
+      };
+      await kv.set(`garmin_tokens_${garminUserId}`, JSON.stringify(tokenData), {
+        ex: Math.max(0, Math.floor((refresh_token_expires_at - Date.now()) / 1000))
+      });
+    }
+
+    const tokens = {
+      access_token,
+      refresh_token,
+      expires_in: Math.max(0, Math.floor((expires_at - Date.now()) / 1000)),
+      refresh_token_expires_in: Math.max(0, Math.floor((refresh_token_expires_at - Date.now()) / 1000)),
+      scope
+    };
+
+    const garminSessionData = {
+      garminUserId: garminUserId,
+      connectedAt: Date.now()
+    };
+
+    const clearCookieOptions = 'HttpOnly; SameSite=Lax; Path=/; Max-Age=0';
+
+    const garminSessionCookie = [
+      `garmin_session=${Buffer.from(JSON.stringify(garminSessionData)).toString('base64')}`,
+      'HttpOnly',
+      'SameSite=Lax',
+      'Path=/',
+      `Max-Age=${tokens.refresh_token_expires_in}`,
+      isSecureEnvironment() ? 'Secure' : ''
+    ].filter(Boolean).join('; ');
+
+    const unifiedSessionData = {
+      userId,
+      authProvider: 'garmin',
+      name: 'Athlete',
+      garminUserId,
+      createdAt: Date.now()
+    };
+
+    const unifiedSessionCookie = createSessionCookie(unifiedSessionData);
+
+    res.setHeader('Set-Cookie', [
+      garminSessionCookie,
+      unifiedSessionCookie
+    ]);
+
+    res.json({ success: true, connected: true });
+
+  } catch (error) {
+    console.error('Garmin exchange token error:', error);
+    res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+}
+
+// ============= STATUS =============
+
+async function handleStatus(req, res) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const cookies = parseCookies(req.headers.cookie);
+  const sessionCookie = cookies.garmin_session;
+
+  if (!sessionCookie) {
+    return res.json({ connected: false, reason: 'no_session' });
+  }
+
+  let session;
+  try {
+    session = JSON.parse(Buffer.from(sessionCookie, 'base64').toString());
+  } catch (e) {
+    return res.json({ connected: false, reason: 'invalid_session' });
+  }
+
+  const { garminUserId } = session;
+
+  if (!garminUserId) {
+    return res.json({ connected: false, reason: 'no_user_id' });
+  }
+
+  let tokenData;
+  try {
+    const stored = await kv.get(`garmin_tokens_${garminUserId}`);
+    tokenData = typeof stored === 'string' ? JSON.parse(stored) : stored;
+  } catch (kvError) {
+    console.warn('KV not available:', kvError.message);
+    return res.json({
+      connected: true,
+      garminUserId: garminUserId,
+      connectedAt: session.connectedAt,
+      warning: 'Token storage not available'
+    });
+  }
+
+  if (!tokenData) {
+    return res.json({ connected: false, reason: 'tokens_not_found' });
+  }
+
+  const now = Date.now();
+  const accessTokenValid = tokenData.expires_at && now < tokenData.expires_at;
+  const refreshTokenValid = tokenData.refresh_token_expires_at && now < tokenData.refresh_token_expires_at;
+
+  if (!refreshTokenValid) {
+    return res.json({
+      connected: false,
+      reason: 'refresh_token_expired',
+      message: 'Please reconnect to Garmin'
+    });
+  }
+
+  res.json({
+    connected: true,
+    garminUserId: garminUserId,
+    connectedAt: session.connectedAt,
+    accessTokenValid: accessTokenValid,
+    needsRefresh: !accessTokenValid,
+    permissions: tokenData.scope ? tokenData.scope.split(' ') : []
+  });
 }
 
 async function handleDisconnect(req, res) {
@@ -1320,6 +1553,8 @@ export default async function handler(req, res) {
       return handleCallback(req, res);
     case 'status':
       return handleStatus(req, res);
+    case 'exchange-token':
+      return handleExchangeToken(req, res);
     case 'sync-workout':
       return handleSyncWorkout(req, res);
     case 'disconnect':

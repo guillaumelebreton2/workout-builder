@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../lib/authContext';
 import { stravaApi } from '../lib/stravaApi';
+import { getGarminAuthUrl } from '../lib/garminAuthUrl';
 
 const API_URL = import.meta.env.PROD ? '' : 'http://localhost:3001';
 
@@ -48,7 +49,7 @@ export function AccountPage() {
   };
 
   const handleGarminConnect = () => {
-    window.location.href = `${API_URL}/api/garmin/auth`;
+    window.location.href = getGarminAuthUrl();
   };
 
   const handleGarminDisconnect = async () => {

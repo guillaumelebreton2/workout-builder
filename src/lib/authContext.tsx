@@ -60,26 +60,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    const handleInitialAuth = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const garminExchangeKey = params.get('garmin_exchange_key');
+      const garminConnected = params.get('garmin_connected') === 'true';
+      const stravaConnected = params.get('strava_connected') === 'true';
+      const garminError = params.get('garmin_error');
+      const stravaError = params.get('strava_error');
+
+      if (garminExchangeKey) {
+        // Cross-environment Garmin callback: exchange key for session cookies
+        try {
+          const response = await fetch(`${API_URL}/api/garmin/exchange-token?key=${encodeURIComponent(garminExchangeKey)}`, {
+            credentials: 'include'
+          });
+          if (!response.ok) {
+            console.error('Garmin exchange failed:', await response.text());
+          }
+        } catch (error) {
+          console.error('Garmin exchange error:', error);
+        }
+        window.history.replaceState({}, '', window.location.pathname);
+        await checkAuth();
+        return;
+      }
+
+      if (garminConnected || stravaConnected) {
+        window.history.replaceState({}, '', window.location.pathname);
+        await checkAuth();
+      }
+
+      if (garminError || stravaError) {
+        console.error('OAuth error:', garminError || stravaError);
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    };
+
     checkAuth();
-
-    // Handle OAuth callback params
-    const params = new URLSearchParams(window.location.search);
-    const garminConnected = params.get('garmin_connected') === 'true';
-    const stravaConnected = params.get('strava_connected') === 'true';
-    const garminError = params.get('garmin_error');
-    const stravaError = params.get('strava_error');
-
-    if (garminConnected || stravaConnected) {
-      // Clean URL and refresh auth
-      window.history.replaceState({}, '', window.location.pathname);
-      checkAuth();
-    }
-
-    if (garminError || stravaError) {
-      // Clean URL but keep error in console
-      console.error('OAuth error:', garminError || stravaError);
-      window.history.replaceState({}, '', window.location.pathname);
-    }
+    handleInitialAuth();
   }, []);
 
   const logout = async () => {

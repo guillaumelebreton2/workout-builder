@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Workout } from '../lib/types';
+import { getGarminAuthUrl } from '../lib/garminAuthUrl';
 
 interface GarminSyncModalProps {
   workout: Workout;
@@ -106,7 +107,7 @@ export function GarminSyncModal({ workout, onClose, onSuccess }: GarminSyncModal
 
   const handleConnect = () => {
     // Rediriger vers l'endpoint OAuth
-    window.location.href = `${API_URL}/api/garmin/auth`;
+    window.location.href = getGarminAuthUrl();
   };
 
   const handleSync = async () => {
