@@ -869,86 +869,15 @@ async function handleCallback(req, res) {
   }
 }
 
-
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  try {
-    const cookies = parseCookies(req.headers.cookie);
-    const sessionCookie = cookies.garmin_session;
-
-    if (!sessionCookie) {
-      return res.json({ connected: false, reason: 'no_session' });
-    }
-
-    let session;
-    try {
-      session = JSON.parse(Buffer.from(sessionCookie, 'base64').toString());
-    } catch (e) {
-      return res.json({ connected: false, reason: 'invalid_session' });
-    }
-
-    const { garminUserId } = session;
-
-    if (!garminUserId) {
-      return res.json({ connected: false, reason: 'no_user_id' });
-    }
-
-    let tokenData;
-    try {
-      const stored = await kv.get(`garmin_tokens_${garminUserId}`);
-      tokenData = typeof stored === 'string' ? JSON.parse(stored) : stored;
-    } catch (kvError) {
-      console.warn('KV not available:', kvError.message);
-      return res.json({
-        connected: true,
-        garminUserId: garminUserId,
-        connectedAt: session.connectedAt,
-        warning: 'Token storage not available'
-      });
-    }
-
-    if (!tokenData) {
-      return res.json({ connected: false, reason: 'tokens_not_found' });
-    }
-
-    const now = Date.now();
-    const accessTokenValid = tokenData.expires_at && now < tokenData.expires_at;
-    const refreshTokenValid = tokenData.refresh_token_expires_at && now < tokenData.refresh_token_expires_at;
-
-    if (!refreshTokenValid) {
-      return res.json({
-        connected: false,
-        reason: 'refresh_token_expired',
-        message: 'Please reconnect to Garmin'
-      });
-    }
-
-    res.json({
-      connected: true,
-      garminUserId: garminUserId,
-      connectedAt: session.connectedAt,
-      accessTokenValid: accessTokenValid,
-      needsRefresh: !accessTokenValid,
-      permissions: tokenData.scope ? tokenData.scope.split(' ') : []
-    });
-
-  } catch (error) {
-    console.error('Garmin status error:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-}
-
 async function handleSyncWorkout(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { workout, scheduleDate } = req.body;
+  const { workout, garminWorkout: providedGarminWorkout, scheduleDate } = req.body;
 
-  if (!workout) {
-    return res.status(400).json({ error: 'Workout data is required' });
+  if (!workout && !providedGarminWorkout) {
+    return res.status(400).json({ error: 'Workout or garminWorkout data is required' });
   }
 
   const cookies = parseCookies(req.headers.cookie);
@@ -972,7 +901,7 @@ async function handleSyncWorkout(req, res) {
 
   try {
     const accessToken = await getValidAccessToken(garminUserId);
-    const garminWorkout = convertToGarminFormat(workout);
+    const garminWorkout = providedGarminWorkout || convertToGarminFormat(workout);
 
     console.log('Creating Garmin workout:', JSON.stringify(garminWorkout, null, 2));
 
