@@ -866,10 +866,10 @@ async function handleSyncWorkout(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { workout, scheduleDate } = req.body;
+  const { workout, garminWorkout: providedGarminWorkout, scheduleDate } = req.body;
 
-  if (!workout) {
-    return res.status(400).json({ error: 'Workout data is required' });
+  if (!workout && !providedGarminWorkout) {
+    return res.status(400).json({ error: 'Workout or garminWorkout data is required' });
   }
 
   const cookies = parseCookies(req.headers.cookie);
@@ -893,7 +893,7 @@ async function handleSyncWorkout(req, res) {
 
   try {
     const accessToken = await getValidAccessToken(garminUserId);
-    const garminWorkout = convertToGarminFormat(workout);
+    const garminWorkout = providedGarminWorkout || convertToGarminFormat(workout);
 
     console.log('Creating Garmin workout:', JSON.stringify(garminWorkout, null, 2));
 

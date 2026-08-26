@@ -178,6 +178,8 @@ export function generateId(): string {
   return Math.random().toString(36).substring(2, 9);
 }
 
+import type { GarminWorkout } from './garmin-format';
+
 // Séance sauvegardée (pour l'historique)
 export type WorkoutSource = 'workouts' | 'coach' | 'manual';
 
@@ -188,6 +190,7 @@ export interface SavedWorkout {
   source: WorkoutSource;
   syncedToGarmin: boolean;
   syncedAt?: string; // ISO string
+  garminWorkout?: GarminWorkout; // JSON Garmin prêt à l'envoi
 }
 
 // Séance partagée publiquement (lien de partage)

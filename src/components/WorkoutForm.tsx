@@ -5,7 +5,9 @@ import { parseWithGroq } from '../lib/groq-parser';
 import { workoutStore } from '../lib/workoutStore';
 import { SportSelector } from './SportSelector';
 import { WorkoutPreview } from './WorkoutPreview';
+import { GarminWorkoutPreview } from './GarminWorkoutPreview';
 import { GarminSyncModal } from './GarminSyncModal';
+import { convertToGarminFormat, GarminWorkout } from '../lib/garmin-format';
 
 // Clés API depuis les variables d'environnement
 const API_KEYS = [
@@ -351,6 +353,8 @@ export function WorkoutForm() {
   const [showHelp, setShowHelp] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [savedWorkoutId, setSavedWorkoutId] = useState<string | null>(null);
+  const [useGarminPreview, setUseGarminPreview] = useState(false);
+  const [garminWorkout, setGarminWorkout] = useState<GarminWorkout | null>(null);
 
   // Sauvegarder les références dans localStorage avec formatage automatique
   const handleRunningPaceChange = (value: string) => {
@@ -426,6 +430,14 @@ export function WorkoutForm() {
       }
 
       setSteps(parsedSteps);
+      setGarminWorkout(convertToGarminFormat({
+        id: generateId(),
+        name: name.trim(),
+        sport,
+        date: new Date(date),
+        description: description.trim(),
+        steps: parsedSteps,
+      }, getGarminFormatParams()));
       setShowPreview(true);
     } catch (err) {
       console.error(err);
@@ -475,6 +487,7 @@ export function WorkoutForm() {
     if (showPreview) {
       setShowPreview(false);
       setSteps([]);
+      setGarminWorkout(null);
     }
     setSyncSuccess(false);
     setFallbackWarning(null);
@@ -489,10 +502,26 @@ export function WorkoutForm() {
     steps,
   });
 
+  const getGarminFormatParams = () => {
+    if (sport === 'running') {
+      const pace = parsePaceInput(runningPace);
+      return pace ? { referencePaceMinKm: pace } : undefined;
+    }
+    if (sport === 'cycling') {
+      const watts = parseFloat(cyclingWatts);
+      return !isNaN(watts) && watts > 0 ? { referenceWatts: watts } : undefined;
+    }
+    if (sport === 'swimming') {
+      const pace = parsePaceInput(swimmingPace);
+      return pace ? { referenceSwimPaceMin100m: pace } : undefined;
+    }
+    return undefined;
+  };
+
   // Sauvegarder la séance
   const handleSave = () => {
     const workout = getCurrentWorkout();
-    const saved = workoutStore.save(workout, 'manual');
+    const saved = workoutStore.save(workout, 'manual', garminWorkout || undefined);
     setIsSaved(true);
     setSavedWorkoutId(saved.id);
     return saved.id;
@@ -742,7 +771,39 @@ export function WorkoutForm() {
       {/* Prévisualisation */}
       {showPreview && steps.length > 0 && (
         <div>
-          <WorkoutPreview steps={steps} />
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-medium text-gray-700">Prévisualisation</h3>
+            <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+              <button
+                type="button"
+                onClick={() => setUseGarminPreview(false)}
+                className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                  !useGarminPreview
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Classique
+              </button>
+              <button
+                type="button"
+                onClick={() => setUseGarminPreview(true)}
+                className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                  useGarminPreview
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Garmin
+              </button>
+            </div>
+          </div>
+
+          {useGarminPreview && garminWorkout ? (
+            <GarminWorkoutPreview garminWorkout={garminWorkout} />
+          ) : (
+            <WorkoutPreview steps={steps} />
+          )}
         </div>
       )}
 
@@ -812,6 +873,7 @@ export function WorkoutForm() {
     {showSyncModal && (
       <GarminSyncModal
         workout={getCurrentWorkout()}
+        garminWorkout={garminWorkout || undefined}
         onClose={() => setShowSyncModal(false)}
         onSuccess={handleSyncSuccess}
       />

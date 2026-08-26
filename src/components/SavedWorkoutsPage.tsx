@@ -197,6 +197,7 @@ export function SavedWorkoutsPage({ onNavigate }: SavedWorkoutsPageProps) {
       {syncWorkout && (
         <GarminSyncModal
           workout={syncWorkout.workout}
+          garminWorkout={syncWorkout.garminWorkout}
           onClose={() => setSyncWorkout(null)}
           onSuccess={() => handleSyncSuccess(syncWorkout.id)}
         />

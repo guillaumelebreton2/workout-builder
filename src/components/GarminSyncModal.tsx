@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Workout } from '../lib/types';
+import { GarminWorkout } from '../lib/garmin-format';
 
 interface GarminSyncModalProps {
   workout: Workout;
+  garminWorkout?: GarminWorkout;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -28,34 +30,43 @@ async function checkGarminStatus(): Promise<GarminStatus> {
   }
 }
 
-async function syncWorkoutToGarmin(workout: Workout, scheduleDate?: string) {
+async function syncWorkoutToGarmin(
+  workout: Workout,
+  garminWorkout: GarminWorkout | undefined,
+  scheduleDate?: string
+) {
+  const body: Record<string, unknown> = { scheduleDate };
+
+  if (garminWorkout) {
+    body.garminWorkout = garminWorkout;
+  } else {
+    body.workout = {
+      name: workout.name,
+      description: workout.description,
+      sport: workout.sport,
+      steps: workout.steps.map(step => ({
+        type: step.type,
+        name: step.name,
+        notes: step.notes,
+        duration: step.duration,
+        details: step.details,
+        repetitions: step.repetitions,
+        steps: step.steps?.map(s => ({
+          type: s.type,
+          name: s.name,
+          notes: s.notes,
+          duration: s.duration,
+          details: s.details,
+        })),
+      })),
+    };
+  }
+
   const response = await fetch(`${API_URL}/api/garmin/sync-workout`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
-    body: JSON.stringify({
-      workout: {
-        name: workout.name,
-        description: workout.description,
-        sport: workout.sport,
-        steps: workout.steps.map(step => ({
-          type: step.type,
-          name: step.name,
-          notes: step.notes,
-          duration: step.duration,
-          details: step.details,
-          repetitions: step.repetitions,
-          steps: step.steps?.map(s => ({
-            type: s.type,
-            name: s.name,
-            notes: s.notes,
-            duration: s.duration,
-            details: s.details,
-          })),
-        })),
-      },
-      scheduleDate: scheduleDate,
-    }),
+    body: JSON.stringify(body),
   });
 
   const data = await response.json();
@@ -74,7 +85,7 @@ async function disconnectGarmin() {
 
 type Step = 'loading' | 'not_connected' | 'connected' | 'syncing' | 'success' | 'error';
 
-export function GarminSyncModal({ workout, onClose, onSuccess }: GarminSyncModalProps) {
+export function GarminSyncModal({ workout, garminWorkout, onClose, onSuccess }: GarminSyncModalProps) {
   const [step, setStep] = useState<Step>('loading');
   const [error, setError] = useState<string | null>(null);
   const [scheduleForDate, setScheduleForDate] = useState(true);
@@ -118,7 +129,7 @@ export function GarminSyncModal({ workout, onClose, onSuccess }: GarminSyncModal
         ? workout.date.toISOString().split('T')[0]
         : undefined;
 
-      const result = await syncWorkoutToGarmin(workout, date);
+      const result = await syncWorkoutToGarmin(workout, garminWorkout, date);
       setSyncResult(result);
       setStep('success');
 

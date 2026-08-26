@@ -28,13 +28,18 @@ function saveToLocal(workouts: SavedWorkout[]): void {
 }
 
 // Sauvegarder une nouvelle séance
-export function saveWorkout(workout: Workout, source: WorkoutSource): SavedWorkout {
+export function saveWorkout(
+  workout: Workout,
+  source: WorkoutSource,
+  garminWorkout?: SavedWorkout['garminWorkout']
+): SavedWorkout {
   const savedWorkout: SavedWorkout = {
     id: generateId(),
     workout,
     createdAt: new Date().toISOString(),
     source,
     syncedToGarmin: false,
+    garminWorkout,
   };
 
   const workouts = getAllWorkouts();
