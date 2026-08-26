@@ -3,6 +3,7 @@ import { useAuth } from '../lib/authContext';
 import { metricsService, TrainingMetrics } from '../lib/metricsService';
 import { dashboardStore, DashboardWidget, WIDGET_LABELS, WidgetType } from '../lib/dashboardStore';
 import { renderWidget } from './widgets';
+import { getGarminAuthUrl } from '../lib/garminAuthUrl';
 
 interface StatsPageProps {
   onNavigate?: (page: 'home' | 'workouts' | 'coach' | 'stats' | 'profile') => void;
@@ -81,7 +82,7 @@ export function StatsPage({ onNavigate }: StatsPageProps) {
   }, [hasActivitySource, metrics, metricsLoading, loadMetrics]);
 
   const handleConnectGarmin = () => {
-    window.location.href = `${import.meta.env.PROD ? '' : 'http://localhost:3001'}/api/garmin/auth`;
+    window.location.href = getGarminAuthUrl();
   };
 
   const handleRefresh = () => {
