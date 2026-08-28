@@ -818,54 +818,56 @@ export function WorkoutForm() {
         </div>
       )}
 
-      {/* Action buttons - vertical sur mobile, horizontal sur desktop */}
-      <div className="flex flex-col md:flex-row gap-3">
-        {/* Synchroniser sur Garmin - en premier sur mobile */}
-        <button
-          type="button"
-          onClick={handleSyncClick}
-          disabled={!showPreview || steps.length === 0 || !name.trim()}
-          className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-orange-400 hover:to-orange-500 disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed transition-all shadow-lg shadow-orange-900/30 flex items-center justify-center gap-2 order-first md:order-last"
-        >
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97-.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>
-          </svg>
-          Synchroniser sur Garmin
-        </button>
-
-        {!isSaved ? (
+      {/* Action buttons - affichés uniquement après analyse */}
+      {showPreview && steps.length > 0 && (
+        <div className="flex flex-col md:flex-row gap-3">
+          {/* Synchroniser sur Garmin - en premier sur mobile */}
           <button
             type="button"
-            onClick={handleSave}
-            disabled={!showPreview || steps.length === 0 || !name.trim()}
-            className="flex-1 bg-gray-800 text-gray-100 border border-gray-700 py-3 px-6 rounded-xl font-semibold hover:bg-gray-700 hover:border-gray-600 disabled:bg-gray-900 disabled:text-gray-600 disabled:border-gray-800 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+            onClick={handleSyncClick}
+            disabled={!name.trim()}
+            className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-orange-400 hover:to-orange-500 disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed transition-all shadow-lg shadow-orange-900/30 flex items-center justify-center gap-2 order-first md:order-last"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97-.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>
+            </svg>
+            Synchroniser sur Garmin
+          </button>
+
+          {!isSaved ? (
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={!name.trim()}
+              className="flex-1 bg-gray-800 text-gray-100 border border-gray-700 py-3 px-6 rounded-xl font-semibold hover:bg-gray-700 hover:border-gray-600 disabled:bg-gray-900 disabled:text-gray-600 disabled:border-gray-800 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+              </svg>
+              Sauvegarder
+            </button>
+          ) : (
+            <span className="flex-1 bg-green-600/20 text-green-400 border border-green-600/30 py-3 px-6 rounded-xl font-semibold flex items-center justify-center gap-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              Sauvegardé
+            </span>
+          )}
+
+          {/* Télécharger FIT - caché sur mobile */}
+          <button
+            type="submit"
+            disabled={isGenerating}
+            className="hidden md:flex flex-1 bg-gray-800 text-gray-100 border border-gray-700 py-3 px-6 rounded-xl font-semibold hover:bg-gray-700 hover:border-gray-600 disabled:bg-gray-900 disabled:text-gray-600 disabled:border-gray-800 disabled:cursor-not-allowed transition-all items-center justify-center gap-2"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
-            Sauvegarder
+            {isGenerating ? 'Génération...' : 'Télécharger FIT'}
           </button>
-        ) : (
-          <span className="flex-1 bg-green-600/20 text-green-400 border border-green-600/30 py-3 px-6 rounded-xl font-semibold flex items-center justify-center gap-2">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-            Sauvegardé
-          </span>
-        )}
-
-        {/* Télécharger FIT - caché sur mobile */}
-        <button
-          type="submit"
-          disabled={isGenerating || !showPreview || steps.length === 0}
-          className="hidden md:flex flex-1 bg-gray-800 text-gray-100 border border-gray-700 py-3 px-6 rounded-xl font-semibold hover:bg-gray-700 hover:border-gray-600 disabled:bg-gray-900 disabled:text-gray-600 disabled:border-gray-800 disabled:cursor-not-allowed transition-all items-center justify-center gap-2"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
-          {isGenerating ? 'Génération...' : 'Télécharger FIT'}
-        </button>
-      </div>
+        </div>
+      )}
 
       {syncSuccess && (
         <div className="p-4 bg-green-50 border border-green-200 rounded-lg text-green-700 flex items-center gap-2">
