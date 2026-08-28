@@ -45,15 +45,6 @@ function AppContent() {
   const path = window.location.pathname;
 
   const [currentPage, setCurrentPage] = useState<Page>(() => getPageFromPath(path));
-  const [isDark, setIsDark] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return window.localStorage.getItem('enduzo-theme') === 'dark';
-  });
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    window.localStorage.setItem('enduzo-theme', isDark ? 'dark' : 'light');
-  }, [isDark]);
 
   // Redirect to login if trying to access protected page while not authenticated
   useEffect(() => {
@@ -109,9 +100,9 @@ function AppContent() {
   }
 
   return (
-    <div className={isDark ? 'dark' : ''}>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-950 dark:to-gray-900 dark:text-white">
-        <Header currentPage={currentPage} onNavigate={setCurrentPage} isDark={isDark} onToggleDark={() => setIsDark(d => !d)} />
+    <div className="dark">
+      <div className="min-h-screen bg-gradient-to-br from-gray-950 to-gray-900 text-white">
+        <Header currentPage={currentPage} onNavigate={setCurrentPage} />
 
       {currentPage === 'home' && (
         <LandingPage onNavigate={setCurrentPage} />

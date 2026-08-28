@@ -6,11 +6,9 @@ type Page = 'home' | 'workouts' | 'saved-workouts' | 'coach' | 'stats' | 'profil
 interface HeaderProps {
   currentPage: Page;
   onNavigate: (page: Page) => void;
-  isDark?: boolean;
-  onToggleDark?: () => void;
 }
 
-export function Header({ currentPage, onNavigate, isDark = false, onToggleDark }: HeaderProps) {
+export function Header({ currentPage, onNavigate }: HeaderProps) {
   const { user, isAuthenticated, logout } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -38,7 +36,7 @@ export function Header({ currentPage, onNavigate, isDark = false, onToggleDark }
   };
 
   return (
-    <header className="bg-white dark:bg-gray-900 dark:bg-gray-900 shadow-sm dark:shadow-gray-800">
+    <header className="bg-white dark:bg-gray-900 shadow-sm dark:shadow-gray-800">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -61,7 +59,7 @@ export function Header({ currentPage, onNavigate, isDark = false, onToggleDark }
                 />
               </svg>
             </div>
-            <span className="font-bold text-gray-900 dark:text-white dark:text-white text-lg hidden sm:inline">Enduzo</span>
+            <span className="font-bold text-gray-900 dark:text-white text-lg hidden sm:inline">Enduzo</span>
           </div>
 
           {/* Navigation */}
@@ -125,7 +123,7 @@ export function Header({ currentPage, onNavigate, isDark = false, onToggleDark }
                 <button
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                    dropdownOpen ? 'bg-gray-100 dark:bg-gray-800 dark:bg-gray-800' : 'hover:bg-gray-100 dark:hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-800'
+                    dropdownOpen ? 'bg-gray-100 dark:bg-gray-800' : 'hover:bg-gray-100 dark:hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-800'
                   }`}
                 >
                   <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
@@ -133,11 +131,11 @@ export function Header({ currentPage, onNavigate, isDark = false, onToggleDark }
                       {user.name?.charAt(0)?.toUpperCase() || '?'}
                     </span>
                   </div>
-                  <span className="text-sm text-gray-700 dark:text-gray-200 dark:text-gray-200 hidden md:inline max-w-[100px] truncate">
+                  <span className="text-sm text-gray-700 dark:text-gray-200 hidden md:inline max-w-[100px] truncate">
                     {user.name}
                   </span>
                   <svg
-                    className={`w-4 h-4 text-gray-500 dark:text-gray-400 dark:text-gray-400 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`}
+                    className={`w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -148,11 +146,11 @@ export function Header({ currentPage, onNavigate, isDark = false, onToggleDark }
 
                 {/* Dropdown menu */}
                 {dropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-900 dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 dark:border-gray-700 py-1 z-50">
+                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
                     {/* User info */}
                     <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white dark:text-white truncate">{user.name}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-400">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{user.name}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
                         Connecte via {user.authProvider === 'garmin' ? 'Garmin' : 'Strava'}
                       </p>
                     </div>
@@ -160,7 +158,7 @@ export function Header({ currentPage, onNavigate, isDark = false, onToggleDark }
                     {/* Menu items */}
                     <button
                       onClick={() => handleDropdownNavigate('profile')}
-                      className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-800 flex items-center gap-3"
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-800 flex items-center gap-3"
                     >
                       <svg className="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -170,34 +168,13 @@ export function Header({ currentPage, onNavigate, isDark = false, onToggleDark }
 
                     <button
                       onClick={() => handleDropdownNavigate('account')}
-                      className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-800 flex items-center gap-3"
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-800 flex items-center gap-3"
                     >
                       <svg className="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
                       Compte & Connectivite
-                    </button>
-
-                    <button
-                      onClick={onToggleDark}
-                      className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-800 flex items-center gap-3"
-                    >
-                      {isDark ? (
-                        <>
-                          <svg className="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                          </svg>
-                          Mode clair
-                        </>
-                      ) : (
-                        <>
-                          <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                          </svg>
-                          Mode sombre
-                        </>
-                      )}
                     </button>
 
                     <div className="border-t border-gray-100 dark:border-gray-800 my-1"></div>
@@ -215,29 +192,12 @@ export function Header({ currentPage, onNavigate, isDark = false, onToggleDark }
                 )}
               </>
             ) : (
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={onToggleDark}
-                  className="p-2 rounded-lg text-gray-600 dark:text-gray-300 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-800 transition-colors"
-                  aria-label={isDark ? 'Mode clair' : 'Mode sombre'}
-                >
-                  {isDark ? (
-                    <svg className="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                    </svg>
-                  ) : (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                    </svg>
-                  )}
-                </button>
-                <button
-                  onClick={() => onNavigate('login')}
-                  className="bg-orange-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-orange-600 transition-colors"
-                >
-                  Connexion
-                </button>
-              </div>
+              <button
+                onClick={() => onNavigate('login')}
+                className="bg-orange-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-orange-600 transition-colors"
+              >
+                Connexion
+              </button>
             )}
           </div>
         </div>
