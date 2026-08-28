@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Workout, WorkoutStep, Sport, generateId } from '../lib/types';
+import { Workout, WorkoutStep, Sport, SavedWorkout, generateId } from '../lib/types';
 import { downloadFitFile } from '../lib/fit-encoder';
 import { parseWithGroq } from '../lib/groq-parser';
 import { workoutStore } from '../lib/workoutStore';
@@ -7,6 +7,7 @@ import { SportSelector } from './SportSelector';
 import { WorkoutPreview } from './WorkoutPreview';
 import { GarminWorkoutPreview } from './GarminWorkoutPreview';
 import { GarminSyncModal } from './GarminSyncModal';
+import { ShareWorkoutDialog } from './ShareWorkoutDialog';
 import { convertToGarminFormat, GarminWorkout } from '../lib/garmin-format';
 
 // Clés API depuis les variables d'environnement
@@ -353,6 +354,7 @@ export function WorkoutForm() {
   const [showHelp, setShowHelp] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [savedWorkoutId, setSavedWorkoutId] = useState<string | null>(null);
+  const [shareSavedWorkout, setShareSavedWorkout] = useState<SavedWorkout | null>(null);
   const [useGarminPreview, setUseGarminPreview] = useState(false);
   const [garminWorkout, setGarminWorkout] = useState<GarminWorkout | null>(null);
 
@@ -534,6 +536,15 @@ export function WorkoutForm() {
       handleSave();
     }
     setShowSyncModal(true);
+  };
+
+  // Ouvrir le modal de partage (sauvegarde auto si pas encore fait)
+  const handleShareClick = () => {
+    const workout = getCurrentWorkout();
+    const saved = workoutStore.save(workout, 'manual', garminWorkout || undefined);
+    setIsSaved(true);
+    setSavedWorkoutId(saved.id);
+    setShareSavedWorkout(saved);
   };
 
   const handleSyncSuccess = () => {
@@ -820,51 +831,72 @@ export function WorkoutForm() {
 
       {/* Action buttons - affichés uniquement après analyse */}
       {showPreview && steps.length > 0 && (
-        <div className="flex flex-col md:flex-row gap-3">
-          {/* Synchroniser sur Garmin - en premier sur mobile */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {/* Synchroniser sur Garmin */}
           <button
             type="button"
             onClick={handleSyncClick}
             disabled={!name.trim()}
-            className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-orange-400 hover:to-orange-500 disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed transition-all shadow-lg shadow-orange-900/30 flex items-center justify-center gap-2 order-first md:order-last"
+            className="flex flex-col items-center justify-center gap-2 py-4 px-3 rounded-xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-b from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-900/30 hover:from-orange-400 hover:to-orange-500"
           >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97-.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="6" y="4" width="12" height="16" rx="4" />
+              <path d="M9 4V2h6v2" />
+              <path d="M9 20v2h6v-2" />
+              <path d="M12 9v6" />
             </svg>
-            Synchroniser sur Garmin
+            <span className="text-xs">Garmin</span>
           </button>
 
+          {/* Sauvegarder */}
           {!isSaved ? (
             <button
               type="button"
               onClick={handleSave}
               disabled={!name.trim()}
-              className="flex-1 bg-gray-800 text-gray-100 border border-gray-700 py-3 px-6 rounded-xl font-semibold hover:bg-gray-700 hover:border-gray-600 disabled:bg-gray-900 disabled:text-gray-600 disabled:border-gray-800 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+              className="flex flex-col items-center justify-center gap-2 py-4 px-3 rounded-xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-gray-800 text-gray-100 border border-gray-700 hover:bg-gray-700 hover:border-gray-600"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-8a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v8" />
+                <path d="M7 21h10" />
+                <path d="M7 3v7a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V3" />
+                <path d="M7 3h10" />
               </svg>
-              Sauvegarder
+              <span className="text-xs">Sauvegarder</span>
             </button>
           ) : (
-            <span className="flex-1 bg-green-600/20 text-green-400 border border-green-600/30 py-3 px-6 rounded-xl font-semibold flex items-center justify-center gap-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            <span className="flex flex-col items-center justify-center gap-2 py-4 px-3 rounded-xl font-semibold bg-green-600/20 text-green-400 border border-green-600/30">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 6L9 17l-5-5" />
               </svg>
-              Sauvegardé
+              <span className="text-xs">Sauvegardé</span>
             </span>
           )}
 
-          {/* Télécharger FIT - caché sur mobile */}
+          {/* Télécharger FIT */}
           <button
             type="submit"
             disabled={isGenerating}
-            className="hidden md:flex flex-1 bg-gray-800 text-gray-100 border border-gray-700 py-3 px-6 rounded-xl font-semibold hover:bg-gray-700 hover:border-gray-600 disabled:bg-gray-900 disabled:text-gray-600 disabled:border-gray-800 disabled:cursor-not-allowed transition-all items-center justify-center gap-2"
+            className="flex flex-col items-center justify-center gap-2 py-4 px-3 rounded-xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-gray-800 text-gray-100 border border-gray-700 hover:bg-gray-700 hover:border-gray-600"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 15V3m0 12-4-4m4 4 4-4" />
+              <path d="M2 17l.621 2.485A2 2 0 0 0 4.561 21h14.878a2 2 0 0 0 1.94-1.515L22 17" />
             </svg>
-            {isGenerating ? 'Génération...' : 'Télécharger FIT'}
+            <span className="text-xs">FIT</span>
+          </button>
+
+          {/* Partager */}
+          <button
+            type="button"
+            onClick={handleShareClick}
+            disabled={!name.trim()}
+            className="flex flex-col items-center justify-center gap-2 py-4 px-3 rounded-xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-indigo-600 text-white shadow-lg shadow-indigo-900/30 hover:bg-indigo-500"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+            </svg>
+            <span className="text-xs">Partager</span>
           </button>
         </div>
       )}
@@ -892,6 +924,14 @@ export function WorkoutForm() {
         garminWorkout={garminWorkout || undefined}
         onClose={() => setShowSyncModal(false)}
         onSuccess={handleSyncSuccess}
+      />
+    )}
+
+    {/* Modal de partage - EN DEHORS du form */}
+    {shareSavedWorkout && (
+      <ShareWorkoutDialog
+        savedWorkout={shareSavedWorkout}
+        onClose={() => setShareSavedWorkout(null)}
       />
     )}
   </>
