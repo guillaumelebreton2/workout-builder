@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { SavedWorkout } from '../lib/types';
 import { workoutStore } from '../lib/workoutStore';
 import { WorkoutPreview } from './WorkoutPreview';
+import { GarminWorkoutPreview } from './GarminWorkoutPreview';
 import { GarminSyncModal } from './GarminSyncModal';
 import { ShareWorkoutDialog } from './ShareWorkoutDialog';
 
@@ -130,8 +131,12 @@ export function SavedWorkoutsPage({ onNavigate }: SavedWorkoutsPageProps) {
               {expandedId === saved.id && (
                 <div className="border-t border-gray-100">
                   {/* Preview */}
-                  <div className="p-4 bg-gray-50">
-                    <WorkoutPreview steps={saved.workout.steps} />
+                  <div className="p-4 bg-gray-950">
+                    {saved.garminWorkout ? (
+                      <GarminWorkoutPreview garminWorkout={saved.garminWorkout} />
+                    ) : (
+                      <WorkoutPreview steps={saved.workout.steps} />
+                    )}
                   </div>
 
                   {/* Actions */}

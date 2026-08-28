@@ -58,7 +58,7 @@ export function ShareWorkoutDialog({ savedWorkout, onClose }: ShareWorkoutDialog
       <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl max-w-md w-full p-6">
         <div className="flex justify-between items-start mb-4">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Partager la séance</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Partager la séance</h2>
             <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{savedWorkout.workout.name}</p>
           </div>
           <button

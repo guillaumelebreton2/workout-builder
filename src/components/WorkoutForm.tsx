@@ -355,7 +355,7 @@ export function WorkoutForm() {
   const [isSaved, setIsSaved] = useState(false);
   const [savedWorkoutId, setSavedWorkoutId] = useState<string | null>(null);
   const [shareSavedWorkout, setShareSavedWorkout] = useState<SavedWorkout | null>(null);
-  const [useGarminPreview, setUseGarminPreview] = useState(false);
+  const [useGarminPreview, setUseGarminPreview] = useState(true);
   const [garminWorkout, setGarminWorkout] = useState<GarminWorkout | null>(null);
 
   // Sauvegarder les références dans localStorage avec formatage automatique
@@ -791,22 +791,22 @@ export function WorkoutForm() {
                 onClick={() => setUseGarminPreview(false)}
                 className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
                   !useGarminPreview
-                    ? 'bg-white dark:bg-gray-900 dark:bg-gray-900 text-gray-900 dark:text-white dark:text-white shadow-sm'
-                    : 'text-gray-500 dark:text-gray-400 dark:text-gray-400 hover:text-gray-700'
+                    ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'
                 }`}
               >
-                Classique
+                Ancienne
               </button>
               <button
                 type="button"
                 onClick={() => setUseGarminPreview(true)}
                 className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
                   useGarminPreview
-                    ? 'bg-white dark:bg-gray-900 dark:bg-gray-900 text-gray-900 dark:text-white dark:text-white shadow-sm'
-                    : 'text-gray-500 dark:text-gray-400 dark:text-gray-400 hover:text-gray-700'
+                    ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'
                 }`}
               >
-                Garmin
+                Nouvelle
               </button>
             </div>
           </div>
@@ -832,54 +832,13 @@ export function WorkoutForm() {
       {/* Action buttons - affichés uniquement après analyse */}
       {showPreview && steps.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {/* Synchroniser sur Garmin */}
-          <button
-            type="button"
-            onClick={handleSyncClick}
-            disabled={!name.trim()}
-            className="flex flex-col items-center justify-center gap-2 py-4 px-3 rounded-xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-b from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-900/30 hover:from-orange-400 hover:to-orange-500"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="6" y="4" width="12" height="16" rx="4" />
-              <path d="M9 4V2h6v2" />
-              <path d="M9 20v2h6v-2" />
-              <path d="M12 9v6" />
-            </svg>
-            <span className="text-xs">Garmin</span>
-          </button>
-
-          {/* Sauvegarder */}
-          {!isSaved ? (
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={!name.trim()}
-              className="flex flex-col items-center justify-center gap-2 py-4 px-3 rounded-xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-gray-800 text-gray-100 border border-gray-700 hover:bg-gray-700 hover:border-gray-600"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M17 21v-8a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v8" />
-                <path d="M7 21h10" />
-                <path d="M7 3v7a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V3" />
-                <path d="M7 3h10" />
-              </svg>
-              <span className="text-xs">Sauvegarder</span>
-            </button>
-          ) : (
-            <span className="flex flex-col items-center justify-center gap-2 py-4 px-3 rounded-xl font-semibold bg-green-600/20 text-green-400 border border-green-600/30">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20 6L9 17l-5-5" />
-              </svg>
-              <span className="text-xs">Sauvegardé</span>
-            </span>
-          )}
-
           {/* Télécharger FIT */}
           <button
             type="submit"
             disabled={isGenerating}
-            className="flex flex-col items-center justify-center gap-2 py-4 px-3 rounded-xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-gray-800 text-gray-100 border border-gray-700 hover:bg-gray-700 hover:border-gray-600"
+            className="flex flex-col items-center justify-center gap-1.5 py-3 px-3 rounded-xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-gray-800 text-gray-100 border border-gray-700 hover:bg-gray-700 hover:border-gray-600"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 15V3m0 12-4-4m4 4 4-4" />
               <path d="M2 17l.621 2.485A2 2 0 0 0 4.561 21h14.878a2 2 0 0 0 1.94-1.515L22 17" />
             </svg>
@@ -891,12 +850,52 @@ export function WorkoutForm() {
             type="button"
             onClick={handleShareClick}
             disabled={!name.trim()}
-            className="flex flex-col items-center justify-center gap-2 py-4 px-3 rounded-xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-indigo-600 text-white shadow-lg shadow-indigo-900/30 hover:bg-indigo-500"
+            className="flex flex-col items-center justify-center gap-1.5 py-3 px-3 rounded-xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-indigo-600 text-white shadow-lg shadow-indigo-900/30 hover:bg-indigo-500"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
             </svg>
             <span className="text-xs">Partager</span>
+          </button>
+
+          {/* Sauvegarder */}
+          {!isSaved ? (
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={!name.trim()}
+              className="flex flex-col items-center justify-center gap-1.5 py-3 px-3 rounded-xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-gray-800 text-gray-100 border border-gray-700 hover:bg-gray-700 hover:border-gray-600"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                <polyline points="17 21 17 13 7 13 7 21" />
+                <polyline points="7 3 7 8 15 8" />
+              </svg>
+              <span className="text-xs">Sauvegarder</span>
+            </button>
+          ) : (
+            <span className="flex flex-col items-center justify-center gap-1.5 py-3 px-3 rounded-xl font-semibold bg-green-600/20 text-green-400 border border-green-600/30">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 6L9 17l-5-5" />
+              </svg>
+              <span className="text-xs">Sauvegardé</span>
+            </span>
+          )}
+
+          {/* Synchroniser sur Garmin */}
+          <button
+            type="button"
+            onClick={handleSyncClick}
+            disabled={!name.trim()}
+            className="flex flex-col items-center justify-center gap-1.5 py-3 px-3 rounded-xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-b from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-900/30 hover:from-orange-400 hover:to-orange-500"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="6" y="4" width="12" height="16" rx="4" />
+              <path d="M9 4V2h6v2" />
+              <path d="M9 20v2h6v-2" />
+              <path d="M12 9v6" />
+            </svg>
+            <span className="text-xs">Garmin</span>
           </button>
         </div>
       )}
