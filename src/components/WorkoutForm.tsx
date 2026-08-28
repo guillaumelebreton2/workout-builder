@@ -706,6 +706,15 @@ export function WorkoutForm() {
           <p className="mt-1 text-xs text-gray-500">
             Sépare les étiquettes par des virgules.
           </p>
+          {parseTags(tags).length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {parseTags(tags).map(tag => (
+                <span key={tag} className="px-2 py-0.5 rounded-md text-xs font-medium bg-blue-600 text-white">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Section Aide */}

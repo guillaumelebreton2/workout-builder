@@ -16,6 +16,12 @@ export function SavedWorkoutsPage({ onNavigate }: SavedWorkoutsPageProps) {
   const [syncWorkout, setSyncWorkout] = useState<SavedWorkout | null>(null);
   const [shareWorkout, setShareWorkout] = useState<SavedWorkout | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+
+  const allTags = Array.from(new Set(workouts.flatMap(w => w.workout.tags || []))).sort();
+  const filteredWorkouts = selectedTag
+    ? workouts.filter(w => w.workout.tags?.includes(selectedTag))
+    : workouts;
 
   const handleDelete = (id: string) => {
     workoutStore.delete(id);
@@ -105,7 +111,41 @@ export function SavedWorkoutsPage({ onNavigate }: SavedWorkoutsPageProps) {
         </div>
       ) : (
         <div className="max-w-3xl mx-auto space-y-4">
-          {workouts.map((saved) => (
+          {allTags.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setSelectedTag(null)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                  selectedTag === null
+                    ? 'bg-gray-700 text-white'
+                    : 'bg-gray-800 text-gray-300 border border-gray-700 hover:bg-gray-700'
+                }`}
+              >
+                Toutes
+              </button>
+              {allTags.map(tag => (
+                <button
+                  key={tag}
+                  onClick={() => setSelectedTag(tag)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                    selectedTag === tag
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-800 text-gray-300 border border-gray-700 hover:bg-gray-700'
+                  }`}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {filteredWorkouts.length === 0 && (
+            <p className="text-center text-gray-500 py-8">
+              Aucune séance ne correspond à ce filtre.
+            </p>
+          )}
+
+          {filteredWorkouts.map((saved) => (
             <div
               key={saved.id}
               className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
@@ -134,6 +174,18 @@ export function SavedWorkoutsPage({ onNavigate }: SavedWorkoutsPageProps) {
                         </span>
                       )}
                     </div>
+                    {saved.workout.tags && saved.workout.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {saved.workout.tags.map(tag => (
+                          <span
+                            key={tag}
+                            className="px-2 py-0.5 rounded-md text-xs font-medium bg-blue-600/20 text-blue-300 border border-blue-500/30"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                     <p className="text-sm text-gray-500">
                       {formatDate(saved.createdAt)} • {saved.workout.steps.length} étape{saved.workout.steps.length > 1 ? 's' : ''}
                     </p>
