@@ -20,21 +20,25 @@ const INTENSITY_LABELS: Record<GarminIntensity | string, string> = {
 };
 
 const INTENSITY_COLORS: Record<GarminIntensity | string, string> = {
-  WARMUP: '#F59E0B',   // orange
-  ACTIVE: '#3B82F6',   // bleu
-  RECOVERY: '#9CA3AF', // gris
-  COOLDOWN: '#22C55E', // vert
-  REST: '#6B7280',     // gris
-  INTERVAL: '#8B5CF6', // violet
+  WARMUP: '#e02c2c',        // rouge
+  ACTIVE: '#1976d2',        // bleu
+  RECOVERY: '#a6a6a6',      // gris
+  COOLDOWN: '#16a544',      // vert
+  REST: '#a6a6a6',          // gris
+  INTERVAL: '#1976d2',      // bleu
+  INTERVAL_WALK: '#1976d2', // bleu
+  OTHER: '#1976d2',         // bleu
 };
 
 const INTENSITY_BG_COLORS: Record<GarminIntensity | string, string> = {
-  WARMUP: 'bg-amber-950/30',
+  WARMUP: 'bg-red-950/30',
   ACTIVE: 'bg-blue-950/30',
   RECOVERY: 'bg-gray-800',
   COOLDOWN: 'bg-green-950/30',
   REST: 'bg-gray-800',
-  INTERVAL: 'bg-violet-950/30',
+  INTERVAL: 'bg-blue-950/30',
+  INTERVAL_WALK: 'bg-blue-950/30',
+  OTHER: 'bg-blue-950/30',
 };
 
 const SPORT_COLORS: Record<GarminSport, { bg: string; text: string }> = {
