@@ -121,16 +121,16 @@ function AppContent() {
         <div className="container mx-auto px-4 py-8">
           {/* Header */}
           <header className="text-center mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">
               Creer une seance
             </h1>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-300">
               Decris ta seance, l'IA la structure pour toi
             </p>
           </header>
 
           {/* Main form */}
-          <main className="max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-6 md:p-8">
+          <main className="max-w-2xl mx-auto bg-white dark:bg-gray-900 rounded-xl shadow-lg dark:shadow-gray-900/50 p-6 md:p-8">
             <WorkoutForm />
           </main>
         </div>
