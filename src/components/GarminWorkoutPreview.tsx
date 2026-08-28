@@ -59,7 +59,13 @@ function msToMinPerKm(ms: number): number {
   return 1000 / (ms * 60);
 }
 
-function formatTarget(step: GarminStep): string | null {
+interface TargetDisplay {
+  main: string;
+  range?: string;
+  label: string;
+}
+
+function formatTarget(step: GarminStep): TargetDisplay | null {
   const { targetType, targetValueLow, targetValueHigh, targetValueType } = step;
 
   if (targetType === 'PACE' && (targetValueLow || targetValueHigh)) {
@@ -67,50 +73,54 @@ function formatTarget(step: GarminStep): string | null {
     const highMs = targetValueLow ?? targetValueHigh ?? 0;
     const lowPace = formatPace(msToMinPerKm(lowMs));
     const highPace = formatPace(msToMinPerKm(highMs));
-    const range = lowPace === highPace ? lowPace : `${lowPace} - ${highPace}`;
-    return `Allure • ${range} min/km`;
+    const mainPace = formatPace((msToMinPerKm(lowMs) + msToMinPerKm(highMs)) / 2);
+    return {
+      main: `${mainPace} /km`,
+      range: lowPace === highPace ? undefined : `(${lowPace}-${highPace} /km)`,
+      label: "Objectif d'intensité",
+    };
   }
 
   if (targetType === 'POWER') {
     if (targetValueType === 'PERCENT' && (targetValueLow || targetValueHigh)) {
-      const range = targetValueLow === targetValueHigh
+      const main = targetValueLow === targetValueHigh
         ? `${targetValueLow}%`
         : `${targetValueLow}-${targetValueHigh}%`;
-      return `Puissance • ${range} FTP`;
+      return { main: `${main} FTP`, label: 'Puissance' };
     }
     if (targetValueLow || targetValueHigh) {
-      const range = targetValueLow === targetValueHigh
+      const main = targetValueLow === targetValueHigh
         ? `${targetValueLow} W`
         : `${targetValueLow}-${targetValueHigh} W`;
-      return `Puissance • ${range}`;
+      return { main, label: 'Puissance' };
     }
   }
 
   if (targetType === 'CADENCE' && (targetValueLow || targetValueHigh)) {
-    const range = targetValueLow === targetValueHigh
+    const main = targetValueLow === targetValueHigh
       ? `${targetValueLow} rpm`
       : `${targetValueLow}-${targetValueHigh} rpm`;
-    return `Cadence • ${range}`;
+    return { main, label: 'Cadence' };
   }
 
   if (targetType === 'HEART_RATE' && (targetValueLow || targetValueHigh)) {
-    const range = targetValueLow === targetValueHigh
+    const main = targetValueLow === targetValueHigh
       ? `${targetValueLow} bpm`
       : `${targetValueLow}-${targetValueHigh} bpm`;
-    return `FC • ${range}`;
+    return { main, label: 'Fréquence cardiaque' };
   }
 
   return null;
 }
 
-function formatSecondaryTarget(step: GarminStep): string | null {
+function formatSecondaryTarget(step: GarminStep): TargetDisplay | null {
   const { secondaryTargetType, secondaryTargetValueLow, secondaryTargetValueHigh } = step;
 
   if (secondaryTargetType === 'CADENCE' && (secondaryTargetValueLow || secondaryTargetValueHigh)) {
-    const range = secondaryTargetValueLow === secondaryTargetValueHigh
+    const main = secondaryTargetValueLow === secondaryTargetValueHigh
       ? `${secondaryTargetValueLow} rpm`
       : `${secondaryTargetValueLow}-${secondaryTargetValueHigh} rpm`;
-    return `Cadence • ${range}`;
+    return { main, label: 'Cadence' };
   }
 
   if (secondaryTargetType === 'PACE_ZONE' && (secondaryTargetValueLow || secondaryTargetValueHigh)) {
@@ -118,8 +128,12 @@ function formatSecondaryTarget(step: GarminStep): string | null {
     const highMs = secondaryTargetValueLow ?? secondaryTargetValueHigh ?? 0;
     const lowPace = formatPace(msToMinPerKm(lowMs) / 10);
     const highPace = formatPace(msToMinPerKm(highMs) / 10);
-    const range = lowPace === highPace ? lowPace : `${lowPace} - ${highPace}`;
-    return `Allure • ${range} /100m`;
+    const mainPace = formatPace((msToMinPerKm(lowMs) + msToMinPerKm(highMs)) / 20);
+    return {
+      main: `${mainPace} /100m`,
+      range: lowPace === highPace ? undefined : `(${lowPace}-${highPace} /100m)`,
+      label: 'Allure',
+    };
   }
 
   if (secondaryTargetType === 'SWIM_INSTRUCTION' && secondaryTargetValueLow) {
@@ -132,7 +146,7 @@ function formatSecondaryTarget(step: GarminStep): string | null {
       7: 'Max',
     };
     const label = map[secondaryTargetValueLow];
-    return label ? `Intensité • ${label}` : null;
+    return label ? { main: label, label: 'Intensité' } : null;
   }
 
   return null;
@@ -218,22 +232,19 @@ function StepCard({ step, sport }: { step: GarminStep; sport: GarminSport }) {
   const estTime = estimateTimeSeconds(step);
   const estDistance = estimateDistanceMeters(step);
 
-  const metrics: { value: string; label: string }[] = [];
+  const primaryMetrics: { value: string; label: string }[] = [];
 
   if (step.durationType === 'TIME' && step.durationValue) {
-    metrics.push({ value: formatDuration(step.durationValue), label: 'Temps total' });
+    primaryMetrics.push({ value: formatDuration(step.durationValue), label: 'Temps total' });
     if (estDistance !== null) {
-      metrics.push({ value: formatDistance(estDistance), label: 'Distance estimée' });
+      primaryMetrics.push({ value: formatDistance(estDistance), label: 'Distance estimée' });
     }
   } else if (step.durationType === 'DISTANCE' && step.durationValue) {
-    metrics.push({ value: formatDistance(step.durationValue), label: 'Distance totale' });
+    primaryMetrics.push({ value: formatDistance(step.durationValue), label: 'Distance totale' });
     if (estTime !== null) {
-      metrics.push({ value: formatDuration(estTime), label: 'Temps estimé' });
+      primaryMetrics.push({ value: formatDuration(estTime), label: 'Temps estimé' });
     }
   }
-
-  if (target) metrics.push({ value: target, label: "Objectif d'intensité" });
-  if (secondary) metrics.push({ value: secondary, label: '2e cible' });
 
   return (
     <div
@@ -241,25 +252,36 @@ function StepCard({ step, sport }: { step: GarminStep; sport: GarminSport }) {
       style={{ borderLeftWidth: '8px', borderLeftColor: color }}
     >
       <div className="p-4">
-        <div className="min-w-0">
-          <div className="font-semibold text-gray-900 text-base leading-tight">
-            {getStepLabel(step, sport)}
-          </div>
-          <div className="text-gray-500 text-sm mt-0.5">
-            {getStepDurationLabel(step)}
-          </div>
+        <div className="font-semibold text-gray-900 text-base leading-tight">
+          {getStepLabel(step, sport)}
         </div>
 
-        {metrics.length > 0 && (
-          <div className="grid grid-cols-2 gap-4 mt-3">
-            {metrics.map((m, idx) => (
-              <div key={idx}>
-                <div className="text-gray-900 font-medium text-sm leading-tight">{m.value}</div>
-                <div className="text-xs text-gray-500 mt-0.5">{m.label}</div>
-              </div>
-            ))}
-          </div>
-        )}
+        <div className="grid grid-cols-2 gap-x-6 gap-y-3 mt-3">
+          {primaryMetrics.map((m, idx) => (
+            <div key={idx}>
+              <div className="text-gray-900 font-medium text-sm leading-tight">{m.value}</div>
+              <div className="text-xs text-gray-500 mt-0.5">{m.label}</div>
+            </div>
+          ))}
+          {target && (
+            <div>
+              <div className="text-gray-900 font-medium text-sm leading-tight">{target.main}</div>
+              {target.range && (
+                <div className="text-gray-500 text-xs leading-tight mt-0.5">{target.range}</div>
+              )}
+              <div className="text-xs text-gray-500 mt-0.5">{target.label}</div>
+            </div>
+          )}
+          {secondary && (
+            <div>
+              <div className="text-gray-900 font-medium text-sm leading-tight">{secondary.main}</div>
+              {secondary.range && (
+                <div className="text-gray-500 text-xs leading-tight mt-0.5">{secondary.range}</div>
+              )}
+              <div className="text-xs text-gray-500 mt-0.5">{secondary.label}</div>
+            </div>
+          )}
+        </div>
       </div>
 
       {step.description && (
@@ -308,6 +330,19 @@ function RepeatBlock({ step, sport, depth = 0 }: { step: GarminStep; sport: Garm
   );
 }
 
+const INTENSITY_HEIGHTS: Record<GarminIntensity | string, string> = {
+  WARMUP: '45%',
+  ACTIVE: '100%',
+  RECOVERY: '35%',
+  COOLDOWN: '45%',
+  REST: '30%',
+  INTERVAL: '90%',
+};
+
+function getIntensityHeight(intensity?: GarminIntensity | null): string {
+  return (intensity && INTENSITY_HEIGHTS[intensity]) || '70%';
+}
+
 function Timeline({ steps, sport }: { steps: GarminStep[]; sport: GarminSport }) {
   const flat = flattenSteps(steps);
   if (flat.length === 0) return null;
@@ -327,13 +362,15 @@ function Timeline({ steps, sport }: { steps: GarminStep[]; sport: GarminSport })
             : 0;
         const widthPercent = totalValue > 0 ? (stepValue / totalValue) * 100 : 100 / flat.length;
         const color = INTENSITY_COLORS[step.intensity || 'ACTIVE'] || INTENSITY_COLORS.ACTIVE;
+        const height = getIntensityHeight(step.intensity);
 
         return (
           <div
             key={`timeline-${idx}`}
-            className="rounded-md min-w-[4px] h-full transition-all hover:opacity-80"
+            className="rounded-md min-w-[4px] transition-all hover:opacity-80"
             style={{
               width: `${Math.max(widthPercent, 0.5)}%`,
+              height,
               backgroundColor: color,
             }}
             title={`${getStepLabel(step, sport)} : ${getStepDurationLabel(step)}`}
@@ -396,6 +433,14 @@ export function GarminWorkoutPreview({ garminWorkout }: GarminWorkoutPreviewProp
       </div>
 
       <div className="p-5 space-y-5">
+        {/* Notes */}
+        {garminWorkout.description && garminWorkout.description !== 'Created with Enduzo' && (
+          <div>
+            <h4 className="text-sm font-semibold text-gray-900 mb-1">Notes</h4>
+            <p className="text-sm text-gray-600 whitespace-pre-line">{garminWorkout.description}</p>
+          </div>
+        )}
+
         {/* Timeline */}
         <Timeline steps={segment.steps} sport={garminWorkout.sport} />
 
