@@ -264,6 +264,8 @@ function StepCard({ step, sport }: { step: GarminStep; sport: GarminSport }) {
     if (estTime !== null) {
       primaryMetrics.push({ value: formatDuration(estTime), label: 'Temps estimé' });
     }
+  } else if (step.durationType === 'OPEN') {
+    primaryMetrics.push({ value: 'Appui sur touche Lap', label: 'Changement d\'étape' });
   }
 
   return (
