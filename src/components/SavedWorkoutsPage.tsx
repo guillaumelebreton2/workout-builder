@@ -173,19 +173,15 @@ export function SavedWorkoutsPage({ onNavigate }: SavedWorkoutsPageProps) {
                           Synchronisé
                         </span>
                       )}
+                      {saved.workout.tags?.map(tag => (
+                        <span
+                          key={tag}
+                          className="px-2 py-1 rounded-full text-xs font-medium bg-blue-600/20 text-blue-300 border border-blue-500/30"
+                        >
+                          {tag}
+                        </span>
+                      ))}
                     </div>
-                    {saved.workout.tags && saved.workout.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-2">
-                        {saved.workout.tags.map(tag => (
-                          <span
-                            key={tag}
-                            className="px-2 py-0.5 rounded-md text-xs font-medium bg-blue-600/20 text-blue-300 border border-blue-500/30"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
                     <p className="text-sm text-gray-500">
                       {formatDate(saved.createdAt)} • {saved.workout.steps.length} étape{saved.workout.steps.length > 1 ? 's' : ''}
                     </p>

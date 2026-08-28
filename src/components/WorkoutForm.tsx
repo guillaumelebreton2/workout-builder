@@ -565,6 +565,11 @@ export function WorkoutForm() {
     setSyncSuccess(true);
   };
 
+  const currentTags = parseTags(tags);
+  const existingTags = Array.from(new Set(workoutStore.getAll().flatMap(w => w.workout.tags || [])))
+    .filter(t => !currentTags.includes(t))
+    .sort();
+
   return (
     <>
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -706,13 +711,30 @@ export function WorkoutForm() {
           <p className="mt-1 text-xs text-gray-500">
             Sépare les étiquettes par des virgules.
           </p>
-          {parseTags(tags).length > 0 && (
+          {currentTags.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mt-2">
-              {parseTags(tags).map(tag => (
+              {currentTags.map(tag => (
                 <span key={tag} className="px-2 py-0.5 rounded-md text-xs font-medium bg-blue-600 text-white">
                   {tag}
                 </span>
               ))}
+            </div>
+          )}
+          {existingTags.length > 0 && (
+            <div className="mt-3">
+              <p className="text-xs text-gray-500 mb-1.5">Tags existants :</p>
+              <div className="flex flex-wrap gap-1.5">
+                {existingTags.map(tag => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => setTags(prev => prev ? `${prev}, ${tag}` : tag)}
+                    className="px-2 py-0.5 rounded-md text-xs font-medium bg-gray-700 text-gray-300 border border-gray-600 hover:bg-gray-600 hover:text-white transition-colors"
+                  >
+                    + {tag}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>
