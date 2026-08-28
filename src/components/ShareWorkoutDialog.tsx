@@ -55,15 +55,15 @@ export function ShareWorkoutDialog({ savedWorkout, onClose }: ShareWorkoutDialog
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl max-w-md w-full p-6">
         <div className="flex justify-between items-start mb-4">
           <div>
             <h2 className="text-xl font-bold text-gray-900">Partager la séance</h2>
-            <p className="text-sm text-gray-600 mt-1">{savedWorkout.workout.name}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{savedWorkout.workout.name}</p>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 hover:text-gray-600 dark:text-gray-300 transition-colors"
             aria-label="Fermer"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -75,7 +75,7 @@ export function ShareWorkoutDialog({ savedWorkout, onClose }: ShareWorkoutDialog
         {!shareUrl ? (
           <>
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                 Expiration du lien
               </label>
               <div className="flex gap-2">
@@ -86,7 +86,7 @@ export function ShareWorkoutDialog({ savedWorkout, onClose }: ShareWorkoutDialog
                     className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${
                       selectedExpiry.label === option.label
                         ? 'bg-orange-500 text-white border-orange-500'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                        : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50'
                     }`}
                   >
                     {option.label}
@@ -116,7 +116,7 @@ export function ShareWorkoutDialog({ savedWorkout, onClose }: ShareWorkoutDialog
         ) : (
           <>
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                 Lien de partage
               </label>
               <div className="flex gap-2">
@@ -124,7 +124,7 @@ export function ShareWorkoutDialog({ savedWorkout, onClose }: ShareWorkoutDialog
                   type="text"
                   readOnly
                   value={shareUrl}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm bg-gray-50 text-gray-700"
+                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-gray-50 dark:bg-gray-800 text-gray-700"
                 />
                 <button
                   onClick={handleCopy}
@@ -138,7 +138,7 @@ export function ShareWorkoutDialog({ savedWorkout, onClose }: ShareWorkoutDialog
             <div className="flex gap-3">
               <button
                 onClick={onClose}
-                className="flex-1 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                className="flex-1 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-lg font-medium hover:bg-gray-200 transition-colors"
               >
                 Fermer
               </button>
@@ -147,7 +147,7 @@ export function ShareWorkoutDialog({ savedWorkout, onClose }: ShareWorkoutDialog
                   setShareUrl(null);
                   setCopied(false);
                 }}
-                className="flex-1 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+                className="flex-1 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800 transition-colors"
               >
                 Nouveau lien
               </button>

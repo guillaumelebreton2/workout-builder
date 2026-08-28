@@ -47,7 +47,7 @@ export function ChatMessageBubble({ message, onWorkoutSaved, onWorkoutSynced }: 
           {/* Contenu */}
           <div className="flex-1">
             {/* Label */}
-            <div className={`text-xs text-gray-500 mb-1 ${isUser ? 'text-right' : ''}`}>
+            <div className={`text-xs text-gray-500 dark:text-gray-400 mb-1 ${isUser ? 'text-right' : ''}`}>
               {isUser ? 'Vous' : 'Coach IA'} - {formatTime(message.timestamp)}
             </div>
 
@@ -57,7 +57,7 @@ export function ChatMessageBubble({ message, onWorkoutSaved, onWorkoutSynced }: 
                 rounded-2xl px-4 py-3
                 ${isUser
                   ? 'bg-blue-500 text-white rounded-br-md'
-                  : 'bg-white border border-gray-200 text-gray-800 rounded-bl-md shadow-sm'
+                  : 'bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-800 rounded-bl-md shadow-sm'
                 }
               `}
             >
@@ -66,11 +66,11 @@ export function ChatMessageBubble({ message, onWorkoutSaved, onWorkoutSynced }: 
 
             {/* Séance générée (si présente) */}
             {message.workout && (
-              <div className="mt-3 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="mt-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
                 <div className="p-4 border-b border-gray-100 bg-gray-50">
                   <h4 className="font-semibold text-gray-900">{message.workout.name}</h4>
                   {message.workout.description && (
-                    <p className="text-sm text-gray-600 mt-1">{message.workout.description}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{message.workout.description}</p>
                   )}
                 </div>
                 <div className="p-4">
@@ -108,8 +108,8 @@ export function ChatLoadingIndicator() {
 
           {/* Contenu */}
           <div className="flex-1">
-            <div className="text-xs text-gray-500 mb-1">Coach IA</div>
-            <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-md px-4 py-3 shadow-sm">
+            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Coach IA</div>
+            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl rounded-bl-md px-4 py-3 shadow-sm">
               <div className="flex items-center gap-2 text-gray-500">
                 <div className="flex gap-1">
                   <div className="w-2 h-2 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />

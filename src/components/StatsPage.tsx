@@ -142,7 +142,7 @@ export function StatsPage({ onNavigate }: StatsPageProps) {
               <>
                 <button
                   onClick={() => onNavigate?.('profile')}
-                  className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-lg font-medium hover:bg-gray-200 transition-colors"
                   title="Profil Athlète"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -172,7 +172,7 @@ export function StatsPage({ onNavigate }: StatsPageProps) {
                 </button>
                 <button
                   onClick={handleResetDashboard}
-                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
+                  className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-200 hover:bg-gray-200 rounded-lg transition-colors"
                   title="Réinitialiser"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -196,12 +196,12 @@ export function StatsPage({ onNavigate }: StatsPageProps) {
 
         {/* Modal ajout widget */}
         {showAddWidget && (
-          <div className="mb-6 p-4 bg-white rounded-xl shadow-sm border border-gray-200">
+          <div className="mb-6 p-4 bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold text-gray-900">Ajouter un widget</h3>
               <button
                 onClick={() => setShowAddWidget(false)}
-                className="p-1 hover:bg-gray-100 rounded"
+                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 dark:bg-gray-800 rounded"
               >
                 <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -214,7 +214,7 @@ export function StatsPage({ onNavigate }: StatsPageProps) {
                   <button
                     key={type}
                     onClick={() => handleAddWidget(type)}
-                    className="p-3 text-left bg-gray-50 hover:bg-orange-50 hover:border-orange-300 border border-gray-200 rounded-lg transition-colors"
+                    className="p-3 text-left bg-gray-50 dark:bg-gray-800 hover:bg-orange-50 hover:border-orange-300 border border-gray-200 dark:border-gray-700 rounded-lg transition-colors"
                   >
                     <p className="font-medium text-sm">{WIDGET_LABELS[type].name}</p>
                     <p className="text-xs text-gray-500">{WIDGET_LABELS[type].description}</p>
@@ -222,7 +222,7 @@ export function StatsPage({ onNavigate }: StatsPageProps) {
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500 text-sm">Tous les widgets sont déjà ajoutés</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Tous les widgets sont déjà ajoutés</p>
             )}
           </div>
         )}
@@ -230,13 +230,13 @@ export function StatsPage({ onNavigate }: StatsPageProps) {
         {/* État non connecté */}
         {!hasActivitySource && (
           <div className="text-center py-16">
-            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
               </svg>
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Connecte un compte</h2>
-            <p className="text-gray-600 mb-6 max-w-md mx-auto">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Connecte un compte</h2>
+            <p className="text-gray-600 dark:text-gray-300 mb-6 max-w-md mx-auto">
               Pour voir tes statistiques d'entraînement, connecte Strava et/ou Garmin
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -308,8 +308,8 @@ export function StatsPage({ onNavigate }: StatsPageProps) {
 
         {/* Widgets vides */}
         {hasActivitySource && !metricsLoading && widgets.length === 0 && (
-          <div className="text-center py-16 bg-white rounded-xl shadow-sm">
-            <p className="text-gray-600 mb-4">Aucun widget sur ton dashboard</p>
+          <div className="text-center py-16 bg-white dark:bg-gray-900 rounded-xl shadow-sm">
+            <p className="text-gray-600 dark:text-gray-300 mb-4">Aucun widget sur ton dashboard</p>
             <button
               onClick={() => setShowAddWidget(true)}
               className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors"

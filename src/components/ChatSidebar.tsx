@@ -134,7 +134,7 @@ export function ChatSidebar({
                         </svg>
                         <span className="text-sm truncate flex-1">{conv.title}</span>
                       </div>
-                      <div className="text-xs text-gray-500 mt-1 ml-6">
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-6">
                         {formatDate(conv.updatedAt)}
                       </div>
                     </div>

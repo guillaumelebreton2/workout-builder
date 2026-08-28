@@ -224,7 +224,7 @@ export function AthleteProfilePage({ onNavigate }: AthleteProfilePageProps) {
             <div className="relative">
               <button
                 onClick={() => setShowSettings(!showSettings)}
-                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 dark:bg-gray-800 rounded-lg transition-colors"
                 title="Options"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -239,11 +239,11 @@ export function AthleteProfilePage({ onNavigate }: AthleteProfilePageProps) {
                     className="fixed inset-0 z-10"
                     onClick={() => setShowSettings(false)}
                   />
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-20">
+                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-20">
                     <div className="py-1">
                       <button
                         onClick={handleAutoEstimate}
-                        className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                        className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800 flex items-center gap-2"
                       >
                         <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
@@ -253,7 +253,7 @@ export function AthleteProfilePage({ onNavigate }: AthleteProfilePageProps) {
                       <hr className="my-1" />
                       <button
                         onClick={handleExport}
-                        className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                        className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800 flex items-center gap-2"
                       >
                         <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -262,7 +262,7 @@ export function AthleteProfilePage({ onNavigate }: AthleteProfilePageProps) {
                       </button>
                       <button
                         onClick={handleImportClick}
-                        className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                        className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800 flex items-center gap-2"
                       >
                         <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -272,7 +272,7 @@ export function AthleteProfilePage({ onNavigate }: AthleteProfilePageProps) {
                       <hr className="my-1" />
                       <button
                         onClick={handleResetProfile}
-                        className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 text-red-600"
+                        className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800 flex items-center gap-2 text-red-600"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -288,7 +288,7 @@ export function AthleteProfilePage({ onNavigate }: AthleteProfilePageProps) {
             {onNavigate && (
               <button
                 onClick={() => onNavigate('stats')}
-                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 dark:bg-gray-800 rounded-lg transition-colors"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -300,7 +300,7 @@ export function AthleteProfilePage({ onNavigate }: AthleteProfilePageProps) {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-6 bg-white rounded-xl p-2 shadow-sm">
+        <div className="flex gap-2 mb-6 bg-white dark:bg-gray-900 rounded-xl p-2 shadow-sm">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -308,7 +308,7 @@ export function AthleteProfilePage({ onNavigate }: AthleteProfilePageProps) {
               className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-colors ${
                 activeTab === tab.id
                   ? 'bg-orange-500 text-white'
-                  : 'text-gray-600 hover:bg-gray-100'
+                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100'
               }`}
             >
               {tab.icon}
@@ -318,7 +318,7 @@ export function AthleteProfilePage({ onNavigate }: AthleteProfilePageProps) {
         </div>
 
         {/* Content */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6">
           {activeTab === 'running' && (
             <RunningTab
               profile={profile}
@@ -412,7 +412,7 @@ function RunningTab({ profile, onUpdate, syncing, syncError, needsReauth, onSync
     <div className="space-y-8">
       {/* Section FC */}
       <section>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Fréquence Cardiaque</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Fréquence Cardiaque</h3>
 
         {/* Sync Strava */}
         <div className="bg-orange-50 rounded-lg p-4 mb-4">
@@ -421,7 +421,7 @@ function RunningTab({ profile, onUpdate, syncing, syncError, needsReauth, onSync
               <h4 className="font-medium text-gray-900">Synchroniser depuis Strava</h4>
               <p className="text-sm text-gray-600">Récupère tes zones FC configurées dans Strava</p>
               {profile.running.stravaZonesLastSync && (
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   Dernière sync: {new Date(profile.running.stravaZonesLastSync).toLocaleDateString('fr-FR')}
                 </p>
               )}
@@ -452,43 +452,43 @@ function RunningTab({ profile, onUpdate, syncing, syncError, needsReauth, onSync
         {/* FC Max et repos */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">FC Max (bpm)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">FC Max (bpm)</label>
             <div className="flex gap-2">
               <input
                 type="number"
                 value={maxHr}
                 onChange={(e) => setMaxHr(e.target.value)}
                 placeholder="Ex: 185"
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               />
               <button
                 onClick={handleSaveMaxHr}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 transition-colors"
               >
                 OK
               </button>
             </div>
-            <p className="text-xs text-gray-500 mt-1">Formule approximative: 220 - âge</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Formule approximative: 220 - âge</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">FC Repos (bpm)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">FC Repos (bpm)</label>
             <div className="flex gap-2">
               <input
                 type="number"
                 value={restingHr}
                 onChange={(e) => setRestingHr(e.target.value)}
                 placeholder="Ex: 55"
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               />
               <button
                 onClick={handleSaveRestingHr}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 transition-colors"
               >
                 OK
               </button>
             </div>
-            <p className="text-xs text-gray-500 mt-1">Mesurée au réveil, au repos complet</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Mesurée au réveil, au repos complet</p>
           </div>
         </div>
 
@@ -501,7 +501,7 @@ function RunningTab({ profile, onUpdate, syncing, syncError, needsReauth, onSync
                 <span className={`text-xs px-2 py-1 rounded-full ${
                   profile.running.hrZonesSource === 'strava' ? 'bg-orange-100 text-orange-700' :
                   profile.running.hrZonesSource === 'manual' ? 'bg-blue-100 text-blue-700' :
-                  'bg-gray-100 text-gray-600'
+                  'bg-gray-100 dark:bg-gray-800 text-gray-600'
                 }`}>
                   {profile.running.hrZonesSource === 'strava' && 'Strava'}
                   {profile.running.hrZonesSource === 'manual' && 'Manuel'}
@@ -523,7 +523,7 @@ function RunningTab({ profile, onUpdate, syncing, syncError, needsReauth, onSync
             editingZones ? (
               <div className="space-y-2">
                 {tempZones.map((zone, index) => (
-                  <div key={zone.zone} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
+                  <div key={zone.zone} className="flex items-center gap-3 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white ${
                       zone.zone === 1 ? 'bg-gray-400' :
                       zone.zone === 2 ? 'bg-blue-400' :
@@ -538,7 +538,7 @@ function RunningTab({ profile, onUpdate, syncing, syncError, needsReauth, onSync
                       type="number"
                       value={zone.min}
                       onChange={(e) => handleZoneChange(index, 'min', parseInt(e.target.value) || 0)}
-                      className="w-20 px-2 py-1 border border-gray-300 rounded text-center"
+                      className="w-20 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-center"
                     />
                     <span>-</span>
                     <input
@@ -546,7 +546,7 @@ function RunningTab({ profile, onUpdate, syncing, syncError, needsReauth, onSync
                       value={zone.max === 999 ? '' : zone.max}
                       onChange={(e) => handleZoneChange(index, 'max', parseInt(e.target.value) || 999)}
                       placeholder="max"
-                      className="w-20 px-2 py-1 border border-gray-300 rounded text-center"
+                      className="w-20 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-center"
                     />
                     <span className="text-sm text-gray-500">bpm</span>
                   </div>
@@ -560,7 +560,7 @@ function RunningTab({ profile, onUpdate, syncing, syncError, needsReauth, onSync
                   </button>
                   <button
                     onClick={() => setEditingZones(false)}
-                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                    className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 transition-colors"
                   >
                     Annuler
                   </button>
@@ -569,7 +569,7 @@ function RunningTab({ profile, onUpdate, syncing, syncError, needsReauth, onSync
             ) : (
               <div className="space-y-2">
                 {profile.running.hrZones.map((zone) => (
-                  <div key={zone.zone} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
+                  <div key={zone.zone} className="flex items-center gap-3 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white ${
                       zone.zone === 1 ? 'bg-gray-400' :
                       zone.zone === 2 ? 'bg-blue-400' :
@@ -588,7 +588,7 @@ function RunningTab({ profile, onUpdate, syncing, syncError, needsReauth, onSync
               </div>
             )
           ) : (
-            <div className="text-sm text-gray-500 p-4 bg-gray-50 rounded-lg text-center">
+            <div className="text-sm text-gray-500 dark:text-gray-400 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg text-center">
               Renseigne ta FC Max pour calculer les zones ou synchronise depuis Strava
             </div>
           )}
@@ -597,7 +597,7 @@ function RunningTab({ profile, onUpdate, syncing, syncError, needsReauth, onSync
 
       {/* Section VMA et Allures */}
       <section>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">VMA et Allures</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">VMA et Allures</h3>
 
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
@@ -630,7 +630,7 @@ function RunningTab({ profile, onUpdate, syncing, syncError, needsReauth, onSync
               value={vma}
               onChange={(e) => setVma(e.target.value)}
               placeholder={profile.running.vmaUnit === 'kmh' ? 'Ex: 16.5' : 'Ex: 3.6'}
-              className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              className="w-32 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             />
             <button
               onClick={handleSaveVma}
@@ -639,7 +639,7 @@ function RunningTab({ profile, onUpdate, syncing, syncError, needsReauth, onSync
               Calculer allures
             </button>
           </div>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
             {profile.running.vma && (
               profile.running.vmaUnit === 'kmh'
                 ? `Équivaut à ${formatPace(60 / profile.running.vma)}/km`
@@ -664,7 +664,7 @@ function RunningTab({ profile, onUpdate, syncing, syncError, needsReauth, onSync
         {profile.running.referencePaces && Object.keys(profile.running.referencePaces).length > 0 ? (
           <EditablePaceGrid paces={profile.running.referencePaces} onUpdate={onUpdate} />
         ) : (
-          <div className="text-sm text-gray-500 p-4 bg-gray-50 rounded-lg text-center">
+          <div className="text-sm text-gray-500 dark:text-gray-400 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg text-center">
             Renseigne ta VMA pour calculer les allures de référence
           </div>
         )}
@@ -705,7 +705,7 @@ function RunningTab({ profile, onUpdate, syncing, syncError, needsReauth, onSync
             ))}
           </div>
         ) : (
-          <div className="text-sm text-gray-500 p-4 bg-gray-50 rounded-lg text-center">
+          <div className="text-sm text-gray-500 dark:text-gray-400 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg text-center">
             Aucun record enregistré. Ajoute tes meilleurs temps !
           </div>
         )}
@@ -784,51 +784,51 @@ function CyclingTab({ profile, onUpdate }: CyclingTabProps) {
     <div className="space-y-8">
       {/* Section Puissance */}
       <section>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Puissance</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Puissance</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">FTP (watts)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">FTP (watts)</label>
             <div className="flex gap-2">
               <input
                 type="number"
                 value={ftp}
                 onChange={(e) => setFtp(e.target.value)}
                 placeholder="Ex: 250"
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               />
               <button
                 onClick={handleSaveFtp}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 transition-colors"
               >
                 OK
               </button>
             </div>
-            <p className="text-xs text-gray-500 mt-1">Functional Threshold Power - puissance sur 1h</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Functional Threshold Power - puissance sur 1h</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">PMA (watts)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">PMA (watts)</label>
             <div className="flex gap-2">
               <input
                 type="number"
                 value={pma}
                 onChange={(e) => setPma(e.target.value)}
                 placeholder="Ex: 330"
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               />
               <button
                 onClick={handleSavePma}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 transition-colors"
               >
                 OK
               </button>
             </div>
-            <p className="text-xs text-gray-500 mt-1">Puissance Maximale Aérobie - puissance sur 5min</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Puissance Maximale Aérobie - puissance sur 5min</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Poids (kg)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Poids (kg)</label>
             <div className="flex gap-2">
               <input
                 type="number"
@@ -836,16 +836,16 @@ function CyclingTab({ profile, onUpdate }: CyclingTabProps) {
                 value={weight}
                 onChange={(e) => setWeight(e.target.value)}
                 placeholder="Ex: 70"
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               />
               <button
                 onClick={handleSaveWeight}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 transition-colors"
               >
                 OK
               </button>
             </div>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               {profile.cycling.ftp && profile.cycling.weight &&
                 `${(profile.cycling.ftp / profile.cycling.weight).toFixed(2)} W/kg`
               }
@@ -894,7 +894,7 @@ function CyclingTab({ profile, onUpdate }: CyclingTabProps) {
                       type="number"
                       value={zone.min}
                       onChange={(e) => handlePowerZoneChange(index, 'min', parseInt(e.target.value) || 0)}
-                      className="w-20 px-2 py-1 border border-gray-300 rounded text-center"
+                      className="w-20 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-center"
                     />
                     <span>-</span>
                     <input
@@ -902,7 +902,7 @@ function CyclingTab({ profile, onUpdate }: CyclingTabProps) {
                       value={zone.max === 9999 ? '' : zone.max}
                       onChange={(e) => handlePowerZoneChange(index, 'max', parseInt(e.target.value) || 9999)}
                       placeholder="∞"
-                      className="w-20 px-2 py-1 border border-gray-300 rounded text-center"
+                      className="w-20 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-center"
                     />
                     <span className="text-sm text-gray-500">W</span>
                   </div>
@@ -916,7 +916,7 @@ function CyclingTab({ profile, onUpdate }: CyclingTabProps) {
                   </button>
                   <button
                     onClick={() => setEditingPowerZones(false)}
-                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                    className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 transition-colors"
                   >
                     Annuler
                   </button>
@@ -945,7 +945,7 @@ function CyclingTab({ profile, onUpdate }: CyclingTabProps) {
             )}
           </div>
         ) : (
-          <div className="text-sm text-gray-500 p-4 bg-gray-50 rounded-lg text-center">
+          <div className="text-sm text-gray-500 dark:text-gray-400 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg text-center">
             Renseigne ton FTP pour calculer les zones de puissance
           </div>
         )}
@@ -973,7 +973,7 @@ function CyclingTab({ profile, onUpdate }: CyclingTabProps) {
             ))}
           </div>
         ) : (
-          <div className="text-sm text-gray-500 p-4 bg-gray-50 rounded-lg text-center">
+          <div className="text-sm text-gray-500 dark:text-gray-400 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg text-center">
             Aucun record enregistré
           </div>
         )}
@@ -1031,18 +1031,18 @@ function SwimmingTab({ profile, onUpdate }: SwimmingTabProps) {
     <div className="space-y-8">
       {/* Section CSS */}
       <section>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Critical Swim Speed (CSS)</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Critical Swim Speed (CSS)</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">CSS (allure / 100m)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">CSS (allure / 100m)</label>
             <div className="flex items-center gap-2">
               <input
                 type="number"
                 value={cssMin}
                 onChange={(e) => setCssMin(e.target.value)}
                 placeholder="1"
-                className="w-16 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-center"
+                className="w-16 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-center"
               />
               <span className="text-gray-500">:</span>
               <input
@@ -1050,7 +1050,7 @@ function SwimmingTab({ profile, onUpdate }: SwimmingTabProps) {
                 value={cssSec}
                 onChange={(e) => setCssSec(e.target.value)}
                 placeholder="45"
-                className="w-16 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-center"
+                className="w-16 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-center"
               />
               <span className="text-sm text-gray-500">/100m</span>
               <button
@@ -1060,20 +1060,20 @@ function SwimmingTab({ profile, onUpdate }: SwimmingTabProps) {
                 OK
               </button>
             </div>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               Test CSS: (T400 - T200) / 2 où T400 et T200 sont les temps au 400m et 200m
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Longueur bassin</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Longueur bassin</label>
             <div className="flex gap-2">
               <button
                 onClick={() => handlePoolLengthChange(25)}
                 className={`flex-1 py-2 rounded-lg font-medium transition-colors ${
                   profile.swimming.poolLength === 25
                     ? 'bg-orange-500 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200'
                 }`}
               >
                 25m
@@ -1083,7 +1083,7 @@ function SwimmingTab({ profile, onUpdate }: SwimmingTabProps) {
                 className={`flex-1 py-2 rounded-lg font-medium transition-colors ${
                   profile.swimming.poolLength === 50
                     ? 'bg-orange-500 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200'
                 }`}
               >
                 50m
@@ -1102,7 +1102,7 @@ function SwimmingTab({ profile, onUpdate }: SwimmingTabProps) {
             <SwimPaceCard label="Sprint" pace={profile.swimming.referencePaces.sprint} color="red" />
           </div>
         ) : (
-          <div className="text-sm text-gray-500 p-4 bg-gray-50 rounded-lg text-center">
+          <div className="text-sm text-gray-500 dark:text-gray-400 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg text-center">
             Renseigne ton CSS pour calculer les allures de référence
           </div>
         )}
@@ -1141,7 +1141,7 @@ function SwimmingTab({ profile, onUpdate }: SwimmingTabProps) {
             ))}
           </div>
         ) : (
-          <div className="text-sm text-gray-500 p-4 bg-gray-50 rounded-lg text-center">
+          <div className="text-sm text-gray-500 dark:text-gray-400 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg text-center">
             Aucun record enregistré
           </div>
         )}
@@ -1196,7 +1196,7 @@ function GoalsTab({ profile, onUpdate }: GoalsTabProps) {
           ))}
         </div>
       ) : (
-        <div className="text-sm text-gray-500 p-8 bg-gray-50 rounded-lg text-center">
+        <div className="text-sm text-gray-500 dark:text-gray-400 p-8 bg-gray-50 dark:bg-gray-800 rounded-lg text-center">
           <svg className="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
           </svg>
@@ -1208,7 +1208,7 @@ function GoalsTab({ profile, onUpdate }: GoalsTabProps) {
       {/* Objectifs passés */}
       {pastGoals.length > 0 && (
         <div>
-          <h4 className="text-sm font-medium text-gray-500 mb-3">Passés</h4>
+          <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Passés</h4>
           <div className="space-y-2 opacity-60">
             {pastGoals.map((goal) => (
               <GoalRow key={goal.id} goal={goal} onUpdate={onUpdate} isPast />
@@ -1231,7 +1231,7 @@ function GoalsTab({ profile, onUpdate }: GoalsTabProps) {
 
 function PaceCard({ label, pace, pct, color }: { label: string; pace?: number; pct: string; color: string }) {
   const colorClasses: Record<string, string> = {
-    gray: 'bg-gray-100 text-gray-700',
+    gray: 'bg-gray-100 dark:bg-gray-800 text-gray-700',
     blue: 'bg-blue-100 text-blue-700',
     green: 'bg-green-100 text-green-700',
     yellow: 'bg-yellow-100 text-yellow-700',
@@ -1291,7 +1291,7 @@ function EditablePaceGrid({ paces, onUpdate }: { paces: RunningPaces; onUpdate: 
   };
 
   const colorClasses: Record<string, string> = {
-    gray: 'bg-gray-100 text-gray-700 border-gray-300',
+    gray: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-300',
     blue: 'bg-blue-100 text-blue-700 border-blue-300',
     green: 'bg-green-100 text-green-700 border-green-300',
     yellow: 'bg-yellow-100 text-yellow-700 border-yellow-300',
@@ -1312,7 +1312,7 @@ function EditablePaceGrid({ paces, onUpdate }: { paces: RunningPaces; onUpdate: 
                 defaultValue={tempPaces[key] ? formatPace(tempPaces[key]!) : ''}
                 onChange={(e) => handlePaceChange(key, e.target.value)}
                 placeholder="5:00"
-                className="w-full px-2 py-1 text-lg font-mono font-bold bg-white border border-gray-300 rounded text-center"
+                className="w-full px-2 py-1 text-lg font-mono font-bold bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded text-center"
               />
               <p className="text-xs opacity-60 mt-1">/km</p>
             </div>
@@ -1327,7 +1327,7 @@ function EditablePaceGrid({ paces, onUpdate }: { paces: RunningPaces; onUpdate: 
           </button>
           <button
             onClick={() => setEditing(false)}
-            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+            className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 transition-colors"
           >
             Annuler
           </button>
@@ -1382,7 +1382,7 @@ function RecordRow({ record, onUpdate }: { record: PersonalRecord; onUpdate: () 
   };
 
   return (
-    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+    <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
       <div>
         <p className="font-medium">{record.distance}</p>
         {record.date && (
@@ -1423,11 +1423,11 @@ function GoalRow({ goal, onUpdate, isPast }: { goal: RaceGoal; onUpdate: () => v
   const priorityColors: Record<string, string> = {
     A: 'bg-red-100 text-red-700 border-red-300',
     B: 'bg-orange-100 text-orange-700 border-orange-300',
-    C: 'bg-gray-100 text-gray-600 border-gray-300',
+    C: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-300',
   };
 
   return (
-    <div className={`p-4 bg-white border rounded-lg ${isPast ? 'opacity-60' : ''}`}>
+    <div className={`p-4 bg-white dark:bg-gray-900 border rounded-lg ${isPast ? 'opacity-60' : ''}`}>
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-3">
           <span className="text-2xl">{sportIcons[goal.sport]}</span>
@@ -1500,16 +1500,16 @@ function AddRecordModal({ sport, onClose, onAdd }: AddRecordModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-md p-6">
         <h3 className="text-lg font-semibold mb-4">Ajouter un record</h3>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Distance</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Distance</label>
             <select
               value={distance}
               onChange={(e) => setDistance(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500"
             >
               <option value="">Sélectionner...</option>
               {distanceOptions[sport].map((d) => (
@@ -1522,20 +1522,20 @@ function AddRecordModal({ sport, onClose, onAdd }: AddRecordModalProps) {
                 type="text"
                 placeholder="Distance personnalisée"
                 onChange={(e) => setDistance(e.target.value)}
-                className="mt-2 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                className="mt-2 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500"
               />
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Temps</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Temps</label>
             <div className="flex items-center gap-2">
               <input
                 type="number"
                 value={hours}
                 onChange={(e) => setHours(e.target.value)}
                 placeholder="HH"
-                className="w-16 px-2 py-2 border border-gray-300 rounded-lg text-center"
+                className="w-16 px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-center"
               />
               <span>:</span>
               <input
@@ -1543,7 +1543,7 @@ function AddRecordModal({ sport, onClose, onAdd }: AddRecordModalProps) {
                 value={minutes}
                 onChange={(e) => setMinutes(e.target.value)}
                 placeholder="MM"
-                className="w-16 px-2 py-2 border border-gray-300 rounded-lg text-center"
+                className="w-16 px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-center"
               />
               <span>:</span>
               <input
@@ -1551,18 +1551,18 @@ function AddRecordModal({ sport, onClose, onAdd }: AddRecordModalProps) {
                 value={seconds}
                 onChange={(e) => setSeconds(e.target.value)}
                 placeholder="SS"
-                className="w-16 px-2 py-2 border border-gray-300 rounded-lg text-center"
+                className="w-16 px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-center"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Date (optionnel)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Date (optionnel)</label>
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500"
             />
           </div>
         </div>
@@ -1570,7 +1570,7 @@ function AddRecordModal({ sport, onClose, onAdd }: AddRecordModalProps) {
         <div className="flex gap-3 mt-6">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+            className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 transition-colors"
           >
             Annuler
           </button>
@@ -1626,30 +1626,30 @@ function AddGoalModal({ onClose, onAdd }: AddGoalModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-md p-6">
         <h3 className="text-lg font-semibold mb-4">Ajouter un objectif</h3>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Nom de l'épreuve</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Nom de l'épreuve</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Ex: Marathon de Paris"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Sport</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Sport</label>
             <div className="grid grid-cols-4 gap-2">
               {(['running', 'cycling', 'swimming', 'triathlon'] as const).map((s) => (
                 <button
                   key={s}
                   onClick={() => setSport(s)}
                   className={`py-2 rounded-lg text-sm font-medium transition-colors ${
-                    sport === s ? 'bg-orange-500 text-white' : 'bg-gray-100 hover:bg-gray-200'
+                    sport === s ? 'bg-orange-500 text-white' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200'
                   }`}
                 >
                   {s === 'running' && '🏃 Course'}
@@ -1662,11 +1662,11 @@ function AddGoalModal({ onClose, onAdd }: AddGoalModalProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Distance/Format</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Distance/Format</label>
             <select
               value={distance}
               onChange={(e) => setDistance(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500"
             >
               <option value="">Sélectionner...</option>
               {distanceOptions[sport].map((d) => (
@@ -1676,24 +1676,24 @@ function AddGoalModal({ onClose, onAdd }: AddGoalModalProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Date</label>
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Temps objectif (optionnel)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Temps objectif (optionnel)</label>
             <div className="flex items-center gap-2">
               <input
                 type="number"
                 value={hours}
                 onChange={(e) => setHours(e.target.value)}
                 placeholder="HH"
-                className="w-16 px-2 py-2 border border-gray-300 rounded-lg text-center"
+                className="w-16 px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-center"
               />
               <span>:</span>
               <input
@@ -1701,7 +1701,7 @@ function AddGoalModal({ onClose, onAdd }: AddGoalModalProps) {
                 value={minutes}
                 onChange={(e) => setMinutes(e.target.value)}
                 placeholder="MM"
-                className="w-16 px-2 py-2 border border-gray-300 rounded-lg text-center"
+                className="w-16 px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-center"
               />
               <span>:</span>
               <input
@@ -1709,13 +1709,13 @@ function AddGoalModal({ onClose, onAdd }: AddGoalModalProps) {
                 value={seconds}
                 onChange={(e) => setSeconds(e.target.value)}
                 placeholder="SS"
-                className="w-16 px-2 py-2 border border-gray-300 rounded-lg text-center"
+                className="w-16 px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-center"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Priorité</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Priorité</label>
             <div className="flex gap-2">
               {(['A', 'B', 'C'] as const).map((p) => (
                 <button
@@ -1726,7 +1726,7 @@ function AddGoalModal({ onClose, onAdd }: AddGoalModalProps) {
                       ? p === 'A' ? 'bg-red-500 text-white' :
                         p === 'B' ? 'bg-orange-500 text-white' :
                         'bg-gray-500 text-white'
-                      : 'bg-gray-100 hover:bg-gray-200'
+                      : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200'
                   }`}
                 >
                   {p} - {p === 'A' ? 'Prioritaire' : p === 'B' ? 'Important' : 'Secondaire'}
@@ -1739,7 +1739,7 @@ function AddGoalModal({ onClose, onAdd }: AddGoalModalProps) {
         <div className="flex gap-3 mt-6">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+            className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 transition-colors"
           >
             Annuler
           </button>

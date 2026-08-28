@@ -69,11 +69,11 @@ export function SharePage() {
   if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center">
+        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8 max-w-md w-full text-center">
           <svg className="w-16 h-16 mx-auto text-red-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <h1 className="text-xl font-bold text-gray-900 mb-2">Lien invalide</h1>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Lien invalide</h1>
           <p className="text-gray-600">{error}</p>
         </div>
       </div>
@@ -86,7 +86,7 @@ export function SharePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <header className="bg-white shadow-sm">
+      <header className="bg-white dark:bg-gray-900 shadow-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <a href="/" className="text-xl font-bold text-gray-900">Enduzo</a>
           <a
@@ -100,7 +100,7 @@ export function SharePage() {
 
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-3xl mx-auto">
-          <div className="bg-white rounded-xl shadow-lg p-6 md:p-8">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6 md:p-8">
             <div className="mb-6">
               <div className="flex items-center gap-3 mb-2">
                 <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{workout.name}</h1>

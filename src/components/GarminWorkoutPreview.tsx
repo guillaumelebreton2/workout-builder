@@ -248,37 +248,37 @@ function StepCard({ step, sport }: { step: GarminStep; sport: GarminSport }) {
 
   return (
     <div
-      className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
+      className="bg-white dark:bg-gray-900 dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 overflow-hidden"
       style={{ borderLeftWidth: '8px', borderLeftColor: color }}
     >
       <div className="p-4">
-        <div className="font-semibold text-gray-900 text-base leading-tight">
+        <div className="font-semibold text-gray-900 dark:text-white dark:text-white text-base leading-tight">
           {getStepLabel(step, sport)}
         </div>
 
         <div className="grid grid-cols-2 gap-x-6 gap-y-3 mt-3">
           {primaryMetrics.map((m, idx) => (
             <div key={idx}>
-              <div className="text-gray-900 font-medium text-sm leading-tight">{m.value}</div>
-              <div className="text-xs text-gray-500 mt-0.5">{m.label}</div>
+              <div className="text-gray-900 dark:text-white dark:text-white font-medium text-sm leading-tight">{m.value}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-400 mt-0.5">{m.label}</div>
             </div>
           ))}
           {target && (
             <div>
-              <div className="text-gray-900 font-medium text-sm leading-tight">{target.main}</div>
+              <div className="text-gray-900 dark:text-white dark:text-white font-medium text-sm leading-tight">{target.main}</div>
               {target.range && (
-                <div className="text-gray-500 text-xs leading-tight mt-0.5">{target.range}</div>
+                <div className="text-gray-500 dark:text-gray-400 dark:text-gray-400 text-xs leading-tight mt-0.5">{target.range}</div>
               )}
-              <div className="text-xs text-gray-500 mt-0.5">{target.label}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-400 mt-0.5">{target.label}</div>
             </div>
           )}
           {secondary && (
             <div>
-              <div className="text-gray-900 font-medium text-sm leading-tight">{secondary.main}</div>
+              <div className="text-gray-900 dark:text-white dark:text-white font-medium text-sm leading-tight">{secondary.main}</div>
               {secondary.range && (
-                <div className="text-gray-500 text-xs leading-tight mt-0.5">{secondary.range}</div>
+                <div className="text-gray-500 dark:text-gray-400 dark:text-gray-400 text-xs leading-tight mt-0.5">{secondary.range}</div>
               )}
-              <div className="text-xs text-gray-500 mt-0.5">{secondary.label}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-400 mt-0.5">{secondary.label}</div>
             </div>
           )}
         </div>
@@ -286,7 +286,7 @@ function StepCard({ step, sport }: { step: GarminStep; sport: GarminSport }) {
 
       {step.description && (
         <div className="px-4 pb-3 pt-0">
-          <div className="border-t border-gray-100 pt-2 text-sm text-gray-600 italic">
+          <div className="border-t border-gray-100 pt-2 text-sm text-gray-600 dark:text-gray-300 dark:text-gray-300 italic">
             {step.description}
           </div>
         </div>
@@ -300,10 +300,10 @@ function RepeatBlock({ step, sport, depth = 0 }: { step: GarminStep; sport: Garm
 
   return (
     <div
-      className="rounded-xl border border-gray-200 overflow-hidden"
+      className="rounded-xl border border-gray-200 dark:border-gray-700 dark:border-gray-700 overflow-hidden"
       style={{ backgroundColor: depth % 2 === 0 ? '#F3F4F6' : '#E5E7EB' }}
     >
-      <div className="px-4 py-2 flex items-center gap-2 text-gray-900 font-semibold">
+      <div className="px-4 py-2 flex items-center gap-2 text-gray-900 dark:text-white dark:text-white font-semibold">
         <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
             strokeLinecap="round"
@@ -354,7 +354,7 @@ function Timeline({ steps, sport }: { steps: GarminStep[]; sport: GarminSport })
   }, 0);
 
   return (
-    <div className="flex items-end gap-1 h-24 bg-gray-50 rounded-xl p-3">
+    <div className="flex items-end gap-1 h-24 bg-gray-50 dark:bg-gray-800 dark:bg-gray-800 rounded-xl p-3">
       {flat.map((step, idx) => {
         const stepValue =
           (step.durationType === 'TIME' || step.durationType === 'DISTANCE') && step.durationValue
@@ -388,7 +388,7 @@ export function GarminWorkoutPreview({ garminWorkout }: GarminWorkoutPreviewProp
   const totals = computeTotals(segment.steps);
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+    <div className="bg-white dark:bg-gray-900 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 dark:border-gray-700 rounded-2xl overflow-hidden shadow-sm">
       {/* Header */}
       <div className="px-5 py-4 border-b border-gray-100">
         <div className="flex items-center gap-3">
@@ -410,7 +410,7 @@ export function GarminWorkoutPreview({ garminWorkout }: GarminWorkoutPreviewProp
             )}
           </div>
           <div className="min-w-0">
-            <h3 className="font-semibold text-gray-900 text-lg truncate">
+            <h3 className="font-semibold text-gray-900 dark:text-white dark:text-white text-lg truncate">
               {garminWorkout.workoutName}
             </h3>
             <p className="text-sm text-gray-500">{SPORT_LABELS[garminWorkout.sport]}</p>
@@ -436,8 +436,8 @@ export function GarminWorkoutPreview({ garminWorkout }: GarminWorkoutPreviewProp
         {/* Notes */}
         {garminWorkout.description && garminWorkout.description !== 'Created with Enduzo' && (
           <div>
-            <h4 className="text-sm font-semibold text-gray-900 mb-1">Notes</h4>
-            <p className="text-sm text-gray-600 whitespace-pre-line">{garminWorkout.description}</p>
+            <h4 className="text-sm font-semibold text-gray-900 dark:text-white dark:text-white mb-1">Notes</h4>
+            <p className="text-sm text-gray-600 dark:text-gray-300 dark:text-gray-300 whitespace-pre-line">{garminWorkout.description}</p>
           </div>
         )}
 

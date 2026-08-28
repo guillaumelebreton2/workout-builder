@@ -102,11 +102,11 @@ export function AccountPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <h1 className="text-2xl font-bold text-gray-900 mb-8">Compte & Connectivite</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">Compte & Connectivite</h1>
 
       {/* Account Info */}
-      <section className="bg-white rounded-xl shadow-sm p-6 mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+      <section className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6 mb-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
           <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
           </svg>
@@ -140,15 +140,15 @@ export function AccountPage() {
       </section>
 
       {/* Connectivity */}
-      <section className="bg-white rounded-xl shadow-sm p-6 mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+      <section className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6 mb-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
           <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
           </svg>
           Connectivite
         </h2>
 
-        <p className="text-sm text-gray-500 mb-4">
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
           Connecte tes comptes pour synchroniser tes seances et importer tes activites.
         </p>
 
@@ -159,7 +159,7 @@ export function AccountPage() {
         ) : (
           <div className="space-y-4">
             {/* Garmin */}
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-[#007CC3] rounded-lg flex items-center justify-center">
                   <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
@@ -191,7 +191,7 @@ export function AccountPage() {
             </div>
 
             {/* Strava */}
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-[#FC4C02] rounded-lg flex items-center justify-center">
                   <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
@@ -228,7 +228,7 @@ export function AccountPage() {
       </section>
 
       {/* Danger Zone */}
-      <section className="bg-white rounded-xl shadow-sm p-6 border border-red-100">
+      <section className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6 border border-red-100">
         <h2 className="text-lg font-semibold text-red-600 mb-4">Zone de danger</h2>
 
         <div className="flex items-center justify-between">

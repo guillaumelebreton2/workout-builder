@@ -17,7 +17,7 @@ const STEP_COLORS: Record<string, string> = {
   active: 'bg-blue-50 border-blue-300 text-blue-800',
   recovery: 'bg-green-50 border-green-300 text-green-800',
   cooldown: 'bg-purple-50 border-purple-300 text-purple-800',
-  rest: 'bg-gray-50 border-gray-300 text-gray-800',
+  rest: 'bg-gray-50 dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-800',
   other: 'bg-slate-50 border-slate-300 text-slate-800',
 };
 
@@ -209,7 +209,7 @@ function StepRow({ step, showIndex, index }: { step: WorkoutStep; showIndex?: bo
             )}
           </div>
           {step.notes && step.notes !== step.name && (
-            <div className="text-xs text-gray-500 mt-0.5 line-clamp-2">
+            <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">
               {step.notes}
             </div>
           )}
@@ -387,9 +387,9 @@ export function WorkoutPreview({ steps }: WorkoutPreviewProps) {
   let stepCounter = 0;
 
   return (
-    <div className="border border-gray-200 rounded-lg overflow-hidden">
+    <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
       {/* Header */}
-      <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+      <div className="bg-gray-50 dark:bg-gray-800 px-4 py-3 border-b border-gray-200">
         <div className="flex justify-between items-center flex-wrap gap-2">
           <h3 className="font-medium text-gray-900">Prévisualisation</h3>
           <div className="text-sm text-gray-600">
@@ -480,7 +480,7 @@ export function WorkoutPreview({ steps }: WorkoutPreviewProps) {
       </div>
 
       {/* Légende des zones */}
-      <div className="bg-gray-50 px-4 py-2 border-t border-gray-200">
+      <div className="bg-gray-50 dark:bg-gray-800 px-4 py-2 border-t border-gray-200">
         <div className="flex flex-wrap gap-3 text-xs text-gray-600">
           <span className="flex items-center gap-1">
             <span className="w-3 h-3 rounded bg-gray-200"></span> Z1 Récup

@@ -405,7 +405,7 @@ export function PrivacyPolicy() {
                   className={`px-2 py-1 rounded text-sm transition-colors ${
                     lang === code
                       ? 'bg-blue-600 text-white'
-                      : 'bg-white text-gray-700 hover:bg-gray-100'
+                      : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-100'
                   }`}
                   title={label}
                 >
@@ -418,17 +418,17 @@ export function PrivacyPolicy() {
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
             {t.title}
           </h1>
-          <p className="text-gray-600 mt-2">{t.lastUpdated}</p>
+          <p className="text-gray-600 dark:text-gray-300 mt-2">{t.lastUpdated}</p>
         </header>
 
-        <main className="bg-white rounded-xl shadow-lg p-6 md:p-8 space-y-6">
+        <main className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6 md:p-8 space-y-6">
           {t.sections.map((section, index) => (
             <section key={index}>
-              <h2 className="text-xl font-semibold text-gray-900 mb-3">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
                 {section.title}
               </h2>
               {Array.isArray(section.content) ? (
-                <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4">
+                <ul className="list-disc list-inside text-gray-700 dark:text-gray-200 space-y-2 ml-4">
                   {section.content.map((item, i) => (
                     <li key={i} dangerouslySetInnerHTML={{ __html: item }} />
                   ))}

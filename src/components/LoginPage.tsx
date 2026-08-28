@@ -13,7 +13,7 @@ export function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 max-w-md w-full">
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center mx-auto mb-4">
@@ -22,7 +22,7 @@ export function LoginPage() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Bienvenue sur Enduzo</h1>
-          <p className="text-gray-600 mt-2">
+          <p className="text-gray-600 dark:text-gray-300 mt-2">
             Connecte-toi pour creer tes seances d'entrainement
           </p>
         </div>
@@ -60,7 +60,7 @@ export function LoginPage() {
         </div>
 
         {/* Info text */}
-        <div className="text-center text-sm text-gray-500 space-y-2">
+        <div className="text-center text-sm text-gray-500 dark:text-gray-400 space-y-2">
           <p>
             Enduzo utilise Garmin ou Strava pour t'identifier.
           </p>

@@ -205,11 +205,11 @@ export function CoachPage() {
       {/* Zone principale */}
       <div className="flex-1 flex flex-col bg-gray-50">
         {/* Header */}
-        <div className="flex items-center justify-between gap-3 p-4 bg-white border-b border-gray-200">
+        <div className="flex items-center justify-between gap-3 p-4 bg-white dark:bg-gray-900 border-b border-gray-200">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="md:hidden p-2 hover:bg-gray-100 rounded-lg"
+              className="md:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-800 dark:bg-gray-800 rounded-lg"
             >
               <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -229,7 +229,7 @@ export function CoachPage() {
               </div>
               <button
                 onClick={handleDisconnectStrava}
-                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
+                className="p-1.5 text-gray-400 hover:text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 dark:bg-gray-800 rounded-lg"
                 title="Déconnecter Strava"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -260,8 +260,8 @@ export function CoachPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Coach IA</h2>
-              <p className="text-gray-600 mb-4 max-w-md">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Coach IA</h2>
+              <p className="text-gray-600 dark:text-gray-300 mb-4 max-w-md">
                 Pose tes questions, analyse tes performances, crée des séances personnalisées
               </p>
 
@@ -278,7 +278,7 @@ export function CoachPage() {
                     </div>
                     <button
                       onClick={handleConnectStrava}
-                      className="px-4 py-2 bg-white text-[#FC4C02] rounded-lg font-medium hover:bg-orange-50 transition-colors"
+                      className="px-4 py-2 bg-white dark:bg-gray-900 text-[#FC4C02] rounded-lg font-medium hover:bg-orange-50 transition-colors"
                     >
                       Connecter
                     </button>
@@ -289,21 +289,21 @@ export function CoachPage() {
               {/* Stats rapides si connecté */}
               {stravaConnected && metrics && (
                 <div className="mb-8 grid grid-cols-2 md:grid-cols-4 gap-3 max-w-lg">
-                  <div className="bg-white rounded-xl shadow-sm p-4 text-center">
+                  <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-4 text-center">
                     <p className="text-2xl font-bold text-gray-900">{metrics.currentWeek.totalDistance}</p>
                     <p className="text-xs text-gray-500">km cette semaine</p>
                   </div>
-                  <div className="bg-white rounded-xl shadow-sm p-4 text-center">
+                  <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-4 text-center">
                     <p className="text-2xl font-bold text-gray-900">{metrics.currentWeek.activityCount}</p>
                     <p className="text-xs text-gray-500">séances</p>
                   </div>
-                  <div className="bg-white rounded-xl shadow-sm p-4 text-center">
+                  <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-4 text-center">
                     <p className="text-2xl font-bold text-gray-900">
                       {Math.round(metrics.currentWeek.totalDuration / 60 * 10) / 10}h
                     </p>
                     <p className="text-xs text-gray-500">durée totale</p>
                   </div>
-                  <div className="bg-white rounded-xl shadow-sm p-4 text-center">
+                  <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-4 text-center">
                     <p className={`text-2xl font-bold ${metrics.weeklyTrend.trend === 'up' ? 'text-green-600' : metrics.weeklyTrend.trend === 'down' ? 'text-red-600' : 'text-gray-900'}`}>
                       {metrics.weeklyTrend.distanceChange >= 0 ? '+' : ''}{metrics.weeklyTrend.distanceChange}%
                     </p>
@@ -323,7 +323,7 @@ export function CoachPage() {
               {/* Activités récentes à analyser */}
               {stravaConnected && metrics && metrics.recentActivities.length > 0 && (
                 <div className="mb-8 w-full max-w-lg">
-                  <h3 className="text-sm font-medium text-gray-700 mb-3 text-left">Analyser une séance</h3>
+                  <h3 className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-3 text-left">Analyser une séance</h3>
                   <div className="space-y-2">
                     {metrics.recentActivities
                       .filter(a => a.source === 'strava' && [
@@ -347,7 +347,7 @@ export function CoachPage() {
                             key={activity.id}
                             onClick={() => handleAskQuestion(`Analyse ma séance "${activity.name}" (activité #${activity.providerActivityId})`)}
                             disabled={isLoading}
-                            className="w-full flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-xl hover:bg-orange-50 hover:border-orange-300 transition-colors text-left disabled:opacity-50"
+                            className="w-full flex items-center gap-3 p-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-orange-50 hover:border-orange-300 transition-colors text-left disabled:opacity-50"
                           >
                             <span className="text-xl">{sportConfig.icon}</span>
                             <div className="flex-1 min-w-0">
@@ -371,7 +371,7 @@ export function CoachPage() {
                     key={q}
                     onClick={() => handleAskQuestion(q)}
                     disabled={isLoading}
-                    className="px-4 py-2 bg-white border border-gray-200 rounded-full text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors disabled:opacity-50"
+                    className="px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-full text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800 hover:border-gray-300 dark:border-gray-600 transition-colors disabled:opacity-50"
                   >
                     {q}
                   </button>
@@ -396,7 +396,7 @@ export function CoachPage() {
         </div>
 
         {/* Zone de saisie */}
-        <div className="border-t border-gray-200 bg-white p-4">
+        <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
           <div className="max-w-3xl mx-auto">
             <div className="flex gap-2">
               <input
@@ -405,7 +405,7 @@ export function CoachPage() {
                 onChange={(e) => setQuestion(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleAskQuestion('')}
                 placeholder="Pose ta question au coach..."
-                className="flex-1 p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                className="flex-1 p-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                 disabled={isLoading}
               />
               <button
@@ -431,7 +431,7 @@ export function CoachPage() {
                     key={q}
                     onClick={() => handleAskQuestion(q)}
                     disabled={isLoading}
-                    className="text-xs px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition-colors disabled:opacity-50"
+                    className="text-xs px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-full hover:bg-gray-200 transition-colors disabled:opacity-50"
                   >
                     {q}
                   </button>

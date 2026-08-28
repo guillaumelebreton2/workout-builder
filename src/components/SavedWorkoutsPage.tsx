@@ -52,7 +52,7 @@ export function SavedWorkoutsPage({ onNavigate }: SavedWorkoutsPageProps) {
       case 'running': return 'bg-green-100 text-green-700';
       case 'cycling': return 'bg-blue-100 text-blue-700';
       case 'swimming': return 'bg-cyan-100 text-cyan-700';
-      default: return 'bg-gray-100 text-gray-700';
+      default: return 'bg-gray-100 dark:bg-gray-800 text-gray-700';
     }
   };
 
@@ -60,7 +60,7 @@ export function SavedWorkoutsPage({ onNavigate }: SavedWorkoutsPageProps) {
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
       <header className="text-center mb-8">
-        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">
           Mes séances
         </h1>
         <p className="text-gray-600">
@@ -73,8 +73,8 @@ export function SavedWorkoutsPage({ onNavigate }: SavedWorkoutsPageProps) {
           <svg className="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
           </svg>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune séance sauvegardée</h3>
-          <p className="text-gray-600 mb-6">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Aucune séance sauvegardée</h3>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
             Crée ta première séance pour la retrouver ici.
           </p>
           <button
@@ -89,17 +89,17 @@ export function SavedWorkoutsPage({ onNavigate }: SavedWorkoutsPageProps) {
           {workouts.map((saved) => (
             <div
               key={saved.id}
-              className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+              className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
             >
               {/* Header de la carte */}
               <div
-                className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                className="p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800 transition-colors"
                 onClick={() => setExpandedId(expandedId === saved.id ? null : saved.id)}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 mb-1">
-                      <h3 className="font-semibold text-gray-900 truncate">
+                      <h3 className="font-semibold text-gray-900 dark:text-white truncate">
                         {saved.workout.name}
                       </h3>
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getSportColor(saved.workout.sport)}`}>
@@ -169,7 +169,7 @@ export function SavedWorkoutsPage({ onNavigate }: SavedWorkoutsPageProps) {
                         </button>
                         <button
                           onClick={() => setDeleteConfirmId(null)}
-                          className="px-3 py-1 bg-gray-200 text-gray-700 rounded text-sm font-medium hover:bg-gray-300"
+                          className="px-3 py-1 bg-gray-200 text-gray-700 dark:text-gray-200 rounded text-sm font-medium hover:bg-gray-300"
                         >
                           Non
                         </button>
@@ -177,7 +177,7 @@ export function SavedWorkoutsPage({ onNavigate }: SavedWorkoutsPageProps) {
                     ) : (
                       <button
                         onClick={() => setDeleteConfirmId(saved.id)}
-                        className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-lg font-medium hover:bg-gray-200 transition-colors"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

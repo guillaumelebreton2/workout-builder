@@ -58,13 +58,13 @@ export function AllActivitiesModal({ isOpen, onClose, onAnalyze }: AllActivities
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">Toutes mes activités</h2>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 text-gray-400 hover:text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 dark:bg-gray-800 rounded-lg transition-colors"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -100,7 +100,7 @@ export function AllActivitiesModal({ isOpen, onClose, onAnalyze }: AllActivities
                 return (
                   <div
                     key={activity.id}
-                    className="flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-800 dark:bg-gray-800 rounded-lg transition-colors"
                   >
                     <span className="text-2xl">{sportConfig.icon}</span>
                     <div className="flex-1 min-w-0">
@@ -147,8 +147,8 @@ export function AllActivitiesModal({ isOpen, onClose, onAnalyze }: AllActivities
         </div>
 
         {/* Footer avec info */}
-        <div className="p-4 border-t border-gray-200 bg-gray-50 rounded-b-xl">
-          <p className="text-xs text-gray-500 text-center">
+        <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-b-xl">
+          <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
             {activities.length} activité{activities.length > 1 ? 's' : ''} affichée{activities.length > 1 ? 's' : ''}
             {' • '}
             L'analyse détaillée n'est disponible que pour les activités Strava

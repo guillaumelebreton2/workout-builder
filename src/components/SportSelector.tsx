@@ -24,7 +24,7 @@ export function SportSelector({ value, onChange }: SportSelectorProps) {
           className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all ${
             value === sport
               ? 'border-blue-500 bg-blue-50 text-blue-700'
-              : 'border-gray-200 hover:border-gray-300 bg-white'
+              : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:border-gray-600 bg-white'
           }`}
         >
           <span className="text-2xl block mb-1">{SPORT_ICONS[sport]}</span>

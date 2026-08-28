@@ -550,7 +550,7 @@ export function WorkoutForm() {
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Sport selector */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 dark:text-gray-200 mb-2">
           Type de sport
         </label>
         <SportSelector value={sport} onChange={setSport} />
@@ -559,7 +559,7 @@ export function WorkoutForm() {
       {/* Workout name + Date */}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-200 dark:text-gray-200 mb-2">
             Nom de la séance
           </label>
           <input
@@ -568,12 +568,12 @@ export function WorkoutForm() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Ex: Test VMA 20min"
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full p-3 border border-gray-300 dark:border-gray-600 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
 
         <div>
-          <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="date" className="block text-sm font-medium text-gray-700 dark:text-gray-200 dark:text-gray-200 mb-2">
             Date
           </label>
           <input
@@ -581,7 +581,7 @@ export function WorkoutForm() {
             id="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full p-3 border border-gray-300 dark:border-gray-600 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
       </div>
@@ -590,7 +590,7 @@ export function WorkoutForm() {
       <div>
         {sport === 'running' && (
           <>
-            <label htmlFor="runningPace" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="runningPace" className="block text-sm font-medium text-gray-700 dark:text-gray-200 dark:text-gray-200 mb-2">
               Allure de référence (VMA, seuil, marathon...)
             </label>
             <div className="flex items-center gap-2">
@@ -600,7 +600,7 @@ export function WorkoutForm() {
                 value={runningPace}
                 onChange={(e) => handleRunningPaceChange(e.target.value)}
                 placeholder="4:00"
-                className="w-32 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center font-mono"
+                className="w-32 p-3 border border-gray-300 dark:border-gray-600 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center font-mono"
               />
               <span className="text-gray-500">/km</span>
               <span className="text-xs text-gray-400 ml-2">
@@ -612,7 +612,7 @@ export function WorkoutForm() {
 
         {sport === 'cycling' && (
           <>
-            <label htmlFor="cyclingWatts" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="cyclingWatts" className="block text-sm font-medium text-gray-700 dark:text-gray-200 dark:text-gray-200 mb-2">
               Puissance de référence (FTP, PMA...)
             </label>
             <div className="flex items-center gap-2">
@@ -622,7 +622,7 @@ export function WorkoutForm() {
                 value={cyclingWatts}
                 onChange={(e) => handleCyclingWattsChange(e.target.value)}
                 placeholder="200"
-                className="w-32 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center font-mono"
+                className="w-32 p-3 border border-gray-300 dark:border-gray-600 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center font-mono"
               />
               <span className="text-gray-500">watts</span>
               <span className="text-xs text-gray-400 ml-2">
@@ -634,7 +634,7 @@ export function WorkoutForm() {
 
         {sport === 'swimming' && (
           <>
-            <label htmlFor="swimmingPace" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="swimmingPace" className="block text-sm font-medium text-gray-700 dark:text-gray-200 dark:text-gray-200 mb-2">
               Allure de référence (CSS, allure critique...)
             </label>
             <div className="flex items-center gap-2">
@@ -644,7 +644,7 @@ export function WorkoutForm() {
                 value={swimmingPace}
                 onChange={(e) => handleSwimmingPaceChange(e.target.value)}
                 placeholder="1:45"
-                className="w-32 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center font-mono"
+                className="w-32 p-3 border border-gray-300 dark:border-gray-600 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center font-mono"
               />
               <span className="text-gray-500">/100m</span>
               <span className="text-xs text-gray-400 ml-2">
@@ -657,7 +657,7 @@ export function WorkoutForm() {
 
       {/* Description */}
       <div>
-        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-200 dark:text-gray-200 mb-2">
           Description de la séance
         </label>
 
@@ -667,7 +667,7 @@ export function WorkoutForm() {
           onChange={(e) => handleDescriptionChange(e.target.value)}
           placeholder={DESCRIPTION_PLACEHOLDERS[sport]}
           rows={6}
-          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+          className="w-full p-3 border border-gray-300 dark:border-gray-600 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
         />
 
         {/* Section Aide */}
@@ -689,10 +689,10 @@ export function WorkoutForm() {
           </button>
 
           {showHelp && (
-            <div className="mt-3 p-4 bg-gray-50 rounded-lg border border-gray-200 text-sm">
+            <div className="mt-3 p-4 bg-gray-50 dark:bg-gray-800 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 dark:border-gray-700 text-sm">
               {/* Fonctionnalités */}
               <div className="mb-4">
-                <h4 className="font-medium text-gray-900 mb-2">Ce que l'IA comprend :</h4>
+                <h4 className="font-medium text-gray-900 dark:text-white dark:text-white mb-2">Ce que l'IA comprend :</h4>
                 <ul className="space-y-1 text-gray-600">
                   {SPORT_HELP[sport].features.map((feature, idx) => (
                     <li key={idx} className="flex items-start gap-2">
@@ -705,7 +705,7 @@ export function WorkoutForm() {
 
               {/* Exemples cliquables */}
               <div>
-                <h4 className="font-medium text-gray-900 mb-2">Exemples à essayer :</h4>
+                <h4 className="font-medium text-gray-900 dark:text-white dark:text-white mb-2">Exemples à essayer :</h4>
                 <div className="flex flex-wrap gap-2">
                   {SPORT_HELP[sport].examples.map((example, idx) => (
                     <button
@@ -717,7 +717,7 @@ export function WorkoutForm() {
                         setShowPreview(false);
                         setSteps([]);
                       }}
-                      className="px-3 py-1.5 bg-white border border-gray-300 rounded-full text-gray-700 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-colors"
+                      className="px-3 py-1.5 bg-white dark:bg-gray-900 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 dark:border-gray-600 rounded-full text-gray-700 dark:text-gray-200 dark:text-gray-200 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-colors"
                     >
                       {example.label}
                     </button>
@@ -773,14 +773,14 @@ export function WorkoutForm() {
         <div>
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-medium text-gray-700">Prévisualisation</h3>
-            <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+            <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 dark:bg-gray-800 rounded-lg p-1">
               <button
                 type="button"
                 onClick={() => setUseGarminPreview(false)}
                 className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
                   !useGarminPreview
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'
+                    ? 'bg-white dark:bg-gray-900 dark:bg-gray-900 text-gray-900 dark:text-white dark:text-white shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 dark:text-gray-400 hover:text-gray-700'
                 }`}
               >
                 Classique
@@ -790,8 +790,8 @@ export function WorkoutForm() {
                 onClick={() => setUseGarminPreview(true)}
                 className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
                   useGarminPreview
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'
+                    ? 'bg-white dark:bg-gray-900 dark:bg-gray-900 text-gray-900 dark:text-white dark:text-white shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 dark:text-gray-400 hover:text-gray-700'
                 }`}
               >
                 Garmin
@@ -803,7 +803,7 @@ export function WorkoutForm() {
             <>
               <GarminWorkoutPreview garminWorkout={garminWorkout} />
               <div className="mt-4">
-                <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 dark:text-gray-400 uppercase tracking-wide mb-2">
                   Données envoyées à Garmin (temporaire)
                 </h4>
                 <pre className="bg-gray-900 text-green-400 text-xs p-4 rounded-lg overflow-auto max-h-96">
@@ -837,7 +837,7 @@ export function WorkoutForm() {
             type="button"
             onClick={handleSave}
             disabled={!showPreview || steps.length === 0 || !name.trim()}
-            className="flex-1 bg-gray-100 text-gray-700 py-3 px-6 rounded-lg font-medium hover:bg-gray-200 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+            className="flex-1 bg-gray-100 dark:bg-gray-800 dark:bg-gray-800 text-gray-700 dark:text-gray-200 dark:text-gray-200 py-3 px-6 rounded-lg font-medium hover:bg-gray-200 disabled:bg-gray-100 dark:bg-gray-800 dark:bg-gray-800 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
@@ -873,7 +873,7 @@ export function WorkoutForm() {
       )}
 
       {showPreview && !syncSuccess && (
-        <p className="text-sm text-gray-500 text-center">
+        <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400 text-center">
           Télécharge le fichier FIT pour l'importer manuellement, ou synchronise directement avec Garmin Connect.
         </p>
       )}

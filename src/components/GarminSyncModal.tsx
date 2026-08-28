@@ -160,7 +160,7 @@ export function GarminSyncModal({ workout, garminWorkout, onClose, onSuccess }: 
   if (step === 'loading') {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-xl p-8 shadow-xl">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-8 shadow-xl">
           <div className="animate-spin h-8 w-8 border-4 border-orange-500 border-t-transparent rounded-full mx-auto" />
         </div>
       </div>
@@ -171,10 +171,10 @@ export function GarminSyncModal({ workout, garminWorkout, onClose, onSuccess }: 
   if (step === 'syncing') {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-xl p-8 max-w-sm w-full mx-4 shadow-xl text-center">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-8 max-w-sm w-full mx-4 shadow-xl text-center">
           <div className="animate-spin h-12 w-12 border-4 border-orange-500 border-t-transparent rounded-full mx-auto mb-4" />
-          <p className="text-gray-700 font-medium">Synchronisation avec Garmin...</p>
-          <p className="text-gray-500 text-sm mt-2">Création de la séance "{workout.name}"</p>
+          <p className="text-gray-700 dark:text-gray-200 font-medium">Synchronisation avec Garmin...</p>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">Création de la séance "{workout.name}"</p>
         </div>
       </div>
     );
@@ -184,14 +184,14 @@ export function GarminSyncModal({ workout, garminWorkout, onClose, onSuccess }: 
   if (step === 'success') {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-xl p-8 max-w-sm w-full mx-4 shadow-xl text-center">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-8 max-w-sm w-full mx-4 shadow-xl text-center">
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
           <h3 className="text-lg font-bold text-gray-800 mb-2">Synchronisé !</h3>
-          <p className="text-gray-600 text-sm">
+          <p className="text-gray-600 dark:text-gray-300 text-sm">
             "{workout.name}" a été ajouté à Garmin Connect
             {syncResult?.scheduled && " et planifié dans ton calendrier"}.
           </p>
@@ -204,16 +204,16 @@ export function GarminSyncModal({ workout, garminWorkout, onClose, onSuccess }: 
   if (step === 'not_connected') {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-xl">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 max-w-md w-full mx-4 shadow-xl">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-gray-800">Synchroniser avec Garmin</h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl">
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:text-gray-300 text-2xl">
               &times;
             </button>
           </div>
 
           <div className="text-center py-6">
-            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-10 h-10 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
               </svg>
@@ -222,7 +222,7 @@ export function GarminSyncModal({ workout, garminWorkout, onClose, onSuccess }: 
             <h3 className="text-lg font-medium text-gray-800 mb-2">
               Connecte ton compte Garmin
             </h3>
-            <p className="text-gray-600 text-sm mb-6">
+            <p className="text-gray-600 dark:text-gray-300 text-sm mb-6">
               Pour synchroniser tes séances, autorise Enduzo à accéder à ton compte Garmin Connect.
             </p>
 
@@ -236,7 +236,7 @@ export function GarminSyncModal({ workout, garminWorkout, onClose, onSuccess }: 
               Connecter avec Garmin
             </button>
 
-            <p className="text-xs text-gray-500 mt-4">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">
               Tu seras redirigé vers Garmin pour t'authentifier de manière sécurisée.
             </p>
           </div>
@@ -244,7 +244,7 @@ export function GarminSyncModal({ workout, garminWorkout, onClose, onSuccess }: 
           <div className="flex justify-center">
             <button
               onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 text-sm"
+              className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-200 text-sm"
             >
               Annuler
             </button>
@@ -258,10 +258,10 @@ export function GarminSyncModal({ workout, garminWorkout, onClose, onSuccess }: 
   if (step === 'error') {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-xl">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 max-w-md w-full mx-4 shadow-xl">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-gray-800">Erreur</h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl">
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:text-gray-300 text-2xl">
               &times;
             </button>
           </div>
@@ -273,7 +273,7 @@ export function GarminSyncModal({ workout, garminWorkout, onClose, onSuccess }: 
           <div className="flex gap-3">
             <button
               onClick={onClose}
-              className="flex-1 py-3 px-4 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+              className="flex-1 py-3 px-4 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-200 font-medium hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800 transition-colors"
             >
               Fermer
             </button>
@@ -292,18 +292,18 @@ export function GarminSyncModal({ workout, garminWorkout, onClose, onSuccess }: 
   // Connected - Ready to sync
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-xl">
+      <div className="bg-white dark:bg-gray-900 rounded-xl p-6 max-w-md w-full mx-4 shadow-xl">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-gray-800">Synchroniser avec Garmin</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl">
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:text-gray-300 text-2xl">
             &times;
           </button>
         </div>
 
         {/* Workout info */}
-        <div className="bg-gray-50 rounded-lg p-4 mb-4">
+        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 mb-4">
           <h3 className="font-medium text-gray-800">{workout.name}</h3>
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
             {workout.sport === 'running' ? 'Course' : workout.sport === 'cycling' ? 'Vélo' : 'Natation'}
             {' • '}
             {workout.steps.length} étape{workout.steps.length > 1 ? 's' : ''}
@@ -311,12 +311,12 @@ export function GarminSyncModal({ workout, garminWorkout, onClose, onSuccess }: 
         </div>
 
         {/* Schedule option */}
-        <label className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer mb-4">
+        <label className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg cursor-pointer mb-4">
           <input
             type="checkbox"
             checked={scheduleForDate}
             onChange={(e) => setScheduleForDate(e.target.checked)}
-            className="w-5 h-5 rounded border-gray-300 text-orange-500 focus:ring-orange-500"
+            className="w-5 h-5 rounded border-gray-300 dark:border-gray-600 text-orange-500 focus:ring-orange-500"
           />
           <div>
             <p className="font-medium text-gray-800">Planifier la séance</p>
@@ -339,7 +339,7 @@ export function GarminSyncModal({ workout, garminWorkout, onClose, onSuccess }: 
         <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 py-3 px-4 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+            className="flex-1 py-3 px-4 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-200 font-medium hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800 transition-colors"
           >
             Annuler
           </button>
@@ -355,7 +355,7 @@ export function GarminSyncModal({ workout, garminWorkout, onClose, onSuccess }: 
         <div className="mt-4 text-center">
           <button
             onClick={handleDisconnect}
-            className="text-sm text-gray-500 hover:text-gray-700"
+            className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700"
           >
             Déconnecter Garmin
           </button>
