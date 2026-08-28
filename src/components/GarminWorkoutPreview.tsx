@@ -37,6 +37,12 @@ const INTENSITY_BG_COLORS: Record<GarminIntensity | string, string> = {
   INTERVAL: 'bg-violet-950/30',
 };
 
+const SPORT_COLORS: Record<GarminSport, { bg: string; text: string }> = {
+  RUNNING: { bg: 'bg-orange-500', text: 'text-orange-400' },
+  CYCLING: { bg: 'bg-blue-500', text: 'text-blue-400' },
+  LAP_SWIMMING: { bg: 'bg-cyan-500', text: 'text-cyan-400' },
+};
+
 function formatDuration(seconds: number): string {
   if (seconds <= 0) return '0:00';
   const hours = Math.floor(seconds / 3600);
@@ -393,21 +399,24 @@ export function GarminWorkoutPreview({ garminWorkout }: GarminWorkoutPreviewProp
   if (!segment) return null;
 
   const totals = computeTotals(segment.steps);
+  const sportColor = SPORT_COLORS[garminWorkout.sport];
 
   return (
     <div className="bg-gray-900 border border-gray-700 rounded-2xl overflow-hidden shadow-sm">
       {/* Header */}
       <div className="px-5 py-4 border-b border-gray-700">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[#007CC3] flex items-center justify-center text-white font-bold text-sm shrink-0">
+          <div className={`w-10 h-10 rounded-full ${sportColor.bg} flex items-center justify-center text-white font-bold text-sm shrink-0`}>
             {garminWorkout.sport === 'RUNNING' && (
               <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M13.5 5.5c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zM9.8 8.9L7 23h2.1l1.8-8 2.1 2v6h2v-7.5l-2.1-2 .6-3C14.8 12 16.8 13 19 13v-2c-1.9 0-3.5-1-4.3-2.4l-1-1.6c-.4-.6-1-1-1.7-1-.3 0-.5.1-.8.1L6 8.3V13h2V9.6l1.8-.7z"/>
               </svg>
             )}
             {garminWorkout.sport === 'CYCLING' && (
-              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M15.5 5.5c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zM5 12c-2.8 0-5 2.2-5 5s2.2 5 5 5 5-2.2 5-5-2.2-5-5-5zm0 8.5c-1.9 0-3.5-1.6-3.5-3.5s1.6-3.5 3.5-3.5 3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5zm5.8-2.5l1.5-2.6c.3-.5.1-1.1-.4-1.4-.5-.3-1.1-.1-1.4.4L8.6 18c-.5.2-.8.8-.6 1.3.2.6.8.9 1.4.7h-.6zm9.2-6c-2.8 0-5 2.2-5 5s2.2 5 5 5 5-2.2 5-5-2.2-5-5-5zm0 8.5c-1.9 0-3.5-1.6-3.5-3.5s1.6-3.5 3.5-3.5 3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5z"/>
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="5.5" cy="17.5" r="3.5" />
+                <circle cx="18.5" cy="17.5" r="3.5" />
+                <path d="M10.5 6a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0Zm0 0h3M7.75 18.25a3.25 3.25 0 1 0 0-6.5 3.25 3.25 0 0 0 0 6.5ZM17 18.25a3.25 3.25 0 1 0 0-6.5 3.25 3.25 0 0 0 0 6.5ZM7.75 18.25 10.5 6l4.5 5.5M12 11.5l2.25 6.75" />
               </svg>
             )}
             {garminWorkout.sport === 'LAP_SWIMMING' && (
@@ -420,7 +429,7 @@ export function GarminWorkoutPreview({ garminWorkout }: GarminWorkoutPreviewProp
             <h3 className="font-semibold text-white text-lg truncate">
               {garminWorkout.workoutName}
             </h3>
-            <p className="text-sm text-gray-400">{SPORT_LABELS[garminWorkout.sport]}</p>
+            <p className={`text-sm ${sportColor.text}`}>{SPORT_LABELS[garminWorkout.sport]}</p>
           </div>
         </div>
         <div className="flex flex-wrap gap-4 mt-3 text-sm">
