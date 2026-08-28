@@ -733,7 +733,7 @@ export function WorkoutForm() {
           type="button"
           onClick={handlePreview}
           disabled={isParsing}
-          className="mt-3 w-full bg-gradient-to-r from-purple-500 to-blue-500 text-white py-2 px-4 rounded-lg font-medium hover:from-purple-600 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+          className="mt-3 w-full bg-gradient-to-r from-violet-500 via-purple-500 to-indigo-500 text-white py-3 px-4 rounded-xl font-semibold hover:from-violet-400 hover:via-purple-400 hover:to-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-purple-900/30 flex items-center justify-center gap-2"
         >
           {isParsing ? (
             <>
@@ -745,7 +745,8 @@ export function WorkoutForm() {
             </>
           ) : (
             <>
-              ✨ Analyser avec l'IA
+              <span>✨</span>
+              Analyser avec l'IA
             </>
           )}
         </button>
@@ -824,10 +825,10 @@ export function WorkoutForm() {
           type="button"
           onClick={handleSyncClick}
           disabled={!showPreview || steps.length === 0 || !name.trim()}
-          className="flex-1 bg-orange-500 text-white py-3 px-6 rounded-lg font-medium hover:bg-orange-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 order-first md:order-last"
+          className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-orange-400 hover:to-orange-500 disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed transition-all shadow-lg shadow-orange-900/30 flex items-center justify-center gap-2 order-first md:order-last"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>
+            <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97-.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>
           </svg>
           Synchroniser sur Garmin
         </button>
@@ -837,7 +838,7 @@ export function WorkoutForm() {
             type="button"
             onClick={handleSave}
             disabled={!showPreview || steps.length === 0 || !name.trim()}
-            className="flex-1 bg-gray-100 dark:bg-gray-800 dark:bg-gray-800 text-gray-700 dark:text-gray-200 dark:text-gray-200 py-3 px-6 rounded-lg font-medium hover:bg-gray-200 disabled:bg-gray-100 dark:bg-gray-800 dark:bg-gray-800 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+            className="flex-1 bg-gray-800 text-gray-100 border border-gray-700 py-3 px-6 rounded-xl font-semibold hover:bg-gray-700 hover:border-gray-600 disabled:bg-gray-900 disabled:text-gray-600 disabled:border-gray-800 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
@@ -845,7 +846,7 @@ export function WorkoutForm() {
             Sauvegarder
           </button>
         ) : (
-          <span className="flex-1 bg-green-100 text-green-700 py-3 px-6 rounded-lg font-medium flex items-center justify-center gap-2">
+          <span className="flex-1 bg-green-600/20 text-green-400 border border-green-600/30 py-3 px-6 rounded-xl font-semibold flex items-center justify-center gap-2">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
@@ -857,8 +858,11 @@ export function WorkoutForm() {
         <button
           type="submit"
           disabled={isGenerating || !showPreview || steps.length === 0}
-          className="hidden md:flex flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors items-center justify-center"
+          className="hidden md:flex flex-1 bg-gray-800 text-gray-100 border border-gray-700 py-3 px-6 rounded-xl font-semibold hover:bg-gray-700 hover:border-gray-600 disabled:bg-gray-900 disabled:text-gray-600 disabled:border-gray-800 disabled:cursor-not-allowed transition-all items-center justify-center gap-2"
         >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
           {isGenerating ? 'Génération...' : 'Télécharger FIT'}
         </button>
       </div>

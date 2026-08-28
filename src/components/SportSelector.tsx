@@ -27,22 +27,27 @@ export function SportSelector({ value, onChange }: SportSelectorProps) {
   const sports: Sport[] = ['running', 'cycling', 'swimming'];
 
   return (
-    <div className="flex gap-2">
-      {sports.map((sport) => (
-        <button
-          key={sport}
-          type="button"
-          onClick={() => onChange(sport)}
-          className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${
-            value === sport
-              ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-              : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300'
-          }`}
-        >
-          <span className="text-[#007CC3]">{SPORT_ICONS[sport]}</span>
-          <span className="text-sm font-medium">{SPORT_LABELS[sport]}</span>
-        </button>
-      ))}
+    <div className="flex gap-3">
+      {sports.map((sport) => {
+        const selected = value === sport;
+        return (
+          <button
+            key={sport}
+            type="button"
+            onClick={() => onChange(sport)}
+            className={`flex-1 py-4 px-3 rounded-2xl border transition-all duration-200 flex flex-col items-center gap-2 ${
+              selected
+                ? 'border-blue-500 bg-blue-600 text-white shadow-lg shadow-blue-900/30'
+                : 'border-gray-700 bg-gray-900 text-gray-300 hover:bg-gray-800 hover:border-gray-600'
+            }`}
+          >
+            <span className={selected ? 'text-white' : 'text-[#007CC3]'}>
+              {SPORT_ICONS[sport]}
+            </span>
+            <span className="text-sm font-semibold">{SPORT_LABELS[sport]}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }
