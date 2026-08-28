@@ -910,8 +910,8 @@ export function WorkoutForm() {
       )}
 
       {showPreview && !syncSuccess && (
-        <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400 text-center">
-          Télécharge le fichier FIT pour l'importer manuellement, ou synchronise directement avec Garmin Connect.
+        <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+          Télécharge le fichier FIT, partage la séance, sauvegarde-la ou synchronise-la directement avec Garmin Connect.
         </p>
       )}
     </form>
