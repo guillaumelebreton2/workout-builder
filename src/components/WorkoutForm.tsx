@@ -800,7 +800,17 @@ export function WorkoutForm() {
           </div>
 
           {useGarminPreview && garminWorkout ? (
-            <GarminWorkoutPreview garminWorkout={garminWorkout} />
+            <>
+              <GarminWorkoutPreview garminWorkout={garminWorkout} />
+              <div className="mt-4">
+                <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                  Données envoyées à Garmin (temporaire)
+                </h4>
+                <pre className="bg-gray-900 text-green-400 text-xs p-4 rounded-lg overflow-auto max-h-96">
+                  {JSON.stringify(garminWorkout, null, 2)}
+                </pre>
+              </div>
+            </>
           ) : (
             <WorkoutPreview steps={steps} />
           )}
