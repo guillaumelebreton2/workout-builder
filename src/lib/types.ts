@@ -90,6 +90,7 @@ export interface Workout {
   date: Date;
   description?: string;
   steps: WorkoutStep[];
+  tags?: string[];
 }
 
 // Labels en français

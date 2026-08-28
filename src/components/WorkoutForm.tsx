@@ -332,6 +332,7 @@ export function WorkoutForm() {
   const [sport, setSport] = useState<Sport>('running');
   const [name, setName] = useState(() => getDefaultName('running', new Date().toISOString().split('T')[0]));
   const [description, setDescription] = useState('');
+  const [tags, setTags] = useState('');
 
   // Mettre à jour le nom par défaut quand le sport ou la date change
   useEffect(() => {
@@ -495,6 +496,13 @@ export function WorkoutForm() {
     setFallbackWarning(null);
   };
 
+  const parseTags = (input: string): string[] => {
+    return input
+      .split(/[,;]/)
+      .map(t => t.trim())
+      .filter(t => t.length > 0);
+  };
+
   const getCurrentWorkout = (): Workout => ({
     id: generateId(),
     name: name.trim(),
@@ -502,6 +510,7 @@ export function WorkoutForm() {
     date: new Date(date),
     description: description.trim(),
     steps,
+    tags: parseTags(tags),
   });
 
   const getGarminFormatParams = () => {
@@ -680,6 +689,24 @@ export function WorkoutForm() {
           rows={6}
           className="w-full p-3 border border-gray-300 dark:border-gray-600 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
         />
+
+        {/* Tags */}
+        <div className="mt-4">
+          <label htmlFor="tags" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+            Étiquettes
+          </label>
+          <input
+            type="text"
+            id="tags"
+            value={tags}
+            onChange={(e) => setTags(e.target.value)}
+            placeholder="prépa marathon, seuil, vma..."
+            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            Sépare les étiquettes par des virgules.
+          </p>
+        </div>
 
         {/* Section Aide */}
         <div className="mt-2">
