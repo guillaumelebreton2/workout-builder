@@ -1,7 +1,9 @@
-import { GarminStep, GarminWorkout, GarminIntensity, GarminSport } from '../lib/garmin-format';
+import { useState, useEffect } from 'react';
+import { GarminStep, GarminWorkout, GarminIntensity, GarminSport, GarminDurationType, GarminTargetType } from '../lib/garmin-format';
 
 interface GarminWorkoutPreviewProps {
   garminWorkout: GarminWorkout;
+  onChange?: (workout: GarminWorkout) => void;
 }
 
 const SPORT_LABELS: Record<GarminSport, string> = {
@@ -244,13 +246,70 @@ function computeTotals(steps: GarminStep[]): { time: number; distance: number } 
   );
 }
 
-function StepCard({ step, sport }: { step: GarminStep; sport: GarminSport }) {
+interface StepCardProps {
+  step: GarminStep;
+  sport: GarminSport;
+  path: number[];
+  editable: boolean;
+  onUpdate: (segmentIndex: number, path: number[], updates: Partial<GarminStep>) => void;
+}
+
+function parsePaceToMs(input: string): number | null {
+  const match = input.match(/^(\d+)[:'′](\d+)$/);
+  if (match) {
+    const min = parseInt(match[1], 10);
+    const sec = parseInt(match[2], 10);
+    return 1000 / ((min + sec / 60) * 60);
+  }
+  const decimal = parseFloat(input);
+  if (!isNaN(decimal) && decimal > 0) {
+    return 1000 / (decimal * 60);
+  }
+  return null;
+}
+
+function formatMsAsPace(ms: number): string {
+  return formatPace(msToMinPerKm(ms));
+}
+
+function StepCard({ step, sport, path, editable, onUpdate }: StepCardProps) {
+  const segmentIndex = 0; // only one segment currently
   const color = INTENSITY_COLORS[step.intensity || 'ACTIVE'] || INTENSITY_COLORS.ACTIVE;
   const bgColor = INTENSITY_BG_COLORS[step.intensity || 'ACTIVE'] || INTENSITY_BG_COLORS.ACTIVE;
   const target = formatTarget(step);
   const secondary = formatSecondaryTarget(step);
   const estTime = estimateTimeSeconds(step);
   const estDistance = estimateDistanceMeters(step);
+
+  const update = (updates: Partial<GarminStep>) => onUpdate(segmentIndex, path, updates);
+
+  const handleDurationValueChange = (value: string) => {
+    const num = value === '' ? null : parseFloat(value);
+    update({
+      durationValue: num,
+      durationValueType: step.durationType === 'DISTANCE' ? 'METER' : null,
+    });
+  };
+
+  const handleTargetLowChange = (value: string) => {
+    let ms: number | null = null;
+    if (step.targetType === 'PACE') {
+      ms = parsePaceToMs(value);
+    } else {
+      ms = value === '' ? null : parseFloat(value);
+    }
+    update({ targetValueLow: ms });
+  };
+
+  const handleTargetHighChange = (value: string) => {
+    let ms: number | null = null;
+    if (step.targetType === 'PACE') {
+      ms = parsePaceToMs(value);
+    } else {
+      ms = value === '' ? null : parseFloat(value);
+    }
+    update({ targetValueHigh: ms });
+  };
 
   const primaryMetrics: { value: string; label: string }[] = [];
 
@@ -304,6 +363,103 @@ function StepCard({ step, sport }: { step: GarminStep; sport: GarminSport }) {
             </div>
           )}
         </div>
+
+        {editable && (
+          <div className="mt-4 pt-4 border-t border-white/10 space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Intensité</label>
+                <select
+                  value={step.intensity || 'ACTIVE'}
+                  onChange={(e) => update({ intensity: e.target.value as GarminIntensity })}
+                  className="w-full text-sm bg-gray-900 border border-gray-600 rounded px-2 py-1.5 text-white"
+                >
+                  {(['WARMUP', 'ACTIVE', 'RECOVERY', 'COOLDOWN', 'REST', 'INTERVAL'] as GarminIntensity[]).map(i => (
+                    <option key={i} value={i}>{INTENSITY_LABELS[i]}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Type durée</label>
+                <select
+                  value={step.durationType}
+                  onChange={(e) => update({
+                    durationType: e.target.value as GarminDurationType,
+                    durationValue: e.target.value === 'OPEN' ? null : step.durationValue,
+                    durationValueType: e.target.value === 'DISTANCE' ? 'METER' : null,
+                  })}
+                  className="w-full text-sm bg-gray-900 border border-gray-600 rounded px-2 py-1.5 text-white"
+                >
+                  <option value="OPEN">Appui Lap</option>
+                  <option value="TIME">Temps (s)</option>
+                  <option value="DISTANCE">Distance (m)</option>
+                </select>
+              </div>
+            </div>
+
+            {step.durationType !== 'OPEN' && (
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">
+                  {step.durationType === 'TIME' ? 'Durée (secondes)' : 'Distance (mètres)'}
+                </label>
+                <input
+                  type="number"
+                  value={step.durationValue ?? ''}
+                  onChange={(e) => handleDurationValueChange(e.target.value)}
+                  className="w-full text-sm bg-gray-900 border border-gray-600 rounded px-2 py-1.5 text-white"
+                />
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Objectif principal</label>
+                <select
+                  value={step.targetType || 'OPEN'}
+                  onChange={(e) => update({
+                    targetType: e.target.value === 'OPEN' ? 'OPEN' : e.target.value as Exclude<GarminTargetType, null>,
+                    targetValueLow: null,
+                    targetValueHigh: null,
+                  })}
+                  className="w-full text-sm bg-gray-900 border border-gray-600 rounded px-2 py-1.5 text-white"
+                >
+                  <option value="OPEN">Aucun</option>
+                  <option value="PACE">Allure</option>
+                  <option value="POWER">Puissance</option>
+                  <option value="CADENCE">Cadence</option>
+                  <option value="HEART_RATE">FC</option>
+                </select>
+              </div>
+            </div>
+
+            {step.targetType && step.targetType !== 'OPEN' && (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">
+                    {step.targetType === 'PACE' ? 'Allure min (min/km)' : 'Valeur basse'}
+                  </label>
+                  <input
+                    type="text"
+                    value={step.targetValueLow ? (step.targetType === 'PACE' ? formatMsAsPace(step.targetValueLow) : step.targetValueLow) : ''}
+                    onChange={(e) => handleTargetLowChange(e.target.value)}
+                    className="w-full text-sm bg-gray-900 border border-gray-600 rounded px-2 py-1.5 text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">
+                    {step.targetType === 'PACE' ? 'Allure max (min/km)' : 'Valeur haute'}
+                  </label>
+                  <input
+                    type="text"
+                    value={step.targetValueHigh ? (step.targetType === 'PACE' ? formatMsAsPace(step.targetValueHigh) : step.targetValueHigh) : ''}
+                    onChange={(e) => handleTargetHighChange(e.target.value)}
+                    className="w-full text-sm bg-gray-900 border border-gray-600 rounded px-2 py-1.5 text-white"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {step.description && (
@@ -317,7 +473,15 @@ function StepCard({ step, sport }: { step: GarminStep; sport: GarminSport }) {
   );
 }
 
-function RepeatBlock({ step, sport }: { step: GarminStep; sport: GarminSport }) {
+interface RepeatBlockProps {
+  step: GarminStep;
+  sport: GarminSport;
+  path: number[];
+  editable: boolean;
+  onUpdate: (segmentIndex: number, path: number[], updates: Partial<GarminStep>) => void;
+}
+
+function RepeatBlock({ step, sport, path, editable, onUpdate }: RepeatBlockProps) {
   if (!step.steps || step.steps.length === 0) return null;
 
   return (
@@ -331,14 +495,24 @@ function RepeatBlock({ step, sport }: { step: GarminStep; sport: GarminSport }) 
             d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
           />
         </svg>
-        <span>{step.repeatValue} fois</span>
+        {editable ? (
+          <input
+            type="number"
+            min={1}
+            value={step.repeatValue ?? 1}
+            onChange={(e) => onUpdate(0, path, { repeatValue: parseInt(e.target.value, 10) || 1 })}
+            className="w-16 text-sm bg-gray-900 border border-gray-600 rounded px-2 py-1 text-white"
+          />
+        ) : (
+          <span>{step.repeatValue} fois</span>
+        )}
       </div>
       <div className="px-3 pb-3 space-y-2">
         {step.steps.map((s, idx) =>
           s.type === 'WorkoutRepeatStep' ? (
-            <RepeatBlock key={`nested-${idx}`} step={s} sport={sport} />
+            <RepeatBlock key={`nested-${idx}`} step={s} sport={sport} path={[...path, idx]} editable={editable} onUpdate={onUpdate} />
           ) : (
-            <StepCard key={`step-${idx}`} step={s} sport={sport} />
+            <StepCard key={`step-${idx}`} step={s} sport={sport} path={[...path, idx]} editable={editable} onUpdate={onUpdate} />
           )
         )}
       </div>
@@ -400,12 +574,64 @@ function Timeline({ steps, sport }: { steps: GarminStep[]; sport: GarminSport })
   );
 }
 
-export function GarminWorkoutPreview({ garminWorkout }: GarminWorkoutPreviewProps) {
-  const segment = garminWorkout.segments[0];
+function updateStepsAtPath(steps: GarminStep[], path: number[], updates: Partial<GarminStep>): GarminStep[] {
+  const [index, ...rest] = path;
+  if (index === undefined) return steps;
+
+  const step = steps[index];
+  if (!step) return steps;
+
+  if (rest.length === 0) {
+    return [
+      ...steps.slice(0, index),
+      { ...step, ...updates },
+      ...steps.slice(index + 1),
+    ];
+  }
+
+  if (!step.steps) return steps;
+
+  return [
+    ...steps.slice(0, index),
+    { ...step, steps: updateStepsAtPath(step.steps, rest, updates) },
+    ...steps.slice(index + 1),
+  ];
+}
+
+export function GarminWorkoutPreview({ garminWorkout, onChange }: GarminWorkoutPreviewProps) {
+  const [localWorkout, setLocalWorkout] = useState(garminWorkout);
+  const editable = !!onChange;
+
+  useEffect(() => {
+    setLocalWorkout(garminWorkout);
+  }, [garminWorkout]);
+
+  useEffect(() => {
+    if (editable) {
+      onChange(localWorkout);
+    }
+  }, [localWorkout, editable, onChange]);
+
+  const updateWorkout = (updates: Partial<GarminWorkout>) => {
+    setLocalWorkout(prev => ({ ...prev, ...updates }));
+  };
+
+  const updateStep = (segmentIndex: number, stepPath: number[], updates: Partial<GarminStep>) => {
+    setLocalWorkout(prev => {
+      const segments = prev.segments.map((seg, idx) =>
+        idx === segmentIndex
+          ? { ...seg, steps: updateStepsAtPath(seg.steps, stepPath, updates) }
+          : seg
+      );
+      return { ...prev, segments };
+    });
+  };
+
+  const segment = localWorkout.segments[0];
   if (!segment) return null;
 
   const totals = computeTotals(segment.steps);
-  const sportColor = SPORT_COLORS[garminWorkout.sport];
+  const sportColor = SPORT_COLORS[localWorkout.sport];
 
   return (
     <div className="bg-gray-900 border border-gray-700 rounded-2xl overflow-hidden shadow-sm">
@@ -413,27 +639,36 @@ export function GarminWorkoutPreview({ garminWorkout }: GarminWorkoutPreviewProp
       <div className="px-5 py-4 border-b border-gray-700">
         <div className="flex items-center gap-3">
           <div className={`w-10 h-10 rounded-full ${sportColor.bg} flex items-center justify-center text-white font-bold text-sm shrink-0`}>
-            {garminWorkout.sport === 'RUNNING' && (
+            {localWorkout.sport === 'RUNNING' && (
               <svg className="w-6 h-6" fill="currentColor" viewBox="0 -960 960 960">
                 <path d="M520-40v-240l-84-80-40 176-276-56 16-80 192 40 64-324-72 28v136h-80v-188l158-68q35-15 51.5-19.5T480-720q21 0 39 11t29 29l40 64q26 42 70.5 69T760-520v80q-66 0-123.5-27.5T540-540l-24 120 84 80v300h-80Zm-36.5-723.5Q460-787 460-820t23.5-56.5Q507-900 540-900t56.5 23.5Q620-853 620-820t-23.5 56.5Q573-740 540-740t-56.5-23.5Z"/>
               </svg>
             )}
-            {garminWorkout.sport === 'CYCLING' && (
+            {localWorkout.sport === 'CYCLING' && (
               <svg className="w-6 h-6" fill="currentColor" viewBox="0 -960 960 960">
                 <path d="M200-80q-83 0-141.5-58.5T0-280q0-83 58.5-141.5T200-480q83 0 141.5 58.5T400-280q0 83-58.5 141.5T200-80Zm85-115q35-35 35-85t-35-85q-35-35-85-35t-85 35q-35 35-35 85t35 85q35 35 85 35t85-35Zm155-5v-200L312-512q-12-11-18-25.5t-6-30.5q0-16 6.5-30.5T312-624l112-112q12-12 27.5-18t32.5-6q17 0 32.5 6t27.5 18l76 76q28 28 64 44t76 16v80q-57 0-108.5-22T560-604l-32-32-96 96 88 92v248h-80Zm123.5-563.5Q540-787 540-820t23.5-56.5Q587-900 620-900t56.5 23.5Q700-853 700-820t-23.5 56.5Q653-740 620-740t-56.5-23.5ZM760-80q-83 0-141.5-58.5T560-280q0-83 58.5-141.5T760-480q83 0 141.5 58.5T960-280q0 83-58.5 141.5T760-80Zm85-115q35-35 35-85t-35-85q-35-35-85-35t-85 35q-35 35-35 85t35 85q35 35 85 35t85-35Z"/>
               </svg>
             )}
-            {garminWorkout.sport === 'LAP_SWIMMING' && (
+            {localWorkout.sport === 'LAP_SWIMMING' && (
               <svg className="w-6 h-6" fill="currentColor" viewBox="0 -960 960 960">
                 <path d="M80-120v-80q38 0 57-20t75-20q56 0 77 20t57 20q36 0 57-20t77-20q56 0 77 20t57 20q36 0 57-20t77-20q56 0 75 20t57 20v80q-59 0-77.5-20T748-160q-36 0-57 20t-77 20q-56 0-77-20t-57-20q-36 0-57 20t-77 20q-56 0-77-20t-57-20q-36 0-54.5 20T80-120Zm0-180v-80q38 0 57-20t75-20q56 0 77.5 20t56.5 20q36 0 57-20t77-20q56 0 77 20t57 20q36 0 57-20t77-20q56 0 75 20t57 20v80q-59 0-77.5-20T748-340q-36 0-55.5 20T614-300q-57 0-77.5-20T480-340q-38 0-56.5 20T346-300q-59 0-78.5-20T212-340q-36 0-54.5 20T80-300Zm196-204 133-133-40-40q-33-33-70-48t-91-15v-100q75 0 124 16.5t96 63.5l256 256q-17 11-33 17.5t-37 6.5q-36 0-57-20t-77-20q-56 0-77 20t-57 20q-21 0-37-6.5T276-504Zm463-306.5q29 29.5 29 70.5 0 42-29 71t-71 29q-42 0-71-29t-29-71q0-41 29-70.5t71-29.5q42 0 71 29.5Z"/>
               </svg>
             )}
           </div>
           <div className="min-w-0">
-            <h3 className="font-semibold text-white text-lg truncate">
-              {garminWorkout.workoutName}
-            </h3>
-            <p className={`text-sm ${sportColor.text}`}>{SPORT_LABELS[garminWorkout.sport]}</p>
+            {editable ? (
+              <input
+                type="text"
+                value={localWorkout.workoutName}
+                onChange={(e) => updateWorkout({ workoutName: e.target.value })}
+                className="w-full font-semibold text-white text-lg bg-transparent border-b border-gray-600 focus:border-blue-500 outline-none truncate"
+              />
+            ) : (
+              <h3 className="font-semibold text-white text-lg truncate">
+                {localWorkout.workoutName}
+              </h3>
+            )}
+            <p className={`text-sm ${sportColor.text}`}>{SPORT_LABELS[localWorkout.sport]}</p>
           </div>
         </div>
         <div className="flex flex-wrap gap-4 mt-3 text-sm">
@@ -454,23 +689,32 @@ export function GarminWorkoutPreview({ garminWorkout }: GarminWorkoutPreviewProp
 
       <div className="p-5 space-y-5">
         {/* Notes */}
-        {garminWorkout.description && garminWorkout.description !== 'Created with Enduzo' && (
+        {(localWorkout.description && localWorkout.description !== 'Created with Enduzo') || editable ? (
           <div>
             <h4 className="text-sm font-semibold text-white mb-1">Notes</h4>
-            <p className="text-sm text-gray-300 whitespace-pre-line">{garminWorkout.description}</p>
+            {editable ? (
+              <textarea
+                value={localWorkout.description}
+                onChange={(e) => updateWorkout({ description: e.target.value })}
+                rows={3}
+                className="w-full text-sm bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white"
+              />
+            ) : (
+              <p className="text-sm text-gray-300 whitespace-pre-line">{localWorkout.description}</p>
+            )}
           </div>
-        )}
+        ) : null}
 
         {/* Timeline */}
-        <Timeline steps={segment.steps} sport={garminWorkout.sport} />
+        <Timeline steps={segment.steps} sport={localWorkout.sport} />
 
         {/* Steps list */}
         <div className="space-y-3">
           {segment.steps.map((step, idx) =>
             step.type === 'WorkoutRepeatStep' ? (
-              <RepeatBlock key={`block-${idx}`} step={step} sport={garminWorkout.sport} />
+              <RepeatBlock key={`block-${idx}`} step={step} sport={localWorkout.sport} path={[idx]} editable={editable} onUpdate={updateStep} />
             ) : (
-              <StepCard key={`step-${idx}`} step={step} sport={garminWorkout.sport} />
+              <StepCard key={`step-${idx}`} step={step} sport={localWorkout.sport} path={[idx]} editable={editable} onUpdate={updateStep} />
             )
           )}
         </div>

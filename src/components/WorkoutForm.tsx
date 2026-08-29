@@ -358,6 +358,13 @@ export function WorkoutForm() {
   const [shareSavedWorkout, setShareSavedWorkout] = useState<SavedWorkout | null>(null);
   const [useGarminPreview, setUseGarminPreview] = useState(true);
   const [garminWorkout, setGarminWorkout] = useState<GarminWorkout | null>(null);
+  const [editableGarminWorkout, setEditableGarminWorkout] = useState<GarminWorkout | null>(null);
+
+  useEffect(() => {
+    if (garminWorkout) {
+      setEditableGarminWorkout(garminWorkout);
+    }
+  }, [garminWorkout]);
 
   // Sauvegarder les références dans localStorage avec formatage automatique
   const handleRunningPaceChange = (value: string) => {
@@ -491,6 +498,7 @@ export function WorkoutForm() {
       setShowPreview(false);
       setSteps([]);
       setGarminWorkout(null);
+      setEditableGarminWorkout(null);
     }
     setSyncSuccess(false);
     setFallbackWarning(null);
@@ -532,7 +540,7 @@ export function WorkoutForm() {
   // Sauvegarder la séance
   const handleSave = () => {
     const workout = getCurrentWorkout();
-    const saved = workoutStore.save(workout, 'manual', garminWorkout || undefined);
+    const saved = workoutStore.save(workout, 'manual', editableGarminWorkout || undefined);
     setIsSaved(true);
     setSavedWorkoutId(saved.id);
     return saved.id;
@@ -550,7 +558,7 @@ export function WorkoutForm() {
   // Ouvrir le modal de partage (sauvegarde auto si pas encore fait)
   const handleShareClick = () => {
     const workout = getCurrentWorkout();
-    const saved = workoutStore.save(workout, 'manual', garminWorkout || undefined);
+    const saved = workoutStore.save(workout, 'manual', editableGarminWorkout || undefined);
     setIsSaved(true);
     setSavedWorkoutId(saved.id);
     setShareSavedWorkout(saved);
@@ -869,15 +877,18 @@ export function WorkoutForm() {
             </div>
           </div>
 
-          {useGarminPreview && garminWorkout ? (
+          {useGarminPreview && editableGarminWorkout ? (
             <>
-              <GarminWorkoutPreview garminWorkout={garminWorkout} />
+              <GarminWorkoutPreview
+                garminWorkout={editableGarminWorkout}
+                onChange={setEditableGarminWorkout}
+              />
               <div className="mt-4">
                 <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 dark:text-gray-400 uppercase tracking-wide mb-2">
                   Données envoyées à Garmin (temporaire)
                 </h4>
                 <pre className="bg-gray-900 text-green-400 text-xs p-4 rounded-lg overflow-auto max-h-96">
-                  {JSON.stringify(garminWorkout, null, 2)}
+                  {JSON.stringify(editableGarminWorkout, null, 2)}
                 </pre>
               </div>
             </>
@@ -978,7 +989,7 @@ export function WorkoutForm() {
     {showSyncModal && (
       <GarminSyncModal
         workout={getCurrentWorkout()}
-        garminWorkout={garminWorkout || undefined}
+        garminWorkout={editableGarminWorkout || undefined}
         onClose={() => setShowSyncModal(false)}
         onSuccess={handleSyncSuccess}
       />
