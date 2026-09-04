@@ -1,9 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { GarminStep, GarminWorkout, GarminIntensity, GarminSport, GarminDurationType, GarminTargetType } from '../lib/garmin-format';
 
 interface GarminWorkoutPreviewProps {
   garminWorkout: GarminWorkout;
+  date?: string;
   onChange?: (workout: GarminWorkout) => void;
+  onDateChange?: (date: string) => void;
+  onFinishEditing?: (workout: GarminWorkout) => void;
+  onDuplicateWorkout?: () => void;
+  onDeleteWorkout?: () => void;
 }
 
 const SPORT_LABELS: Record<GarminSport, string> = {
@@ -22,14 +27,14 @@ const INTENSITY_LABELS: Record<GarminIntensity | string, string> = {
 };
 
 const INTENSITY_COLORS: Record<GarminIntensity | string, string> = {
-  WARMUP: '#e02c2c',        // rouge
-  ACTIVE: '#1976d2',        // bleu
-  RECOVERY: '#a6a6a6',      // gris
-  COOLDOWN: '#16a544',      // vert
-  REST: '#a6a6a6',          // gris
-  INTERVAL: '#1976d2',      // bleu
-  INTERVAL_WALK: '#1976d2', // bleu
-  OTHER: '#1976d2',         // bleu
+  WARMUP: '#e02c2c',
+  ACTIVE: '#1976d2',
+  RECOVERY: '#a6a6a6',
+  COOLDOWN: '#16a544',
+  REST: '#a6a6a6',
+  INTERVAL: '#1976d2',
+  INTERVAL_WALK: '#1976d2',
+  OTHER: '#1976d2',
 };
 
 const INTENSITY_BG_COLORS: Record<GarminIntensity | string, string> = {
@@ -406,6 +411,45 @@ function duplicateStepAtPath(steps: GarminStep[], path: number[]): GarminStep[] 
   ];
 }
 
+function getParentPath(path: number[]): number[] {
+  return path.slice(0, -1);
+}
+
+function getLastIndex(path: number[]): number {
+  return path[path.length - 1] ?? -1;
+}
+
+function moveWithinParent(steps: GarminStep[], parentPath: number[], fromIndex: number, toIndex: number): GarminStep[] {
+  if (parentPath.length === 0) {
+    const newSteps = [...steps];
+    const [moved] = newSteps.splice(fromIndex, 1);
+    newSteps.splice(toIndex, 0, moved);
+    return newSteps;
+  }
+
+  const [index, ...rest] = parentPath;
+  const step = steps[index];
+  if (!step || !step.steps) return steps;
+
+  return [
+    ...steps.slice(0, index),
+    { ...step, steps: moveWithinParent(step.steps, rest, fromIndex, toIndex) },
+    ...steps.slice(index + 1),
+  ];
+}
+
+function moveStepAtPath(steps: GarminStep[], fromPath: number[], toPath: number[]): GarminStep[] {
+  const fromParent = getParentPath(fromPath);
+  const toParent = getParentPath(toPath);
+
+  // Only support moving within the same container
+  if (fromParent.length !== toParent.length || !fromParent.every((v, i) => v === toParent[i])) {
+    return steps;
+  }
+
+  return moveWithinParent(steps, fromParent, getLastIndex(fromPath), getLastIndex(toPath));
+}
+
 // Inputs
 
 function parsePaceToMs(input: string): number | null {
@@ -500,18 +544,113 @@ function DurationInput({ value, onChange }: { value: number | null; onChange: (s
   );
 }
 
+// UI helpers
+
+export function ThreeDotsMenu({
+  onEdit,
+  onDuplicate,
+  onDelete,
+}: {
+  onEdit: () => void;
+  onDuplicate?: () => void;
+  onDelete?: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handle = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handle);
+    return () => document.removeEventListener('mousedown', handle);
+  }, []);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+      >
+        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+        </svg>
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 w-40 bg-gray-800 border border-gray-600 rounded-lg shadow-xl z-20 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => { setOpen(false); onEdit(); }}
+            className="w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+          >
+            Modifier
+          </button>
+          {onDuplicate && (
+            <button
+              type="button"
+              onClick={() => { setOpen(false); onDuplicate(); }}
+              className="w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+            >
+              Dupliquer
+            </button>
+          )}
+          {onDelete && (
+            <button
+              type="button"
+              onClick={() => { setOpen(false); onDelete(); }}
+              className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-700"
+            >
+              Supprimer
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function pathsEqual(a: number[] | null, b: number[] | null): boolean {
+  if (!a || !b) return false;
+  if (a.length !== b.length) return false;
+  return a.every((v, i) => v === b[i]);
+}
+
 interface StepCardProps {
   step: GarminStep;
   sport: GarminSport;
   path: number[];
   editable: boolean;
+  editingStepPath: number[] | null;
+  draggedPath: number[] | null;
   onUpdate: (segmentIndex: number, path: number[], updates: Partial<GarminStep>) => void;
   onAdd: (path: number[], position: 'before' | 'after') => void;
   onDuplicate: (path: number[]) => void;
   onDelete: (path: number[]) => void;
+  onDragStart: (path: number[]) => void;
+  onDragOver: (path: number[]) => void;
+  onDrop: () => void;
+  setEditingStepPath: (path: number[] | null) => void;
 }
 
-function StepCard({ step, sport, path, editable, onUpdate, onAdd, onDuplicate, onDelete }: StepCardProps) {
+function StepCard({
+  step,
+  sport,
+  path,
+  editable,
+  editingStepPath,
+  draggedPath,
+  onUpdate,
+  onAdd,
+  onDuplicate,
+  onDelete,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  setEditingStepPath,
+}: StepCardProps) {
   const segmentIndex = 0;
   const color = INTENSITY_COLORS[step.intensity || 'ACTIVE'] || INTENSITY_COLORS.ACTIVE;
   const bgColor = INTENSITY_BG_COLORS[step.intensity || 'ACTIVE'] || INTENSITY_BG_COLORS.ACTIVE;
@@ -519,6 +658,8 @@ function StepCard({ step, sport, path, editable, onUpdate, onAdd, onDuplicate, o
   const secondary = formatSecondaryTarget(step);
   const estTime = estimateTimeSeconds(step);
   const estDistance = estimateDistanceMeters(step);
+  const isEditingFields = pathsEqual(editingStepPath, path);
+  const isDragged = pathsEqual(draggedPath, path);
 
   const update = (updates: Partial<GarminStep>) => onUpdate(segmentIndex, path, updates);
 
@@ -560,8 +701,13 @@ function StepCard({ step, sport, path, editable, onUpdate, onAdd, onDuplicate, o
 
   return (
     <div
-      className={`${bgColor} rounded-xl overflow-hidden`}
+      className={`${bgColor} rounded-xl overflow-hidden transition-opacity ${editable ? 'cursor-grab active:cursor-grabbing' : ''} ${isDragged ? 'opacity-40' : ''}`}
       style={{ borderLeftWidth: '6px', borderLeftColor: color }}
+      draggable={editable}
+      onDragStart={() => onDragStart(path)}
+      onDragOver={(e) => { e.preventDefault(); onDragOver(path); }}
+      onDrop={(e) => { e.preventDefault(); onDrop(); }}
+      onClick={() => editable && setEditingStepPath(path)}
     >
       <div className="p-4">
         <div className="flex items-start justify-between gap-3">
@@ -569,7 +715,7 @@ function StepCard({ step, sport, path, editable, onUpdate, onAdd, onDuplicate, o
             {getStepLabel(step, sport)}
           </div>
           {editable && (
-            <div className="flex items-center gap-1 shrink-0">
+            <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
               <button
                 type="button"
                 onClick={() => onAdd(path, 'before')}
@@ -625,7 +771,7 @@ function StepCard({ step, sport, path, editable, onUpdate, onAdd, onDuplicate, o
           )}
         </div>
 
-        {editable && (
+        {isEditingFields && (
           <div className="mt-4 pt-4 border-t border-white/10 space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -750,17 +896,48 @@ interface RepeatBlockProps {
   sport: GarminSport;
   path: number[];
   editable: boolean;
+  editingStepPath: number[] | null;
+  draggedPath: number[] | null;
   onUpdate: (segmentIndex: number, path: number[], updates: Partial<GarminStep>) => void;
   onAdd: (path: number[], position: 'before' | 'after') => void;
   onDuplicate: (path: number[]) => void;
   onDelete: (path: number[]) => void;
+  onDragStart: (path: number[]) => void;
+  onDragOver: (path: number[]) => void;
+  onDrop: () => void;
+  setEditingStepPath: (path: number[] | null) => void;
 }
 
-function RepeatBlock({ step, sport, path, editable, onUpdate, onAdd, onDuplicate, onDelete }: RepeatBlockProps) {
+function RepeatBlock({
+  step,
+  sport,
+  path,
+  editable,
+  editingStepPath,
+  draggedPath,
+  onUpdate,
+  onAdd,
+  onDuplicate,
+  onDelete,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  setEditingStepPath,
+}: RepeatBlockProps) {
   if (!step.steps || step.steps.length === 0) return null;
 
+  const isEditingFields = pathsEqual(editingStepPath, path);
+  const isDragged = pathsEqual(draggedPath, path);
+
   return (
-    <div className="rounded-xl border border-gray-600 overflow-hidden">
+    <div
+      className={`rounded-xl border border-gray-600 overflow-hidden transition-opacity ${editable ? 'cursor-grab active:cursor-grabbing' : ''} ${isDragged ? 'opacity-40' : ''}`}
+      draggable={editable}
+      onDragStart={() => onDragStart(path)}
+      onDragOver={(e) => { e.preventDefault(); onDragOver(path); }}
+      onDrop={(e) => { e.preventDefault(); onDrop(); }}
+      onClick={() => editable && setEditingStepPath(path)}
+    >
       <div className="px-4 py-2 flex items-center justify-between gap-2 text-white font-semibold bg-gray-800/50">
         <div className="flex items-center gap-2">
           <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -771,12 +948,13 @@ function RepeatBlock({ step, sport, path, editable, onUpdate, onAdd, onDuplicate
               d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
             />
           </svg>
-          {editable ? (
+          {editable && isEditingFields ? (
             <input
               type="number"
               min={1}
               value={step.repeatValue ?? 1}
               onChange={(e) => onUpdate(0, path, { repeatValue: parseInt(e.target.value, 10) || 1 })}
+              onClick={(e) => e.stopPropagation()}
               className="w-16 text-sm bg-gray-900 border border-gray-600 rounded px-2 py-1 text-white"
             />
           ) : (
@@ -784,7 +962,7 @@ function RepeatBlock({ step, sport, path, editable, onUpdate, onAdd, onDuplicate
           )}
         </div>
         {editable && (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
             <button
               type="button"
               onClick={() => onAdd(path, 'before')}
@@ -815,9 +993,9 @@ function RepeatBlock({ step, sport, path, editable, onUpdate, onAdd, onDuplicate
       <div className="px-3 pb-3 space-y-2">
         {step.steps.map((s, idx) =>
           s.type === 'WorkoutRepeatStep' ? (
-            <RepeatBlock key={`nested-${idx}`} step={s} sport={sport} path={[...path, idx]} editable={editable} onUpdate={onUpdate} onAdd={onAdd} onDuplicate={onDuplicate} onDelete={onDelete} />
+            <RepeatBlock key={`nested-${idx}`} step={s} sport={sport} path={[...path, idx]} editable={editable} editingStepPath={editingStepPath} draggedPath={draggedPath} onUpdate={onUpdate} onAdd={onAdd} onDuplicate={onDuplicate} onDelete={onDelete} onDragStart={onDragStart} onDragOver={onDragOver} onDrop={onDrop} setEditingStepPath={setEditingStepPath} />
           ) : (
-            <StepCard key={`step-${idx}`} step={s} sport={sport} path={[...path, idx]} editable={editable} onUpdate={onUpdate} onAdd={onAdd} onDuplicate={onDuplicate} onDelete={onDelete} />
+            <StepCard key={`step-${idx}`} step={s} sport={sport} path={[...path, idx]} editable={editable} editingStepPath={editingStepPath} draggedPath={draggedPath} onUpdate={onUpdate} onAdd={onAdd} onDuplicate={onDuplicate} onDelete={onDelete} onDragStart={onDragStart} onDragOver={onDragOver} onDrop={onDrop} setEditingStepPath={setEditingStepPath} />
           )
         )}
       </div>
@@ -879,9 +1057,21 @@ function Timeline({ steps, sport }: { steps: GarminStep[]; sport: GarminSport })
   );
 }
 
-export function GarminWorkoutPreview({ garminWorkout, onChange }: GarminWorkoutPreviewProps) {
+export function GarminWorkoutPreview({
+  garminWorkout,
+  date,
+  onChange,
+  onDateChange,
+  onFinishEditing,
+  onDuplicateWorkout,
+  onDeleteWorkout,
+}: GarminWorkoutPreviewProps) {
   const [localWorkout, setLocalWorkout] = useState(garminWorkout);
+  const [draftBeforeEdit, setDraftBeforeEdit] = useState<GarminWorkout | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [editingStepPath, setEditingStepPath] = useState<number[] | null>(null);
+  const [draggedPath, setDraggedPath] = useState<number[] | null>(null);
+  const [dragOverPath, setDragOverPath] = useState<number[] | null>(null);
   const editable = !!onChange;
 
   useEffect(() => {
@@ -953,6 +1143,52 @@ export function GarminWorkoutPreview({ garminWorkout, onChange }: GarminWorkoutP
     });
   };
 
+  const handleDragStart = (path: number[]) => {
+    setDraggedPath(path);
+  };
+
+  const handleDragOver = (path: number[]) => {
+    setDragOverPath(path);
+  };
+
+  const handleDrop = () => {
+    if (draggedPath && dragOverPath) {
+      setLocalWorkout(prev => {
+        const segments = prev.segments.map((seg, idx) =>
+          idx === 0
+            ? { ...seg, steps: moveStepAtPath(seg.steps, draggedPath, dragOverPath) }
+            : seg
+        );
+        return { ...prev, segments: reorderSegmentSteps(segments) };
+      });
+    }
+    setDraggedPath(null);
+    setDragOverPath(null);
+  };
+
+  const startEditing = () => {
+    setDraftBeforeEdit(JSON.parse(JSON.stringify(localWorkout)));
+    setIsEditing(true);
+  };
+
+  const cancelEditing = () => {
+    if (draftBeforeEdit) {
+      setLocalWorkout(draftBeforeEdit);
+    }
+    setDraftBeforeEdit(null);
+    setIsEditing(false);
+    setEditingStepPath(null);
+  };
+
+  const finishEditing = () => {
+    if (onFinishEditing) {
+      onFinishEditing(localWorkout);
+    }
+    setDraftBeforeEdit(null);
+    setIsEditing(false);
+    setEditingStepPath(null);
+  };
+
   const segment = localWorkout.segments[0];
   if (!segment) return null;
 
@@ -999,20 +1235,54 @@ export function GarminWorkoutPreview({ garminWorkout, onChange }: GarminWorkoutP
             </div>
           </div>
           {editable && (
-            <button
-              type="button"
-              onClick={() => setIsEditing(!isEditing)}
-              className={`shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                isEditing
-                  ? 'bg-blue-600 text-white hover:bg-blue-500'
-                  : 'bg-gray-800 text-gray-200 border border-gray-600 hover:bg-gray-700'
-              }`}
-            >
-              {isEditing ? 'Terminer' : 'Modifier'}
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              {isEditing ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={finishEditing}
+                    title="Terminer"
+                    className="p-2 rounded-full text-green-400 hover:text-green-300 hover:bg-green-400/10 transition-colors"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={cancelEditing}
+                    title="Annuler"
+                    className="p-2 rounded-full text-red-400 hover:text-red-300 hover:bg-red-400/10 transition-colors"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </>
+              ) : (
+                <ThreeDotsMenu
+                  onEdit={startEditing}
+                  onDuplicate={onDuplicateWorkout}
+                  onDelete={onDeleteWorkout}
+                />
+              )}
+            </div>
           )}
         </div>
-        <div className="flex flex-wrap gap-4 mt-3 text-sm">
+        <div className="flex flex-wrap items-center gap-4 mt-3 text-sm">
+          {isEditing && date !== undefined && onDateChange ? (
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => onDateChange(e.target.value)}
+              className="bg-gray-900 border border-gray-600 rounded px-2 py-1 text-white text-sm"
+            />
+          ) : date ? (
+            <span className="text-gray-300">
+              <span className="text-gray-500">Date</span>{' '}
+              <span className="font-medium text-white">{new Date(date).toLocaleDateString('fr-FR')}</span>
+            </span>
+          ) : null}
           {totals.time > 0 && (
             <span className="text-gray-300">
               <span className="text-gray-500">Temps estimé</span>{' '}
@@ -1053,9 +1323,41 @@ export function GarminWorkoutPreview({ garminWorkout, onChange }: GarminWorkoutP
         <div className="space-y-3">
           {segment.steps.map((step, idx) =>
             step.type === 'WorkoutRepeatStep' ? (
-              <RepeatBlock key={`block-${idx}`} step={step} sport={localWorkout.sport} path={[idx]} editable={isEditing} onUpdate={updateStep} onAdd={handleAdd} onDuplicate={handleDuplicate} onDelete={handleDelete} />
+              <RepeatBlock
+                key={`block-${idx}`}
+                step={step}
+                sport={localWorkout.sport}
+                path={[idx]}
+                editable={isEditing}
+                editingStepPath={editingStepPath}
+                draggedPath={draggedPath}
+                onUpdate={updateStep}
+                onAdd={handleAdd}
+                onDuplicate={handleDuplicate}
+                onDelete={handleDelete}
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+                setEditingStepPath={setEditingStepPath}
+              />
             ) : (
-              <StepCard key={`step-${idx}`} step={step} sport={localWorkout.sport} path={[idx]} editable={isEditing} onUpdate={updateStep} onAdd={handleAdd} onDuplicate={handleDuplicate} onDelete={handleDelete} />
+              <StepCard
+                key={`step-${idx}`}
+                step={step}
+                sport={localWorkout.sport}
+                path={[idx]}
+                editable={isEditing}
+                editingStepPath={editingStepPath}
+                draggedPath={draggedPath}
+                onUpdate={updateStep}
+                onAdd={handleAdd}
+                onDuplicate={handleDuplicate}
+                onDelete={handleDelete}
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+                setEditingStepPath={setEditingStepPath}
+              />
             )
           )}
         </div>

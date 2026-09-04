@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { SavedWorkout } from '../lib/types';
 import { workoutStore } from '../lib/workoutStore';
 import { convertToGarminFormat, GarminWorkout } from '../lib/garmin-format';
-import { GarminWorkoutPreview } from './GarminWorkoutPreview';
+import { GarminWorkoutPreview, ThreeDotsMenu } from './GarminWorkoutPreview';
 import { GarminSyncModal } from './GarminSyncModal';
 import { ShareWorkoutDialog } from './ShareWorkoutDialog';
+import { Workout, generateId } from '../lib/types';
 
 interface SavedWorkoutsPageProps {
   onNavigate: (page: 'home' | 'workouts' | 'coach' | 'stats' | 'profile' | 'account' | 'saved-workouts') => void;
@@ -35,6 +36,32 @@ export function SavedWorkoutsPage({ onNavigate }: SavedWorkoutsPageProps) {
     workoutStore.markAsSynced(id);
     setWorkouts(workoutStore.getAll());
     setSyncWorkout(null);
+  };
+
+  const duplicateSavedWorkout = (saved: SavedWorkout) => {
+    const newWorkout: Workout = {
+      ...saved.workout,
+      id: generateId(),
+      name: `${saved.workout.name} (copie)`,
+    };
+    const duplicated = workoutStore.save(newWorkout, saved.source, saved.garminWorkout);
+    setWorkouts(workoutStore.getAll());
+    setExpandedId(duplicated.id);
+  };
+
+  const startEditingSaved = (saved: SavedWorkout) => {
+    setEditedGarminWorkouts(prev => ({
+      ...prev,
+      [saved.id]: saved.garminWorkout || convertToGarminFormat(saved.workout),
+    }));
+    setEditingId(saved.id);
+    setExpandedId(saved.id);
+  };
+
+  const finishEditingSaved = (saved: SavedWorkout, garminWorkout: GarminWorkout) => {
+    workoutStore.update(saved.id, { garminWorkout });
+    setWorkouts(workoutStore.getAll());
+    setEditingId(null);
   };
 
   const formatDate = (dateString: string) => {
@@ -157,9 +184,9 @@ export function SavedWorkoutsPage({ onNavigate }: SavedWorkoutsPageProps) {
                 className="p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800 transition-colors"
                 onClick={() => setExpandedId(expandedId === saved.id ? null : saved.id)}
               >
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-1">
+                    <div className="flex items-center gap-3 mb-1 flex-wrap">
                       <h3 className="font-semibold text-gray-900 dark:text-white truncate">
                         {saved.workout.name}
                       </h3>
@@ -188,14 +215,39 @@ export function SavedWorkoutsPage({ onNavigate }: SavedWorkoutsPageProps) {
                       {formatDate(saved.createdAt)} • {saved.workout.steps.length} étape{saved.workout.steps.length > 1 ? 's' : ''}
                     </p>
                   </div>
-                  <svg
-                    className={`w-5 h-5 text-gray-400 transition-transform ${expandedId === saved.id ? 'rotate-180' : ''}`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {deleteConfirmId === saved.id ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-600 dark:text-gray-300">Supprimer ?</span>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDelete(saved.id); }}
+                          className="px-2 py-1 bg-red-500 text-white rounded text-xs font-medium hover:bg-red-600"
+                        >
+                          Oui
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(null); }}
+                          className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs font-medium hover:bg-gray-300"
+                        >
+                          Non
+                        </button>
+                      </div>
+                    ) : (
+                      <ThreeDotsMenu
+                        onEdit={() => startEditingSaved(saved)}
+                        onDuplicate={() => duplicateSavedWorkout(saved)}
+                        onDelete={() => setDeleteConfirmId(saved.id)}
+                      />
+                    )}
+                    <svg
+                      className={`w-5 h-5 text-gray-400 transition-transform ${expandedId === saved.id ? 'rotate-180' : ''}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
                 </div>
               </div>
 
@@ -207,7 +259,15 @@ export function SavedWorkoutsPage({ onNavigate }: SavedWorkoutsPageProps) {
                     {editingId === saved.id && editedGarminWorkouts[saved.id] ? (
                       <GarminWorkoutPreview
                         garminWorkout={editedGarminWorkouts[saved.id]}
+                        date={saved.workout.date.toISOString().split('T')[0]}
                         onChange={(updated) => setEditedGarminWorkouts(prev => ({ ...prev, [saved.id]: updated }))}
+                        onDateChange={(newDate) => {
+                          workoutStore.update(saved.id, {
+                            workout: { ...saved.workout, date: new Date(newDate) },
+                          });
+                          setWorkouts(workoutStore.getAll());
+                        }}
+                        onFinishEditing={(updated) => finishEditingSaved(saved, updated)}
                       />
                     ) : (
                       <GarminWorkoutPreview garminWorkout={saved.garminWorkout || convertToGarminFormat(saved.workout)} />
@@ -215,94 +275,29 @@ export function SavedWorkoutsPage({ onNavigate }: SavedWorkoutsPageProps) {
                   </div>
 
                   {/* Actions */}
-                  <div className="p-4 flex gap-3 flex-wrap">
-                    {editingId === saved.id ? (
+                  {!editingId && (
+                    <div className="p-4 flex gap-3 flex-wrap">
                       <button
-                        onClick={() => {
-                          const updated = editedGarminWorkouts[saved.id];
-                          if (updated) {
-                            workoutStore.update(saved.id, { garminWorkout: updated });
-                            setWorkouts(workoutStore.getAll());
-                          }
-                          setEditingId(null);
-                        }}
-                        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-500 transition-colors"
+                        onClick={() => setSyncWorkout({ ...saved, garminWorkout: saved.garminWorkout || convertToGarminFormat(saved.workout) })}
+                        className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors"
+                      >
+                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97-.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>
+                        </svg>
+                        Sync Garmin
+                      </button>
+
+                      <button
+                        onClick={() => setShareWorkout(saved)}
+                        className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg font-medium hover:bg-indigo-600 transition-colors"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                         </svg>
-                        Sauvegarder
+                        Partager
                       </button>
-                    ) : (
-                      <button
-                        onClick={() => {
-                          setEditedGarminWorkouts(prev => ({
-                            ...prev,
-                            [saved.id]: saved.garminWorkout || convertToGarminFormat(saved.workout),
-                          }));
-                          setEditingId(saved.id);
-                        }}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-500 transition-colors"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                        </svg>
-                        Modifier
-                      </button>
-                    )}
-
-                    {editingId !== saved.id && (
-                      <>
-                        <button
-                          onClick={() => setSyncWorkout({ ...saved, garminWorkout: saved.garminWorkout || convertToGarminFormat(saved.workout) })}
-                          className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors"
-                        >
-                          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97-.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>
-                          </svg>
-                          Sync Garmin
-                        </button>
-
-                        <button
-                          onClick={() => setShareWorkout(saved)}
-                          className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg font-medium hover:bg-indigo-600 transition-colors"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                          </svg>
-                          Partager
-                        </button>
-
-                        {deleteConfirmId === saved.id ? (
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-600">Supprimer ?</span>
-                            <button
-                              onClick={() => handleDelete(saved.id)}
-                              className="px-3 py-1 bg-red-500 text-white rounded text-sm font-medium hover:bg-red-600"
-                            >
-                              Oui
-                            </button>
-                            <button
-                              onClick={() => setDeleteConfirmId(null)}
-                              className="px-3 py-1 bg-gray-200 text-gray-700 dark:text-gray-200 rounded text-sm font-medium hover:bg-gray-300"
-                            >
-                              Non
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => setDeleteConfirmId(saved.id)}
-                            className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-lg font-medium hover:bg-gray-200 transition-colors"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                            Supprimer
-                          </button>
-                        )}
-                      </>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

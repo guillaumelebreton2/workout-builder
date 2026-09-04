@@ -881,7 +881,9 @@ export function WorkoutForm() {
             <>
               <GarminWorkoutPreview
                 garminWorkout={editableGarminWorkout}
+                date={date}
                 onChange={setEditableGarminWorkout}
+                onDateChange={setDate}
               />
               <div className="mt-4">
                 <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 dark:text-gray-400 uppercase tracking-wide mb-2">
