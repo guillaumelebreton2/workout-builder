@@ -18,6 +18,8 @@ type Page = 'home' | 'workouts' | 'saved-workouts' | 'coach' | 'stats' | 'profil
 // Pages that require authentication
 const PROTECTED_PAGES: Page[] = ['workouts', 'saved-workouts', 'coach', 'stats', 'profile', 'account'];
 
+const REDIRECT_AFTER_LOGIN_KEY = 'redirectAfterLogin';
+
 function getPageFromPath(path: string): Page {
   if (path === '/workouts') return 'workouts';
   if (path === '/saved-workouts') return 'saved-workouts';
@@ -50,6 +52,8 @@ function AppContent() {
   useEffect(() => {
     if (path === '/share' || path === '/privacy') return;
     if (!isLoading && !isAuthenticated && PROTECTED_PAGES.includes(currentPage)) {
+      // Remember where the user wanted to go, to redirect back after login
+      sessionStorage.setItem(REDIRECT_AFTER_LOGIN_KEY, currentPage);
       const timeout = setTimeout(() => setCurrentPage('login'), 0);
       return () => clearTimeout(timeout);
     }
@@ -59,7 +63,10 @@ function AppContent() {
   useEffect(() => {
     if (path === '/share' || path === '/privacy') return;
     if (!isLoading && isAuthenticated && currentPage === 'login') {
-      const timeout = setTimeout(() => setCurrentPage('home'), 0);
+      const pending = sessionStorage.getItem(REDIRECT_AFTER_LOGIN_KEY);
+      sessionStorage.removeItem(REDIRECT_AFTER_LOGIN_KEY);
+      const target: Page = pending && PROTECTED_PAGES.includes(pending as Page) ? (pending as Page) : 'home';
+      const timeout = setTimeout(() => setCurrentPage(target), 0);
       return () => clearTimeout(timeout);
     }
   }, [isLoading, isAuthenticated, currentPage, path]);
