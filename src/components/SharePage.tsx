@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Workout, SPORT_LABELS } from '../lib/types';
 import { workoutStore } from '../lib/workoutStore';
 import { useAuth } from '../lib/authContext';
-import { WorkoutPreview } from './WorkoutPreview';
+import { GarminWorkoutPreview } from './GarminWorkoutPreview';
+import { convertToGarminFormat } from '../lib/garmin-format';
 
 export function SharePage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
@@ -113,7 +114,7 @@ export function SharePage() {
               )}
             </div>
 
-            <WorkoutPreview steps={workout.steps} />
+            <GarminWorkoutPreview garminWorkout={convertToGarminFormat(workout)} />
 
             <div className="mt-6 flex flex-wrap gap-3">
               {isAuthenticated ? (
