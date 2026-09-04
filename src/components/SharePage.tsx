@@ -61,7 +61,7 @@ export function SharePage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-950 to-gray-900 flex items-center justify-center">
         <div className="animate-spin h-12 w-12 border-4 border-orange-500 border-t-transparent rounded-full" />
       </div>
     );
@@ -69,13 +69,13 @@ export function SharePage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8 max-w-md w-full text-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-950 to-gray-900 flex items-center justify-center p-4">
+        <div className="bg-gray-900 border border-gray-700 rounded-xl shadow-lg p-8 max-w-md w-full text-center">
           <svg className="w-16 h-16 mx-auto text-red-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Lien invalide</h1>
-          <p className="text-gray-600">{error}</p>
+          <h1 className="text-xl font-bold text-white mb-2">Lien invalide</h1>
+          <p className="text-gray-300">{error}</p>
         </div>
       </div>
     );
@@ -86,13 +86,13 @@ export function SharePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <header className="bg-white dark:bg-gray-900 shadow-sm">
+    <div className="min-h-screen bg-gradient-to-br from-gray-950 to-gray-900 text-white">
+      <header className="bg-gray-900 border-b border-gray-800">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <a href="/" className="text-xl font-bold text-gray-900">Enduzo</a>
+          <a href="/" className="text-xl font-bold text-white">Enduzo</a>
           <a
             href="/saved-workouts"
-            className="text-sm font-medium text-orange-600 hover:text-orange-700"
+            className="text-sm font-medium text-orange-400 hover:text-orange-300"
           >
             Mes séances
           </a>
@@ -101,16 +101,16 @@ export function SharePage() {
 
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-3xl mx-auto">
-          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6 md:p-8">
+          <div className="bg-gray-900 border border-gray-700 rounded-xl shadow-lg p-6 md:p-8">
             <div className="mb-6">
               <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{workout.name}</h1>
-                <span className="px-2.5 py-0.5 rounded-full text-sm font-medium bg-orange-100 text-orange-700">
+                <h1 className="text-2xl md:text-3xl font-bold text-white">{workout.name}</h1>
+                <span className="px-2.5 py-0.5 rounded-full text-sm font-medium bg-orange-500/15 text-orange-300 border border-orange-500/30">
                   {SPORT_LABELS[workout.sport]}
                 </span>
               </div>
               {workout.description && (
-                <p className="text-gray-600">{workout.description}</p>
+                <p className="text-gray-300">{workout.description}</p>
               )}
             </div>
 
@@ -119,7 +119,7 @@ export function SharePage() {
             <div className="mt-6 flex flex-wrap gap-3">
               {isAuthenticated ? (
                 imported ? (
-                  <div className="flex items-center gap-2 px-4 py-2 bg-green-100 text-green-800 rounded-lg font-medium">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-green-500/15 text-green-300 border border-green-500/30 rounded-lg font-medium">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
