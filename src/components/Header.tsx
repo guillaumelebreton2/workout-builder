@@ -12,6 +12,7 @@ export function Header({ currentPage, onNavigate }: HeaderProps) {
   const { user, isAuthenticated, logout } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const isProd = import.meta.env.PROD;
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -94,26 +95,30 @@ export function Header({ currentPage, onNavigate }: HeaderProps) {
             >
               Séances
             </button>
-            <button
-              onClick={() => onNavigate('coach')}
-              className={`px-2 py-2 rounded-lg font-medium transition-colors text-xs sm:text-sm md:text-base md:px-4 ${
-                currentPage === 'coach'
-                  ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400'
-                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-800'
-              }`}
-            >
-              Coach
-            </button>
-            <button
-              onClick={() => onNavigate('stats')}
-              className={`px-2 py-2 rounded-lg font-medium transition-colors text-xs sm:text-sm md:text-base md:px-4 ${
-                currentPage === 'stats'
-                  ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400'
-                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-800'
-              }`}
-            >
-              Stats
-            </button>
+            {!isProd && (
+              <>
+                <button
+                  onClick={() => onNavigate('coach')}
+                  className={`px-2 py-2 rounded-lg font-medium transition-colors text-xs sm:text-sm md:text-base md:px-4 ${
+                    currentPage === 'coach'
+                      ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400'
+                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  Coach
+                </button>
+                <button
+                  onClick={() => onNavigate('stats')}
+                  className={`px-2 py-2 rounded-lg font-medium transition-colors text-xs sm:text-sm md:text-base md:px-4 ${
+                    currentPage === 'stats'
+                      ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400'
+                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  Stats
+                </button>
+              </>
+            )}
           </nav>
 
           {/* User menu */}
@@ -156,15 +161,17 @@ export function Header({ currentPage, onNavigate }: HeaderProps) {
                     </div>
 
                     {/* Menu items */}
-                    <button
-                      onClick={() => handleDropdownNavigate('profile')}
-                      className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-800 flex items-center gap-3"
-                    >
-                      <svg className="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                      Profil athlete
-                    </button>
+                    {!isProd && (
+                      <button
+                        onClick={() => handleDropdownNavigate('profile')}
+                        className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-800 flex items-center gap-3"
+                      >
+                        <svg className="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        Profil athlete
+                      </button>
+                    )}
 
                     <button
                       onClick={() => handleDropdownNavigate('account')}

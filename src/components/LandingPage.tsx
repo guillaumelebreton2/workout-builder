@@ -3,6 +3,7 @@ interface LandingPageProps {
 }
 
 export function LandingPage({ onNavigate }: LandingPageProps) {
+  const isProd = import.meta.env.PROD;
   return (
     <div className="container mx-auto px-4 py-12">
       {/* Hero Section */}
@@ -21,12 +22,14 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
           >
             Créer une séance
           </button>
-          <button
-            onClick={() => onNavigate('coach')}
-            className="bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 px-8 py-4 rounded-xl font-semibold text-lg hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800 transition-colors border border-gray-200"
-          >
-            Découvrir le Coach IA
-          </button>
+          {!isProd && (
+            <button
+              onClick={() => onNavigate('coach')}
+              className="bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 px-8 py-4 rounded-xl font-semibold text-lg hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800 transition-colors border border-gray-200"
+            >
+              Découvrir le Coach IA
+            </button>
+          )}
         </div>
       </div>
 
