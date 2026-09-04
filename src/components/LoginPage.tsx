@@ -12,8 +12,8 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 max-w-md w-full">
+    <div className="min-h-screen bg-gradient-to-br from-gray-950 to-gray-900 flex items-center justify-center p-4">
+      <div className="bg-gray-900 border border-gray-700 rounded-2xl shadow-xl p-8 max-w-md w-full">
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center mx-auto mb-4">
@@ -21,8 +21,8 @@ export function LoginPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Bienvenue sur Enduzo</h1>
-          <p className="text-gray-600 dark:text-gray-300 mt-2">
+          <h1 className="text-2xl font-bold text-white">Bienvenue sur Enduzo</h1>
+          <p className="text-gray-300 mt-2">
             Connecte-toi pour creer tes seances d'entrainement
           </p>
         </div>
@@ -54,18 +54,18 @@ export function LoginPage() {
 
         {/* Divider */}
         <div className="my-6 flex items-center">
-          <div className="flex-1 border-t border-gray-200"></div>
-          <span className="px-4 text-sm text-gray-500">info</span>
-          <div className="flex-1 border-t border-gray-200"></div>
+          <div className="flex-1 border-t border-gray-700"></div>
+          <span className="px-4 text-sm text-gray-400">info</span>
+          <div className="flex-1 border-t border-gray-700"></div>
         </div>
 
         {/* Info text */}
-        <div className="text-center text-sm text-gray-500 dark:text-gray-400 space-y-2">
+        <div className="text-center text-sm text-gray-400 space-y-2">
           <p>
             Enduzo utilise Garmin ou Strava pour t'identifier.
           </p>
           <p>
-            <a href="/privacy" className="text-blue-600 hover:underline">
+            <a href="/privacy" className="text-blue-400 hover:underline">
               Politique de confidentialite
             </a>
           </p>
