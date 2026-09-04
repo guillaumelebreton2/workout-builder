@@ -55,6 +55,15 @@ function AppContent() {
     }
   }, [isLoading, isAuthenticated, currentPage, path]);
 
+  // Redirect away from login page once authenticated (e.g. after Garmin OAuth callback)
+  useEffect(() => {
+    if (path === '/share' || path === '/privacy') return;
+    if (!isLoading && isAuthenticated && currentPage === 'login') {
+      const timeout = setTimeout(() => setCurrentPage('home'), 0);
+      return () => clearTimeout(timeout);
+    }
+  }, [isLoading, isAuthenticated, currentPage, path]);
+
   // Update URL when page changes
   useEffect(() => {
     if (path === '/share' || path === '/privacy') return;
